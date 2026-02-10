@@ -80,6 +80,27 @@ done
 
 > **Note:** neon007 (DeltaNet) is ~30× slower due to sequential recurrence.
 
+### 3M Intent Attention Experiments (neon015-022)
+
+All use SwiGLU + RMSNorm + QK-Norm + RoPE + weight tying. QKVI projected per-head.
+
+| Model | Gating | Intent Activation | Value Activation | Formula |
+|-------|--------|-------------------|-----------------|---------|
+| **neon015** | Result | raw | raw | I_i ⊙ Σ(A V) |
+| **neon016** | Result | σ | raw | σ(I_i) ⊙ Σ(A V) |
+| **neon017** | Result | raw | σ | I_i ⊙ Σ(A σ(V)) |
+| **neon018** | Result | σ | σ | σ(I_i) ⊙ Σ(A σ(V)) |
+| **neon019** | Source | raw | raw | Σ A (I_j ⊙ V_j) |
+| **neon020** | Source | σ | raw | Σ A (σ(I_j) ⊙ V_j) |
+| **neon021** | Source | raw | σ | Σ A (I_j ⊙ σ(V_j)) |
+| **neon022** | Source | σ | σ | Σ A (σ(I_j) ⊙ σ(V_j)) |
+
+```bash
+for model in neon015 neon016 neon017 neon018 neon019 neon020 neon021 neon022; do
+    python3 train.py --model $model --data data/hp/hp0.txt --tokenizer tokenizers/hp_tok1.json --tok_name tok1
+done
+```
+
 ### Test: Train neon010 on WikiText-103
 Run this first to verify the pipeline works before the expensive 10M models:
 ```bash

@@ -21,7 +21,7 @@ def get_config(model_name):
         'd_ff': 512,
         'block_size': 256,
         'learning_rate': 1e-3,
-        'max_iters': 30000,
+        'max_iters': 10000,
         'eval_interval': 500,
         'batch_size': 64,
         'device': 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -43,7 +43,7 @@ def get_config(model_name):
     elif model_name == "neon014":  # MLP-Heavy (4× expansion)
         config.update({'d_model': 384, 'n_layers': 6, 'n_head': 6, 'd_ff': 1536})
 
-    all_models = [f"neon{i:03d}" for i in range(1, 15)]
+    all_models = [f"neon{i:03d}" for i in range(1, 23)]
     if model_name in all_models:
         return config
     else:
