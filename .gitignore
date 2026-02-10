@@ -1,0 +1,13 @@
+# Data and Checkpoints
+data/
+checkpoints/
+*.pth
+*.bin
+*.parquet
+*.pt
+
+# Python/System
+__pycache__/
+*.pyc
+logs/
+.DS_Store
