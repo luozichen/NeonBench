@@ -76,11 +76,12 @@ def clean_token(t):
     return t.replace("Ġ", "·").replace("Ċ", "↵").replace("▁", "·")
 
 
-# ── Attention capture via SDPA monkey-patch ──────────────────────────
+# ── Attention + MLP capture ──────────────────────────────────────────
 
 def capture_forward(model, input_ids):
-    """Run forward pass while capturing attention weights from every SDPA call."""
-    bucket = []
+    """Run forward pass, capture attention weights and MLP activations."""
+    attn_bucket = []
+    mlp_bucket = []
     real_sdpa = F.scaled_dot_product_attention
 
     def spy(q, k, v, attn_mask=None, dropout_p=0.0, is_causal=False, scale=None):
@@ -93,8 +94,21 @@ def capture_forward(model, input_ids):
         if attn_mask is not None:
             logits = logits + attn_mask
         w = torch.softmax(logits, dim=-1)
-        bucket.append(w.detach().cpu())
+        attn_bucket.append(w.detach().cpu())
         return w @ v
+
+    # Hook MLP modules to capture their input and output
+    hooks = []
+    for block in model.blocks:
+        if hasattr(block, 'mlp'):
+            def make_hook():
+                def hook_fn(module, inp, out):
+                    mlp_bucket.append({
+                        'input': inp[0].detach().cpu(),    # (B, T, d_model)
+                        'output': out.detach().cpu(),      # (B, T, d_model)
+                    })
+                return hook_fn
+            hooks.append(block.mlp.register_forward_hook(make_hook()))
 
     F.scaled_dot_product_attention = spy
     try:
@@ -102,7 +116,9 @@ def capture_forward(model, input_ids):
             model(input_ids)
     finally:
         F.scaled_dot_product_attention = real_sdpa
-    return bucket          # list of (1, n_head, T, T) tensors, one per layer
+        for h in hooks:
+            h.remove()
+    return attn_bucket, mlp_bucket
 
 
 # ── Plotting ─────────────────────────────────────────────────────────
@@ -166,12 +182,93 @@ def plot_all_heads(attn_layer, tokens, layer, n_heads):
 def plot_attention_received(attn_matrix, tokens, layer, head):
     """Bar chart: total attention each token receives (column sum)."""
     labels = [clean_token(t) for t in tokens]
-    received = attn_matrix.sum(axis=0)   # sum over queries
+    received = attn_matrix.sum(axis=0)
     fig = go.Figure(go.Bar(x=labels, y=received, marker_color="#1f77b4"))
     fig.update_layout(
         title=f"Attention Received — Layer {layer}, Head {head}",
         xaxis_title="Token", yaxis_title="Total attention received",
         height=280, margin=dict(l=60, r=20, t=40, b=60),
+    )
+    fig.update_xaxes(tickangle=45)
+    return fig
+
+
+def plot_full_grid(attns, tokens, n_layers, n_heads):
+    """Full grid: rows=layers, cols=heads."""
+    labels = [clean_token(t) for t in tokens]
+    fig = make_subplots(
+        rows=n_layers, cols=n_heads,
+        subplot_titles=[f"L{l} H{h}" for l in range(n_layers) for h in range(n_heads)],
+        horizontal_spacing=0.02, vertical_spacing=0.03,
+    )
+    global_max = max(float(a[0].max()) for a in attns)
+    for l in range(n_layers):
+        for h in range(n_heads):
+            fig.add_trace(go.Heatmap(
+                z=attns[l][0, h].numpy(),
+                x=labels, y=labels,
+                colorscale="Blues", showscale=False,
+                zmin=0, zmax=global_max,
+                xgap=1, ygap=1,
+            ), row=l + 1, col=h + 1)
+            fig.update_yaxes(autorange="reversed", showticklabels=False, row=l + 1, col=h + 1)
+            fig.update_xaxes(showticklabels=False, row=l + 1, col=h + 1)
+    T = len(labels)
+    cell_h = max(120, T * 10 + 30)
+    fig.update_layout(
+        title="All Layers × All Heads",
+        height=cell_h * n_layers + 60,
+        margin=dict(l=30, r=20, t=60, b=30),
+    )
+    # Add row labels on left
+    for l in range(n_layers):
+        fig.add_annotation(text=f"L{l}", x=-0.02, y=1 - (l + 0.5) / n_layers,
+                           xref="paper", yref="paper", showarrow=False,
+                           font=dict(size=11, color="gray"))
+    return fig
+
+
+def plot_mlp_activation(mlp_data, tokens, layer):
+    """Heatmap of MLP output magnitude per token per dimension (top dims)."""
+    out = mlp_data[layer]['output'][0].numpy()  # (T, d_model)
+    # Show top-32 most active dimensions (by variance across tokens)
+    var = np.var(out, axis=0)
+    top_dims = np.argsort(var)[-32:][::-1]
+    labels = [clean_token(t) for t in tokens]
+    fig = go.Figure(go.Heatmap(
+        z=out[:, top_dims].T,
+        x=labels,
+        y=[f"d{d}" for d in top_dims],
+        colorscale="RdBu_r", zmid=0,
+        xgap=1, ygap=1,
+    ))
+    fig.update_layout(
+        title=f"MLP Output — Layer {layer} (top 32 dims by variance)",
+        xaxis_title="Token", yaxis_title="Dimension",
+        height=500, margin=dict(l=60, r=20, t=50, b=80),
+    )
+    fig.update_xaxes(tickangle=45)
+    return fig
+
+
+def plot_mlp_norm(mlp_data, tokens, n_layers):
+    """Heatmap: L2 norm of MLP output per token per layer."""
+    labels = [clean_token(t) for t in tokens]
+    norms = []
+    for l in range(n_layers):
+        out = mlp_data[l]['output'][0].numpy()  # (T, d_model)
+        norms.append(np.linalg.norm(out, axis=1))  # (T,)
+    norms = np.array(norms)  # (n_layers, T)
+    fig = go.Figure(go.Heatmap(
+        z=norms, x=labels,
+        y=[f"Layer {l}" for l in range(n_layers)],
+        colorscale="Oranges", xgap=1, ygap=1,
+    ))
+    fig.update_layout(
+        title="MLP Output Norm — All Layers",
+        xaxis_title="Token", yaxis_title="Layer",
+        height=max(250, n_layers * 50 + 100),
+        margin=dict(l=80, r=20, t=50, b=80),
     )
     fig.update_xaxes(tickangle=45)
     return fig
@@ -238,23 +335,26 @@ if st.button("🔍 Visualize", type="primary") or "attentions" in st.session_sta
             toks = toks[:config['block_size']]
 
         input_tensor = torch.tensor([ids])
-        attns = capture_forward(model, input_tensor)
+        attns, mlps = capture_forward(model, input_tensor)
 
         st.session_state["attentions"] = attns
+        st.session_state["mlp_data"] = mlps
         st.session_state["tokens"] = toks
         st.session_state["_vis_key"] = current_key
 
     attns = st.session_state["attentions"]
+    mlps  = st.session_state.get("mlp_data", [])
     toks  = st.session_state["tokens"]
 
     st.success(f"**{len(toks)} tokens** × {n_layers} layers × {n_heads} heads")
     st.markdown("**Tokens:** " + "  ".join(f"`{clean_token(t)}`" for t in toks))
 
     # ── Tabs ──
-    tab1, tab2, tab3 = st.tabs(["🔎 Single Head", "📊 All Heads", "📈 Attention Flow"])
+    tabs = st.tabs(["🔎 Single Head", "📊 All Heads", "🧩 Full Grid",
+                    "📈 Attention Flow", "🔧 MLP Activations"])
 
     # --- Single Head ---
-    with tab1:
+    with tabs[0]:
         c1, c2 = st.columns(2)
         with c1:
             layer = st.selectbox("Layer", range(n_layers),
@@ -268,15 +368,21 @@ if st.button("🔍 Visualize", type="primary") or "attentions" in st.session_sta
         st.plotly_chart(plot_attention_received(attn_np, toks, layer, head),
                         use_container_width=True)
 
-    # --- All Heads ---
-    with tab2:
+    # --- All Heads (one layer) ---
+    with tabs[1]:
         layer_all = st.selectbox("Layer", range(n_layers),
                                  format_func=lambda x: f"Layer {x}", key="ah_layer")
         st.plotly_chart(plot_all_heads(attns[layer_all], toks, layer_all, n_heads),
                         use_container_width=True)
 
+    # --- Full Grid (all layers × all heads) ---
+    with tabs[2]:
+        st.markdown(f"**{n_layers} layers × {n_heads} heads** — rows = layers, columns = heads")
+        st.plotly_chart(plot_full_grid(attns, toks, n_layers, n_heads),
+                        use_container_width=True)
+
     # --- Attention Flow ---
-    with tab3:
+    with tabs[3]:
         st.markdown("**Average attention per layer** (mean across all heads)")
         layer_flow = st.selectbox("Layer", range(n_layers),
                                   format_func=lambda x: f"Layer {x}", key="af_layer")
@@ -295,3 +401,17 @@ if st.button("🔍 Visualize", type="primary") or "attentions" in st.session_sta
         )
         fig.update_xaxes(tickangle=45)
         st.plotly_chart(fig, use_container_width=True)
+
+    # --- MLP Activations ---
+    with tabs[4]:
+        if not mlps:
+            st.info("No MLP data captured. Model may not have standard MLP blocks.")
+        else:
+            st.markdown("**MLP output norm across all layers and tokens**")
+            st.plotly_chart(plot_mlp_norm(mlps, toks, n_layers),
+                            use_container_width=True)
+            st.divider()
+            mlp_layer = st.selectbox("Layer", range(n_layers),
+                                     format_func=lambda x: f"Layer {x}", key="mlp_layer")
+            st.plotly_chart(plot_mlp_activation(mlps, toks, mlp_layer),
+                            use_container_width=True)
