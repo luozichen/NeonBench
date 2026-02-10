@@ -131,6 +131,9 @@ python3 scripts/plot_results.py --data_name wiki103 --models neon011,neon012,neo
 
 # Compare neon010 across HP and WikiText
 python3 scripts/plot_results.py --data_name wiki103 --models neon010,neon011,neon012,neon013,neon014
+
+# Log scale (spreads out tight curves)
+python3 scripts/plot_results_log.py --data_name hp0 --models neon015,neon016,neon017,neon018,neon019,neon020,neon021,neon022
 ```
 
 ---
@@ -149,3 +152,31 @@ python3 scripts/inference.py \
 | `--max_tokens` | 500 | Max tokens to generate |
 | `--temperature` | 0.8 | Sampling temperature |
 | `--top_k` | 50 | Top-k sampling |
+
+---
+
+## 7. LayerDrop Experiment (neon023-024)
+
+Both are 8-layer neon016 (σ(I) result gating). neon024 uses LayerDrop=0.1 during training.
+
+```bash
+for model in neon023 neon024; do
+    python3 train.py --model $model --data data/hp/hp0.txt --tokenizer tokenizers/hp_tok1.json --tok_name tok1
+done
+```
+
+---
+
+## 8. Attention Visualizer (local only)
+
+Interactive browser app for visualizing attention heatmaps.
+
+```bash
+# Install deps (once)
+pip install streamlit plotly
+
+# Run
+python3 -m streamlit run scripts/visualizer.py
+```
+
+Open http://localhost:8501 — select a model, type a prompt, click Visualize.
