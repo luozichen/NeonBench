@@ -1,10 +1,14 @@
-# Data and Checkpoints
+# Data (too large for git)
 data/
-checkpoints/
-*.pth
 *.bin
 *.parquet
 *.pt
+
+# Large model checkpoints (10M+ params, neon011-014)
+checkpoints/neon011*
+checkpoints/neon012*
+checkpoints/neon013*
+checkpoints/neon014*
 
 # Python/System
 __pycache__/

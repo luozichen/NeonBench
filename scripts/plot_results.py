@@ -29,7 +29,7 @@ def main():
     if args.models:
         models = [m.strip() for m in args.models.split(",")]
     else:
-        models = [f"neon{i:03d}" for i in range(1, 23)]
+        models = [f"neon{i:03d}" for i in range(1, 25)]
 
     tokenizers = [t.strip() for t in args.tokenizers.split(",")]
 
@@ -37,7 +37,8 @@ def main():
               '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
               '#aec7e8', '#ffbb78', '#98df8a', '#ff9896',
               '#c5b0d5', '#c49c94', '#f7b6d2', '#c7c7c7',
-              '#dbdb8d', '#9edae5', '#393b79', '#637939']
+              '#dbdb8d', '#9edae5', '#393b79', '#637939',
+              '#e7298a', '#66a61e']
 
     if len(tokenizers) > 1:
         fig, axes = plt.subplots(1, len(tokenizers), figsize=(7 * len(tokenizers), 6), sharey=True)

@@ -43,7 +43,13 @@ def get_config(model_name):
     elif model_name == "neon014":  # MLP-Heavy (4× expansion)
         config.update({'d_model': 384, 'n_layers': 6, 'n_head': 6, 'd_ff': 1536})
 
-    all_models = [f"neon{i:03d}" for i in range(1, 23)]
+    # --- 8-layer deep intent models (neon023-024) ---
+    if model_name == "neon023":  # 8-layer neon016, no layerdrop
+        config.update({'n_layers': 8, 'layerdrop': 0.0})
+    elif model_name == "neon024":  # 8-layer neon016, layerdrop=0.1
+        config.update({'n_layers': 8, 'layerdrop': 0.1})
+
+    all_models = [f"neon{i:03d}" for i in range(1, 25)]
     if model_name in all_models:
         return config
     else:
