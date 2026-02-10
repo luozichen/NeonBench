@@ -1,0 +1,5 @@
+Run: neon007_tok1_hp0
+Training neon007 on data/hp/hp0.txt with tokenizer tok1
+Config: {'vocab_size': 1024, 'd_model': 256, 'n_layers': 4, 'n_head': 4, 'd_ff': 512, 'block_size': 256, 'learning_rate': 0.001, 'max_iters': 10000, 'eval_interval': 500, 'batch_size': 64, 'device': 'cuda'}
+Step 0: Train Loss 7.1027, Val Loss 6.9623
+Step 500: Train Loss 2.9790, Val Loss 3.0147
