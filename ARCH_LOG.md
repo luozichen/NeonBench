@@ -14,14 +14,14 @@ This document details the Neon transformer architectures, their configurations, 
 | neon006 | 2,755,328 | 1.5467 | Multi-Latent Attention (MLA) |
 | neon007 | 2,889,984 | 3.0147 | DeltaNet (Linear Attention) |
 | neon008 | 2,888,704 | 6.0381 | L2-Norm + LayerNorm (Unit Sphere) |
-| neon009 | 3,148,544 | 1.3010 | QKVI Intent Attention (separate I proj) |
-| neon010 | 2,903,040 | 1.3698 | Gated SDPA (query-derived gate) |
+| **neon009** | 3,148,544 | 1.3010 | QKVI Intent Attention (separate I proj) |
+| **neon010** | 2,903,040 | 1.3698 | Gated SDPA (query-derived gate) |
 | neon011 | 12,230,528 | — | 10M: Narrow & Deep (384d, 8L) |
 | neon012 | 16,285,312 | — | 10M: Wide & Medium (512d, 6L) |
 | neon013 | 8,538,880 | — | 10M: Balanced (320d, 8L) |
 | neon014 | 14,579,712 | — | 10M: MLP-Heavy (384d, 4× FF) |
 | neon015 | 3,148,544 | 1.3042 | Result gate: I ⊙ attn (raw I, raw V) |
-| neon016 | 3,148,544 | 1.2551 | **Result gate: σ(I) ⊙ attn** ⭐ best |
+| **neon016** | 3,148,544 | 1.2551 | **Result gate: σ(I) ⊙ attn** ⭐ best |
 | neon017 | 3,148,544 | 1.3764 | Result gate: I ⊙ attn(σ(V)) |
 | neon018 | 3,148,544 | 1.3808 | Result gate: σ(I) ⊙ attn(σ(V)) |
 | neon019 | 3,148,544 | 1.3150 | Source gate: attn(I ⊙ V) |
@@ -32,7 +32,7 @@ This document details the Neon transformer architectures, their configurations, 
 | neon024 | 6,034,688 | 1.0800 | 8-layer neon016 + LayerDrop=0.1 |
 | neon025 | 3,148,544 | 1.3404 | neon016 + Post-Norm (instead of Pre-Norm) |
 | neon026 | 3,150,592 | 1.3553 | neon005 scaled (d_ff 512→598) — fair baseline |
-| neon027 | 3,148,800 | 1.2558 | neon010 scaled (d_ff 512→592) — Gated SDPA |
+| **neon027** | 3,148,800 | 1.2558 | neon010 scaled (d_ff 512→592) — Gated SDPA |
 | neon028 | 3,148,544 | 1.3554 | neon006 scaled (d_ff 512→640) — MLA |
 | neon029 | 3,148,780 | 1.4158 | neon001 scaled (d_ff 512→891) — GPT-2 |
 | neon030 | 3,148,544 | 1.3953 | neon002 scaled (d_ff 512→896) — RMSNorm |
@@ -51,7 +51,7 @@ This document details the Neon transformer architectures, their configurations, 
 | neon043 | 2,903,040 | 1.3780 | Gated Calc Intent: σ(W_g(K ⊙ V) + b_g) |
 | neon044 | 2,903,040 | 1.3905 | Gated Calc Intent: σ(W_g(Q ⊙ K ⊙ V) + b_g) |
 | neon045 | 2,903,040 | 1.3618 | Gated Calc Intent: σ(W_g(Q + V) + b_g) |
-| neon046 | 2,903,040 | 1.3524 | Gated Calc Intent: σ(W_g(Q + K + V) + b_g) |
+| **neon046** | 2,903,040 | 1.3524 | Gated Calc Intent: σ(W_g(Q + K + V) + b_g) |
 | neon047 | 2,903,040 | 1.3758 | Gated Calc Intent: σ(W_g(σ(Q)⊙tanh(V)) + b_g) |
 | neon048 | 2,903,040 | 1.3609 | Gated Calc Intent: σ(W_g(Q + σ(K⊙V)) + b_g) |
 | neon049 | 2,903,040 | 1.3594 | Gated Calc Intent: σ(W_g(Q + K - V) + b_g) |
@@ -59,6 +59,8 @@ This document details the Neon transformer architectures, their configurations, 
 | neon051 | 2,887,424 | 1.3938 | Linear Mix Intent: σ(w_q Q + w_k K + w_v V + b) |
 | neon052 | 2,935,808 | 1.3447 | Matrix Mix Intent: σ(Q W_q + K W_k + V W_v + b) |
 | neon053 | 3,148,544 | — | IntentAttention + SiLU (unbounded I) |
+| neon054 | 2,903,040 | — | Gated Calc Intent (SiLU): SiLU(W_g(Q+K+V)) |
+| neon055 | 3,148,800 | — | neon046 scaled (d_ff=592) — Fair Comparison |
 
 ---
 

@@ -71,9 +71,13 @@ def get_config(model_name):
     # neon051: Linear combination intent (w_q Q + w_k K + w_v V + b)
     # neon052: Matrix combination intent (Q W_q + K W_k + V W_v + b)
     # neon053: IntentAttention with SiLU gating (instead of Sigmoid)
+    # neon054: IntentAttention with SiLU (based on neon046 formula)
+    # neon055: neon046 scaled up (d_ff=592)
     
-    all_models = [f"neon{i:03d}" for i in range(1, 54)]
+    all_models = [f"neon{i:03d}" for i in range(1, 56)]
     if model_name in all_models:
+        if model_name == 'neon055':
+            config['d_ff'] = 592
         return config
     else:
         raise ValueError(f"Unknown model: {model_name}")
