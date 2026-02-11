@@ -39,6 +39,58 @@ This document details the Neon transformer architectures, their configurations, 
 
 ---
 
+## 3M Fair Comparison Experiment (neon025-030)
+
+**Motivation:** Intent attention (neon016) has ~262K more params than baseline (neon005) due to the extra Intent projection. To isolate whether the performance gain comes from the gating mechanism or just having more parameters, we scaled up neon001-010's best candidates to match neon016's param count (~3.15M) by increasing `d_ff`.
+
+**Research Question:** Is intent attention better than just having a bigger MLP?
+
+### Experimental Setup
+
+| Model | Base | d_ff | Total Params | Purpose |
+|-------|------|------|--------------|---------|
+| neon016 | — | 512 | 3,148,544 | **Reference** (σ(I) Intent Attention) |
+| neon025 | neon016 | 512 | 3,148,544 | Post-Norm variant |
+| neon026 | neon005 | 598 | 3,150,592 | Modern baseline scaled |
+| neon027 | neon010 | 592 | 3,148,800 | Gated SDPA scaled |
+| neon028 | neon006 | 640 | 3,148,544 | MLA scaled |
+| neon029 | neon001 | 891 | 3,148,780 | GPT-2 scaled |
+| neon030 | neon002 | 896 | 3,148,544 | RMSNorm+GELU scaled |
+
+All trained for 10k steps on `hp0.txt` with `tok1` (BPE).
+
+### Results (Final Val Loss @ 10k steps)
+
+| Rank | Model | Final VL | Δ vs neon016 | Steps to VL<1.5 | Architecture |
+|------|-------|----------|--------------|-----------------|-------------|
+| **1** | **neon016** | **1.2551** | — | **6,000** | σ(I) Intent |
+| **2** | **neon027** | **1.2558** | **+0.0007** | **6,000** | Gated SDPA |
+| 3 | neon025 | 1.3404 | +0.0853 | 7,000 | Post-Norm |
+| 4 | neon026 | 1.3553 | +0.1002 | 7,500 | Baseline+BigMLP |
+| 5 | neon028 | 1.3554 | +0.1003 | 7,500 | MLA |
+| 6 | neon030 | 1.3953 | +0.1402 | 8,000 | RMSNorm+BigMLP |
+| 7 | neon029 | 1.4158 | +0.1607 | 8,500 | GPT-2+BigMLP |
+
+### Key Findings
+
+1. **Gating mechanisms win decisively.** neon016 (Intent) and neon027 (Gated SDPA) are virtually identical (Δ=0.0007), both **0.1 better** than the scaled baseline (neon026). The ~262K extra params are better spent on attention gating than MLP capacity.
+
+2. **Gating mechanism doesn't matter; having gating does.** neon016 (σ(I) result gating) ≈ neon027 (σ(W_g Q) gating). Both approaches gate the attention output with a learned sigmoid, and both work equally well. The key is **gating attention**, not the specific mechanism.
+
+3. **Pre-Norm is critical.** neon025 (Post-Norm) drops from 1.255 → 1.340 (Δ=0.085). Pre-Norm provides better gradient flow and training stability.
+
+4. **Modern techniques stack additively.** GPT-2 (1.416) → +RMSNorm (1.395) → +SwiGLU (1.355) shows each modern technique contributes ~0.02-0.04 val loss improvement.
+
+5. **MLA doesn't help at 3M scale.** neon028 (MLA) ≈ neon026 (standard attn). KV compression provides no benefit at this parameter count.
+
+### Conclusion
+
+**Intent attention is validated.** The performance gain is not from extra parameters — it's from the gating mechanism itself. At equal param count, gated attention (Intent or Gated SDPA) provides a consistent **~0.1 val loss advantage** over increasing MLP capacity.
+
+**Recommended architecture:** neon016 (σ(I) Intent Attention, Pre-Norm) remains the best choice.
+
+---
+
 ## Tokenizers
 
 Two tokenization strategies are supported for experimentation:
