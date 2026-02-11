@@ -80,7 +80,7 @@ def get_config(model_name):
     # neon064: Hadamard Head Merge (8 heads -> 4 merged)
     # neon065: Big Single Head (Head dim = 2 * d_model)
     
-    all_models = [f"neon{i:03d}" for i in range(1, 76)]
+    all_models = [f"neon{i:03d}" for i in range(1, 79)]
     if model_name in all_models:
         if model_name in ['neon055', 'neon056', 'neon057', 'neon059', 'neon060']:
             config['d_ff'] = 592
@@ -121,6 +121,16 @@ def get_config(model_name):
             config['d_ff'] = 576 # Swish Hydra. Same cost.
         elif model_name == "neon075":
             config['d_ff'] = 576 # Negative Hydra. Same cost.
+        elif model_name == "neon076":
+            config['d_model'] = 240 # Reduce model dim
+            config['block_size'] = 256
+            config['d_ff'] = 480 # Target 3.15M
+            config['n_head'] = 4 
+        elif model_name == "neon077":
+            config['d_ff'] = 368 # Target 3.15M
+        elif model_name == "neon078":
+            config['n_layers'] = 4 
+            config['d_ff'] = 500 # Adjusted to match 3.15M params.
 
         return config
             
