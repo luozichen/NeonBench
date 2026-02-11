@@ -75,6 +75,10 @@ def clean_token(t):
     """Make BPE tokens more readable."""
     return t.replace("Ġ", "·").replace("Ċ", "↵").replace("▁", "·")
 
+def token_labels(tokens):
+    """Create unique labels: prepend position index to avoid Plotly duplicate-label issues."""
+    return [f"{i}:{clean_token(t)}" for i, t in enumerate(tokens)]
+
 
 # ── Attention + MLP capture ──────────────────────────────────────────
 
@@ -84,15 +88,14 @@ def capture_forward(model, input_ids):
     mlp_bucket = []
     real_sdpa = F.scaled_dot_product_attention
 
-    def spy(q, k, v, attn_mask=None, dropout_p=0.0, is_causal=False, scale=None):
+    def spy(q, k, v, *args, **kwargs):
         L, S = q.size(-2), k.size(-2)
+        scale = kwargs.get('scale', None)
         s = 1.0 / (q.size(-1) ** 0.5) if scale is None else scale
         logits = q @ k.transpose(-2, -1) * s
-        if is_causal:
-            mask = torch.triu(torch.ones(L, S, dtype=torch.bool, device=q.device), diagonal=1)
-            logits.masked_fill_(mask, float("-inf"))
-        if attn_mask is not None:
-            logits = logits + attn_mask
+        # Always apply causal mask (all NeonBench models are autoregressive)
+        mask = torch.triu(torch.ones(L, S, dtype=torch.bool, device=q.device), diagonal=1)
+        logits.masked_fill_(mask, float("-inf"))
         w = torch.softmax(logits, dim=-1)
         attn_bucket.append(w.detach().cpu())
         return w @ v
@@ -125,7 +128,7 @@ def capture_forward(model, input_ids):
 
 def plot_single_head(attn_matrix, tokens, layer, head):
     """Interactive plotly heatmap for one attention head."""
-    labels = [clean_token(t) for t in tokens]
+    labels = token_labels(tokens)
     T = len(labels)
     fig = go.Figure(go.Heatmap(
         z=attn_matrix,
@@ -154,7 +157,7 @@ def plot_all_heads(attn_layer, tokens, layer, n_heads):
     """Small-multiple grid of all heads for one layer."""
     cols = min(n_heads, 4)
     rows = (n_heads + cols - 1) // cols
-    labels = [clean_token(t) for t in tokens]
+    labels = token_labels(tokens)
 
     fig = make_subplots(rows=rows, cols=cols,
                         subplot_titles=[f"Head {h}" for h in range(n_heads)],
@@ -181,7 +184,7 @@ def plot_all_heads(attn_layer, tokens, layer, n_heads):
 
 def plot_attention_received(attn_matrix, tokens, layer, head):
     """Bar chart: total attention each token receives (column sum)."""
-    labels = [clean_token(t) for t in tokens]
+    labels = token_labels(tokens)
     received = attn_matrix.sum(axis=0)
     fig = go.Figure(go.Bar(x=labels, y=received, marker_color="#1f77b4"))
     fig.update_layout(
@@ -195,7 +198,7 @@ def plot_attention_received(attn_matrix, tokens, layer, head):
 
 def plot_full_grid(attns, tokens, n_layers, n_heads):
     """Full grid: rows=layers, cols=heads."""
-    labels = [clean_token(t) for t in tokens]
+    labels = token_labels(tokens)
     fig = make_subplots(
         rows=n_layers, cols=n_heads,
         subplot_titles=[f"L{l} H{h}" for l in range(n_layers) for h in range(n_heads)],
@@ -234,7 +237,7 @@ def plot_mlp_activation(mlp_data, tokens, layer):
     # Show top-32 most active dimensions (by variance across tokens)
     var = np.var(out, axis=0)
     top_dims = np.argsort(var)[-32:][::-1]
-    labels = [clean_token(t) for t in tokens]
+    labels = token_labels(tokens)
     fig = go.Figure(go.Heatmap(
         z=out[:, top_dims].T,
         x=labels,
@@ -253,7 +256,7 @@ def plot_mlp_activation(mlp_data, tokens, layer):
 
 def plot_mlp_norm(mlp_data, tokens, n_layers):
     """Heatmap: L2 norm of MLP output per token per layer."""
-    labels = [clean_token(t) for t in tokens]
+    labels = token_labels(tokens)
     norms = []
     for l in range(n_layers):
         out = mlp_data[l]['output'][0].numpy()  # (T, d_model)
@@ -387,7 +390,7 @@ if st.button("🔍 Visualize", type="primary") or "attentions" in st.session_sta
         layer_flow = st.selectbox("Layer", range(n_layers),
                                   format_func=lambda x: f"Layer {x}", key="af_layer")
         avg = attns[layer_flow][0].mean(dim=0).numpy()
-        labels = [clean_token(t) for t in toks]
+        labels = token_labels(toks)
         fig = go.Figure(go.Heatmap(
             z=avg, x=labels, y=labels,
             colorscale="Viridis", xgap=1, ygap=1,

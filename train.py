@@ -49,7 +49,9 @@ def get_config(model_name):
     elif model_name == "neon024":  # 8-layer neon016, layerdrop=0.1
         config.update({'n_layers': 8, 'layerdrop': 0.1})
 
-    all_models = [f"neon{i:03d}" for i in range(1, 25)]
+    # neon025: Post-Norm neon016 (uses default 4-layer config, no overrides needed)
+
+    all_models = [f"neon{i:03d}" for i in range(1, 26)]
     if model_name in all_models:
         return config
     else:

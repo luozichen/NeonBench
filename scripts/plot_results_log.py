@@ -29,7 +29,7 @@ def main():
     if args.models:
         models = [m.strip() for m in args.models.split(",")]
     else:
-        models = [f"neon{i:03d}" for i in range(1, 25)]
+        models = [f"neon{i:03d}" for i in range(1, 26)]
 
     tokenizers = [t.strip() for t in args.tokenizers.split(",")]
 

@@ -1,6 +1,36 @@
 # Architecture Log
 
-This document details the four Neon transformer architectures, their configurations, techniques, and parameter breakdowns.
+This document details the Neon transformer architectures, their configurations, techniques, and parameter breakdowns.
+
+## Model Summary
+
+| Model | Params | Key Feature |
+|-------|--------|-------------|
+| neon001 | 2,371,072 | Baseline GPT-2 (GELU, LayerNorm) |
+| neon002 | 2,362,112 | + RMSNorm (replace LayerNorm) |
+| neon003 | 1,968,896 | + SwiGLU MLP |
+| neon004 | 1,968,896 | + Wide MLP (1024 d_ff) |
+| neon005 | 2,886,400 | RoPE + RMSNorm + SwiGLU (new baseline) |
+| neon006 | 2,755,328 | Multi-Latent Attention (MLA) |
+| neon007 | 2,889,984 | QK-Norm |
+| neon008 | 2,888,704 | Grouped-Query Attention (GQA) |
+| neon009 | 3,148,544 | QKVI Intent Attention (separate I proj) |
+| neon010 | 2,903,040 | Gated SDPA (query-derived gate) |
+| neon011 | 12,230,528 | 10M: Narrow & Deep (384d, 8L) |
+| neon012 | 16,285,312 | 10M: Wide & Medium (512d, 6L) |
+| neon013 | 8,538,880 | 10M: Balanced (320d, 8L) |
+| neon014 | 14,579,712 | 10M: MLP-Heavy (384d, 4× FF) |
+| neon015 | 3,148,544 | Result gate: I ⊙ attn (raw I, raw V) |
+| neon016 | 3,148,544 | **Result gate: σ(I) ⊙ attn** ⭐ best |
+| neon017 | 3,148,544 | Result gate: I ⊙ attn(σ(V)) |
+| neon018 | 3,148,544 | Result gate: σ(I) ⊙ attn(σ(V)) |
+| neon019 | 3,148,544 | Source gate: attn(I ⊙ V) |
+| neon020 | 3,148,544 | Source gate: attn(σ(I) ⊙ V) |
+| neon021 | 3,148,544 | Source gate: attn(I ⊙ σ(V)) |
+| neon022 | 3,148,544 | Source gate: attn(σ(I) ⊙ σ(V)) |
+| neon023 | 3,148,544 | 8-layer neon016 (deep, MLP-starved) |
+| neon024 | 3,148,544 | 8-layer neon016 + LayerDrop=0.1 |
+| neon025 | 3,148,544 | neon016 + Post-Norm (instead of Pre-Norm) |
 
 ---
 

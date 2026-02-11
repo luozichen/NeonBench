@@ -32,7 +32,7 @@ def get_config(model_name):
     return config
 
 def main():
-    models_to_count = [f"neon{i:03d}" for i in range(1, 25)]
+    models_to_count = [f"neon{i:03d}" for i in range(1, 26)]
 
     print(f"{'Model':<10} | {'Parameters':>12}")
     print("-" * 25)
