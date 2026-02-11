@@ -61,6 +61,11 @@ This document details the Neon transformer architectures, their configurations, 
 | neon053 | 3,148,544 | 1.3129 | IntentAttention + SiLU (unbounded I) |
 | neon054 | 2,903,040 | 1.4444 | Gated Calc Intent (SiLU): SiLU(W_g(Q+K+V)) |
 | neon055 | 3,148,800 | 1.2417 | neon046 scaled (d_ff=592) — Fair Comparison |
+| neon056 | 3,165,440 | — | Double-Gated Intent: σ(Mag) ⊙ tanh(Dir) |
+| neon057 | 3,148,800 | — | Differential Intent: σ(\|Q-V\|) |
+| neon058 | 2,902,784 | — | Residual Intent: Attn + SiLU(Q) (Add, not Gate) |
+| neon059 | 3,149,568 | — | Norm-Gated Intent: Gate sees \|\|Q+K+V\|\| |
+| neon060 | 3,148,800 | — | Max-Pooled Intent: Gate sees Max(Q,K,V) |
 
 ---
 

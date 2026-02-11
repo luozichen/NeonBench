@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import os, sys, importlib
+import os, sys, importlib, json
 from tokenizers import Tokenizer
 
 # --- Setup ---
@@ -56,10 +56,19 @@ def load_model(model_name, ckpt_path, tok_name, data_name):
     tok_path = find_tokenizer(tok_name, data_name)
     if tok_path is None:
         return None, None, None
-    tokenizer = Tokenizer.from_file(tok_path)
+    with open(tok_path, 'r', encoding='utf-8') as f:
+        tok_data = json.load(f)
+    
+    if tok_data.get('type') == 'word_level_pos':
+        from scripts.build_warm_tokenizer import WarmTokenizer
+        tokenizer = WarmTokenizer(tok_path)
+        vocab_size = len(tokenizer)
+    else:
+        tokenizer = Tokenizer.from_file(tok_path)
+        vocab_size = tokenizer.get_vocab_size()
 
     config = get_config(model_name)
-    config['vocab_size'] = tokenizer.get_vocab_size()
+    config['vocab_size'] = vocab_size
 
     cls_name = model_name.capitalize()
     mod = importlib.import_module(f"models.{model_name}")
@@ -160,7 +169,8 @@ def capture_forward(model, input_ids):
     
     try:
         with torch.no_grad():
-            model(input_ids)
+            logits, _ = model(input_ids)
+            last_logits = logits[0, -1].detach().cpu()
     finally:
         # Restore
         F.scaled_dot_product_attention = real_sdpa
@@ -175,8 +185,65 @@ def capture_forward(model, input_ids):
         "k": k_bucket,
         "v": v_bucket,
         "intent": intent_bucket,
-        "mlp": mlp_bucket
+        "mlp": mlp_bucket,
+        "last_logits": last_logits
     }
+
+@torch.no_grad()
+def generate_text(model, tokenizer, prompt, max_new_tokens=100, temperature=1.0, top_k=50):
+    """Simple generation loop for the visualizer."""
+    model.eval()
+    device = next(model.parameters()).device
+    
+    # Encode
+    if hasattr(tokenizer, 'encode'):
+        res = tokenizer.encode(prompt)
+        # Handle BPE vs Warm
+        if hasattr(res, 'ids'): ids = res.ids
+        else: ids = res
+    else:
+        ids = tokenizer.encode(prompt)
+        
+    idx = torch.tensor([ids], dtype=torch.long, device=device)
+    block_size = model.config['block_size']
+    
+    placeholder = st.empty()
+    
+    for _ in range(max_new_tokens):
+        # Crop
+        idx_cond = idx if idx.size(1) <= block_size else idx[:, -block_size:]
+        
+        # Forward
+        logits, _ = model(idx_cond)
+        logits = logits[:, -1, :] / max(temperature, 1e-5)
+        
+        # Top-k
+        if top_k is not None and top_k > 0:
+            v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
+            logits[logits < v[:, [-1]]] = -float('inf')
+        
+        # Sample
+        probs = torch.softmax(logits, dim=-1)
+        next_token = torch.multinomial(probs, num_samples=1)
+        
+        # Append
+        idx = torch.cat([idx, next_token], dim=1)
+        
+        # Decode and show
+        full_ids = idx[0].tolist()
+        try:
+            current_text = tokenizer.decode(full_ids)
+        except Exception:
+            current_text = str(full_ids) # Fallback
+            
+        placeholder.markdown(current_text + " ▌")
+        
+        # Stop check
+        if next_token.item() == 0: # Usually [PAD] or something
+             break
+            
+    placeholder.markdown(current_text)
+    return current_text
 
 
 # ── Plotting ─────────────────────────────────────────────────────────
@@ -378,6 +445,41 @@ def plot_mlp_norm(mlp_data, tokens, n_layers):
     return fig
 
 
+def plot_next_token_probs(logits, tokenizer, top_k=20):
+    """Horizontal bar chart of top-K next token probabilities."""
+    probs = torch.softmax(logits, dim=-1).numpy()
+    top_indices = np.argsort(probs)[-top_k:][::-1]
+    top_probs = probs[top_indices]
+    
+    # Decode labels
+    labels = []
+    for idx in top_indices:
+        try:
+            # Handle diff tokenizer types
+            if hasattr(tokenizer, 'decode'):
+                t = tokenizer.decode([int(idx)])
+            else:
+                t = f"id:{idx}"
+            labels.append(f"`{clean_token(t)}`")
+        except:
+            labels.append(f"id:{idx}")
+
+    fig = go.Figure(go.Bar(
+        x=top_probs,
+        y=labels,
+        orientation='h',
+        marker_color='rgb(55, 83, 109)'
+    ))
+    fig.update_layout(
+        title=f"Top {top_k} Next Token Probabilities",
+        xaxis_title="Probability",
+        yaxis=dict(autorange="reversed"),
+        height=max(400, top_k * 25),
+        margin=dict(l=150, r=20, t=50, b=50),
+    )
+    return fig
+
+
 # ══════════════════════════════════════════════════════════════════════
 #  MAIN UI
 # ══════════════════════════════════════════════════════════════════════
@@ -456,7 +558,7 @@ if st.button("🔍 Visualize", type="primary") or "data" in st.session_state:
 
     # ── Tabs ──
     tabs = st.tabs(["🔎 Single Head", "📊 All Heads", "🧩 Full Grid",
-                    "📈 Attention Flow", "🔧 MLP Activations"])
+                    "📈 Attention Flow", "🔧 MLP Activations", "🔮 Next Token", "💬 Chat/Inference"])
 
     # --- Single Head ---
     with tabs[0]:
@@ -542,3 +644,28 @@ if st.button("🔍 Visualize", type="primary") or "data" in st.session_state:
                                      format_func=lambda x: f"Layer {x}", key="mlp_layer")
             st.plotly_chart(plot_mlp_activation(mlps, toks, mlp_layer),
                             use_container_width=True)
+
+    # --- Next Token Probs ---
+    with tabs[5]:
+        st.subheader("Next Token Prediction")
+        st.markdown("The model's probability distribution for the token immediately following your prompt.")
+        top_k_viz = st.slider("Show Top K tokens", 5, 50, 20)
+        st.plotly_chart(plot_next_token_probs(data["last_logits"], tokenizer, top_k_viz),
+                        use_container_width=True)
+
+    # --- Chat/Inference ---
+    with tabs[6]:
+        st.subheader("Talk to the Model")
+        chat_prompt = st.text_input("Continue from prompt or ask something:", value=prompt, key="chat_input")
+        
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            max_tokens = st.slider("Max new tokens", 10, 500, 100)
+        with c2:
+            temp = st.slider("Temperature", 0.1, 2.0, 0.8)
+        with c3:
+            top_k = st.slider("Top-k", 1, 100, 50)
+            
+        if st.button("🚀 Generate Response", type="primary"):
+            with st.spinner("Model is thinking..."):
+                generate_text(model, tokenizer, chat_prompt, max_tokens, temp, top_k)

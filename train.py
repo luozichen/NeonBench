@@ -73,10 +73,15 @@ def get_config(model_name):
     # neon053: IntentAttention with SiLU gating (instead of Sigmoid)
     # neon054: IntentAttention with SiLU (based on neon046 formula)
     # neon055: neon046 scaled up (d_ff=592)
+    # neon056: Double-Gated (Sigmoid + Tanh)
+    # neon057: Differential Intent (|Q-V|)
+    # neon058: Residual Intent (Additive, d_ff=512)
+    # neon059: Norm-Gated Intent
+    # neon060: Max-Pooled Intent
     
-    all_models = [f"neon{i:03d}" for i in range(1, 56)]
+    all_models = [f"neon{i:03d}" for i in range(1, 61)]
     if model_name in all_models:
-        if model_name == 'neon055':
+        if model_name in ['neon055', 'neon056', 'neon057', 'neon059', 'neon060']:
             config['d_ff'] = 592
         return config
     else:
