@@ -58,9 +58,9 @@ This document details the Neon transformer architectures, their configurations, 
 | neon050 | ~2,903,296 | 1.3740 | Gated Calc Intent: σ(W_g(RMSNorm(Q⊙V)) + b_g) |
 | neon051 | 2,887,424 | 1.3938 | Linear Mix Intent: σ(w_q Q + w_k K + w_v V + b) |
 | neon052 | 2,935,808 | 1.3447 | Matrix Mix Intent: σ(Q W_q + K W_k + V W_v + b) |
-| neon053 | 3,148,544 | — | IntentAttention + SiLU (unbounded I) |
-| neon054 | 2,903,040 | — | Gated Calc Intent (SiLU): SiLU(W_g(Q+K+V)) |
-| neon055 | 3,148,800 | — | neon046 scaled (d_ff=592) — Fair Comparison |
+| neon053 | 3,148,544 | 1.3129 | IntentAttention + SiLU (unbounded I) |
+| neon054 | 2,903,040 | 1.4444 | Gated Calc Intent (SiLU): SiLU(W_g(Q+K+V)) |
+| neon055 | 3,148,800 | 1.2417 | neon046 scaled (d_ff=592) — Fair Comparison |
 
 ---
 
