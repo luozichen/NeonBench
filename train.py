@@ -65,7 +65,10 @@ def get_config(model_name):
     # --- Calculated Intent models (neon031-040): use default config ---
     # All have 3*d_model c_attn (no learned I), intent computed from Q/K/V
 
-    all_models = [f"neon{i:03d}" for i in range(1, 41)]
+    # --- Gated Calculated Intent models (neon041-050): use default config ---
+    # Same formulas as neon031-040 + tiny W_g linear gate
+
+    all_models = [f"neon{i:03d}" for i in range(1, 51)]
     if model_name in all_models:
         return config
     else:
