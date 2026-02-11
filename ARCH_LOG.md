@@ -46,16 +46,16 @@ This document details the Neon transformer architectures, their configurations, 
 | neon038 | 2,886,400 | 1.3784 | Calculated Intent: Q + σ(K ⊙ V) |
 | neon039 | 2,886,400 | 1.4417 | Calculated Intent: tanh(Q + K - V) |
 | neon040 | ~2,886,656 | 1.5139 | Calculated Intent: RMSNorm(Q ⊙ V) |
-| neon041 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q ⊙ V) + b_g) |
-| neon042 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q ⊙ K) + b_g) |
-| neon043 | 2,903,040 | — | Gated Calc Intent: σ(W_g(K ⊙ V) + b_g) |
-| neon044 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q ⊙ K ⊙ V) + b_g) |
-| neon045 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q + V) + b_g) |
-| neon046 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q + K + V) + b_g) |
-| neon047 | 2,903,040 | — | Gated Calc Intent: σ(W_g(σ(Q)⊙tanh(V)) + b_g) |
-| neon048 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q + σ(K⊙V)) + b_g) |
-| neon049 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q + K - V) + b_g) |
-| neon050 | ~2,903,296 | — | Gated Calc Intent: σ(W_g(RMSNorm(Q⊙V)) + b_g) |
+| neon041 | 2,903,040 | 1.3754 | Gated Calc Intent: σ(W_g(Q ⊙ V) + b_g) |
+| neon042 | 2,903,040 | 1.3774 | Gated Calc Intent: σ(W_g(Q ⊙ K) + b_g) |
+| neon043 | 2,903,040 | 1.3780 | Gated Calc Intent: σ(W_g(K ⊙ V) + b_g) |
+| neon044 | 2,903,040 | 1.3905 | Gated Calc Intent: σ(W_g(Q ⊙ K ⊙ V) + b_g) |
+| neon045 | 2,903,040 | 1.3618 | Gated Calc Intent: σ(W_g(Q + V) + b_g) |
+| neon046 | 2,903,040 | 1.3524 | Gated Calc Intent: σ(W_g(Q + K + V) + b_g) |
+| neon047 | 2,903,040 | 1.3758 | Gated Calc Intent: σ(W_g(σ(Q)⊙tanh(V)) + b_g) |
+| neon048 | 2,903,040 | 1.3609 | Gated Calc Intent: σ(W_g(Q + σ(K⊙V)) + b_g) |
+| neon049 | 2,903,040 | 1.3594 | Gated Calc Intent: σ(W_g(Q + K - V) + b_g) |
+| neon050 | ~2,903,296 | 1.3740 | Gated Calc Intent: σ(W_g(RMSNorm(Q⊙V)) + b_g) |
 | neon051 | 2,887,424 | — | Linear Mix Intent: σ(w_q Q + w_k K + w_v V + b) |
 | neon052 | 2,935,808 | — | Matrix Mix Intent: σ(Q W_q + K W_k + V W_v + b) |
 
