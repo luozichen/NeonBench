@@ -148,6 +148,27 @@ def main():
     # 1. Setup Config & Device
     config = get_config(args.model)
     device = config['device']
+    # 2. Load Tokenizer (detect type from file content)
+    if not os.path.exists(args.tokenizer):
+        print(f"Error: Tokenizer not found at {args.tokenizer}.")
+        return
+    
+    with open(args.tokenizer, 'r', encoding='utf-8') as f:
+        tok_data = json.load(f)
+    
+    if tok_data.get('type') == 'word_level_pos':
+        tokenizer_type = "warm"
+        from scripts.build_warm_tokenizer import WarmTokenizer
+        tokenizer = WarmTokenizer(args.tokenizer)
+        config['vocab_size'] = len(tokenizer)
+        print(f"Loaded warm tokenizer with vocab size: {config['vocab_size']}")
+    else:
+        tokenizer_type = "bpe"
+        tokenizer = Tokenizer.from_file(args.tokenizer)
+        config['vocab_size'] = tokenizer.get_vocab_size()
+        print(f"Loaded BPE tokenizer with vocab size: {config['vocab_size']}")
+
+    # 3. Setup Logging & Print Config
     print(f"--- Training {args.model} ---")
     print(f"Device: {device}")
     print(f"Config: {config}")
@@ -155,40 +176,18 @@ def main():
     os.makedirs(args.out_dir, exist_ok=True)
     os.makedirs(args.log_dir, exist_ok=True)
     
-    # Setup logging - include model, tokenizer, and data in naming
     data_name = os.path.splitext(os.path.basename(args.data))[0]
     run_name = f"{args.model}_{args.tok_name}_{data_name}"
     log_file_path = os.path.join(args.log_dir, f"{run_name}_log.txt")
     print(f"Run name: {run_name}")
     print(f"Logging to: {log_file_path}")
+    
     with open(log_file_path, "w") as f:
         f.write(f"Run: {run_name}\n")
         f.write(f"Training {args.model} on {args.data} with tokenizer {args.tok_name}\n")
         f.write(f"Config: {config}\n")
     
-    # 2. Load Tokenizer (detect type from file content)
-    if not os.path.exists(args.tokenizer):
-        print(f"Error: Tokenizer not found at {args.tokenizer}. Run scripts/build_tokenizer.py first.")
-        return
-    
-    # Check if it's a warm tokenizer (has 'type' field) or BPE tokenizer
-    with open(args.tokenizer, 'r', encoding='utf-8') as f:
-        tok_data = json.load(f)
-    
-    if tok_data.get('type') == 'word_level_pos':
-        # Warm tokenizer - use our custom class
-        tokenizer_type = "warm"
-        from scripts.build_warm_tokenizer import WarmTokenizer
-        tokenizer = WarmTokenizer(args.tokenizer)
-        config['vocab_size'] = len(tokenizer)
-        print(f"Loaded warm tokenizer with vocab size: {config['vocab_size']}")
-    else:
-        # Standard BPE tokenizer
-        tokenizer_type = "bpe"
-        tokenizer = Tokenizer.from_file(args.tokenizer)
-        print(f"Loaded BPE tokenizer")
-    
-    # 3. Load warm embeddings if provided
+    # 4. Load warm embeddings if provided
     warm_embeddings = None
     if args.warm_embeddings:
         if not os.path.exists(args.warm_embeddings):
