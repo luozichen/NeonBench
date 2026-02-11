@@ -1,4 +1,4 @@
-"""NeonBench Model Visualizer — Interactive attention heatmaps.
+"""NeonBench Model Visualizer — Interactive attention & vector heatmaps.
 Run: streamlit run scripts/visualizer.py
 """
 import streamlit as st
@@ -80,48 +80,103 @@ def token_labels(tokens):
     return [f"{i}:{clean_token(t)}" for i, t in enumerate(tokens)]
 
 
-# ── Attention + MLP capture ──────────────────────────────────────────
+# ── Attention + MLP + Vector capture ─────────────────────────────────
 
 def capture_forward(model, input_ids):
-    """Run forward pass, capture attention weights and MLP activations."""
+    """Run forward pass, capture Q, K, V, Intent, Attention Weights, and MLP activations."""
+    
+    # Storage buckets
     attn_bucket = []
+    q_bucket = []
+    k_bucket = []
+    v_bucket = []
+    intent_bucket = []  # Stores (B, n_head, T, head_dim)
     mlp_bucket = []
-    real_sdpa = F.scaled_dot_product_attention
 
-    def spy(q, k, v, *args, **kwargs):
+    # Original functions
+    real_sdpa = F.scaled_dot_product_attention
+    real_sigmoid = torch.sigmoid
+    real_silu = F.silu
+
+    # 1. SDPA Hook (Captures Q, K, V, Attn)
+    def spy_sdpa(q, k, v, *args, **kwargs):
+        # Capture Vectors (detach to save memory)
+        q_bucket.append(q.detach().cpu())
+        k_bucket.append(k.detach().cpu())
+        v_bucket.append(v.detach().cpu())
+
+        # Compute Attention Weights (Replicate logic roughly to get weights)
         L, S = q.size(-2), k.size(-2)
         scale = kwargs.get('scale', None)
         s = 1.0 / (q.size(-1) ** 0.5) if scale is None else scale
         logits = q @ k.transpose(-2, -1) * s
-        # Always apply causal mask (all NeonBench models are autoregressive)
         mask = torch.triu(torch.ones(L, S, dtype=torch.bool, device=q.device), diagonal=1)
         logits.masked_fill_(mask, float("-inf"))
         w = torch.softmax(logits, dim=-1)
         attn_bucket.append(w.detach().cpu())
+        
+        # We must return the Output of SDPA (V weighted by attn)
+        # Note: If model does subsequent gating (neon016), it happens AFTER this returns.
         return w @ v
 
-    # Hook MLP modules to capture their input and output
+    # 2. Intent Hook (Captures 4D Sigmoid/SiLU inputs)
+    def spy_sigmoid(input):
+        if input.dim() == 4: # (B, n_head, T, head_dim)
+            intent_bucket.append(input.detach().cpu())
+        return real_sigmoid(input)
+
+    def spy_silu(input, inplace=False):
+        if input.dim() == 4:
+            intent_bucket.append(input.detach().cpu())
+        return real_silu(input, inplace=inplace)
+
+    # 3. MLP Hook
     hooks = []
     for block in model.blocks:
         if hasattr(block, 'mlp'):
             def make_hook():
                 def hook_fn(module, inp, out):
+                    # inp[0] is the input to the down-proj, which is the hidden state (B, T, d_ff)
+                    # OR if we hooked the MLP block, inp is (B, T, d_model) and out is (B, T, d_model)
+                    # We prefer inner hidden state if possible.
+                    data = inp[0].detach().cpu()
                     mlp_bucket.append({
-                        'input': inp[0].detach().cpu(),    # (B, T, d_model)
-                        'output': out.detach().cpu(),      # (B, T, d_model)
+                        'input': data,  # This will be d_ff if hooked on down_proj
+                        'output': out.detach().cpu(),
                     })
                 return hook_fn
-            hooks.append(block.mlp.register_forward_hook(make_hook()))
+            
+            # Detect architecture style
+            # neon015/055 (SwiGLU) uses 'w_down'
+            # neon001 (GPT-2) uses 'c_proj'
+            target_layer = getattr(block.mlp, 'w_down', getattr(block.mlp, 'c_proj', block.mlp))
+            
+            hooks.append(target_layer.register_forward_hook(make_hook()))
 
-    F.scaled_dot_product_attention = spy
+    # Apply Patches
+    F.scaled_dot_product_attention = spy_sdpa
+    torch.sigmoid = spy_sigmoid
+    F.silu = spy_silu
+    
     try:
         with torch.no_grad():
             model(input_ids)
     finally:
+        # Restore
         F.scaled_dot_product_attention = real_sdpa
+        torch.sigmoid = real_sigmoid
+        F.silu = real_silu
         for h in hooks:
             h.remove()
-    return attn_bucket, mlp_bucket
+            
+    return {
+        "attn": attn_bucket,
+        "q": q_bucket,
+        "k": k_bucket,
+        "v": v_bucket,
+        "intent": intent_bucket,
+        "mlp": mlp_bucket
+    }
 
 
 # ── Plotting ─────────────────────────────────────────────────────────
@@ -142,7 +197,7 @@ def plot_single_head(attn_matrix, tokens, layer, head):
         textfont_size=9,
     ))
     fig.update_layout(
-        title=f"Layer {layer} — Head {head}",
+        title=f"Layer {layer} — Head {head} (Attention Weights)",
         xaxis_title="Key (attended to →)",
         yaxis_title="Query (attending from ↓)",
         yaxis=dict(autorange="reversed"),
@@ -152,6 +207,35 @@ def plot_single_head(attn_matrix, tokens, layer, head):
     fig.update_xaxes(tickangle=45)
     return fig
 
+def plot_vector_heatmap(vector_data, tokens, layer, head, component_name):
+    """Heatmap for Q, K, V, or Intent vectors. Shape (T, head_dim)."""
+    # vector_data is list of (B, n_head, T, head_dim). 
+    # Select layer, squeeze batch, select head -> (T, head_dim)
+    data = vector_data[layer][0, head].numpy() # (T, D)
+    
+    labels = token_labels(tokens)
+    T, D = data.shape
+    
+    # Auto-scale colors (centered at 0 for vectors)
+    mx = abs(data).max()
+    
+    fig = go.Figure(go.Heatmap(
+        z=data,
+        x=[f"d{i}" for i in range(D)],
+        y=labels,
+        colorscale="RdBu", 
+        zmin=-mx, zmax=mx,
+        xgap=1, ygap=0, # Gap between columns, but dense rows
+    ))
+    fig.update_layout(
+        title=f"Layer {layer} — Head {head} ({component_name})",
+        xaxis_title="Dimension",
+        yaxis_title="Token",
+        yaxis=dict(autorange="reversed"),
+        height=max(420, T * 22 + 120),
+        margin=dict(l=80, r=20, t=50, b=80),
+    )
+    return fig
 
 def plot_all_heads(attn_layer, tokens, layer, n_heads):
     """Small-multiple grid of all heads for one layer."""
@@ -223,7 +307,6 @@ def plot_full_grid(attns, tokens, n_layers, n_heads):
         height=cell_h * n_layers + 60,
         margin=dict(l=30, r=20, t=60, b=30),
     )
-    # Add row labels on left
     for l in range(n_layers):
         fig.add_annotation(text=f"L{l}", x=-0.02, y=1 - (l + 0.5) / n_layers,
                            xref="paper", yref="paper", showarrow=False,
@@ -232,23 +315,33 @@ def plot_full_grid(attns, tokens, n_layers, n_heads):
 
 
 def plot_mlp_activation(mlp_data, tokens, layer):
-    """Heatmap of MLP output magnitude per token per dimension (top dims)."""
-    out = mlp_data[layer]['output'][0].numpy()  # (T, d_model)
-    # Show top-32 most active dimensions (by variance across tokens)
-    var = np.var(out, axis=0)
-    top_dims = np.argsort(var)[-32:][::-1]
+    """Heatmap of MLP hidden state magnitude per token per dimension."""
+    # Start with input to the down-projection (hidden state)
+    data = mlp_data[layer]['input'][0].numpy()  # (T, d_ff)
+    
+    # If the hook caught the block wrapper, 'input' is d_model. Check dims.
+    T, D = data.shape
+    
+    # User requested seeing all dimensions (e.g. 592)
+    # No sorting/filtering.
+    
     labels = token_labels(tokens)
+    
+    # Auto-scale colors
+    mx = abs(data).max()
+    
     fig = go.Figure(go.Heatmap(
-        z=out[:, top_dims].T,
+        z=data.T,
         x=labels,
-        y=[f"d{d}" for d in top_dims],
-        colorscale="RdBu_r", zmid=0,
-        xgap=1, ygap=1,
+        y=[f"d{d}" for d in range(D)],
+        colorscale="RdBu_r", zmid=0, zmin=-mx, zmax=mx,
+        xgap=1, ygap=0,
     ))
     fig.update_layout(
-        title=f"MLP Output — Layer {layer} (top 32 dims by variance)",
+        title=f"MLP Hidden State — Layer {layer} ({D} dimensions)",
         xaxis_title="Token", yaxis_title="Dimension",
-        height=500, margin=dict(l=60, r=20, t=50, b=80),
+        height=max(500, D * 10 + 100), # Ensure enough height if D is large
+        margin=dict(l=60, r=20, t=50, b=80),
     )
     fig.update_xaxes(tickangle=45)
     return fig
@@ -322,10 +415,10 @@ prompt = st.text_area("✏️ Enter a prompt:",
                       value="Harry looked at the mirror and saw",
                       height=80)
 
-if st.button("🔍 Visualize", type="primary") or "attentions" in st.session_state:
+if st.button("🔍 Visualize", type="primary") or "data" in st.session_state:
     # Only recompute if prompt changed or first run
     current_key = f"{selected}|{prompt}"
-    if st.session_state.get("_vis_key") != current_key:
+    if st.session_state.get("_vis_key") != current_key or "data" not in st.session_state:
         encoded = tokenizer.encode(prompt)
         ids = encoded.ids
         toks = encoded.tokens
@@ -338,19 +431,20 @@ if st.button("🔍 Visualize", type="primary") or "attentions" in st.session_sta
             toks = toks[:config['block_size']]
 
         input_tensor = torch.tensor([ids])
-        attns, mlps = capture_forward(model, input_tensor)
+        data = capture_forward(model, input_tensor)
 
-        st.session_state["attentions"] = attns
-        st.session_state["mlp_data"] = mlps
+        st.session_state["data"] = data
         st.session_state["tokens"] = toks
         st.session_state["_vis_key"] = current_key
 
-    attns = st.session_state["attentions"]
-    mlps  = st.session_state.get("mlp_data", [])
-    toks  = st.session_state["tokens"]
-
+    data = st.session_state["data"]
+    toks = st.session_state["tokens"]
+    
+    attns = data["attn"]
+    mlps  = data["mlp"]
+    
     st.success(f"**{len(toks)} tokens** × {n_layers} layers × {n_heads} heads")
-    st.markdown("**Tokens:** " + "  ".join(f"`{clean_token(t)}`" for t in toks))
+    st.markdown("**Tokens:** " + "  ".join(f"`{clean_token(t)}`" for i, t in enumerate(toks)))
 
     # ── Tabs ──
     tabs = st.tabs(["🔎 Single Head", "📊 All Heads", "🧩 Full Grid",
@@ -358,18 +452,40 @@ if st.button("🔍 Visualize", type="primary") or "attentions" in st.session_sta
 
     # --- Single Head ---
     with tabs[0]:
-        c1, c2 = st.columns(2)
+        c1, c2, c3 = st.columns([1, 1, 2])
         with c1:
             layer = st.selectbox("Layer", range(n_layers),
                                  format_func=lambda x: f"Layer {x}", key="sh_layer")
         with c2:
             head = st.selectbox("Head", range(n_heads),
                                 format_func=lambda x: f"Head {x}", key="sh_head")
-        attn_np = attns[layer][0, head].numpy()
-        st.plotly_chart(plot_single_head(attn_np, toks, layer, head),
-                        use_container_width=True)
-        st.plotly_chart(plot_attention_received(attn_np, toks, layer, head),
-                        use_container_width=True)
+                                
+        # Component Selector
+        components = ["Attention Matrix (T×T)", "Query Vector (T×D)", "Key Vector (T×D)", "Value Vector (T×D)"]
+        if data["intent"]:
+            components.append("Intent Vector (T×D)")
+            
+        with c3:
+            comp = st.selectbox("Component", components, key="sh_comp")
+            
+        if "Attention" in comp:
+            attn_np = attns[layer][0, head].numpy()
+            st.plotly_chart(plot_single_head(attn_np, toks, layer, head),
+                            use_container_width=True)
+            st.plotly_chart(plot_attention_received(attn_np, toks, layer, head),
+                            use_container_width=True)
+        else:
+            # Map selection to bucket
+            if "Query" in comp: vec_data = data["q"]
+            elif "Key" in comp: vec_data = data["k"]
+            elif "Value" in comp: vec_data = data["v"]
+            elif "Intent" in comp: vec_data = data["intent"]
+            
+            if vec_data:
+                st.plotly_chart(plot_vector_heatmap(vec_data, toks, layer, head, comp),
+                                use_container_width=True)
+            else:
+                st.warning(f"No data captured for {comp}")
 
     # --- All Heads (one layer) ---
     with tabs[1]:
