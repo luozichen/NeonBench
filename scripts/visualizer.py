@@ -121,7 +121,7 @@ def capture_forward(model, input_ids):
 
     # 2. Intent Hook (Captures 4D Sigmoid/SiLU inputs)
     def spy_sigmoid(input):
-        if input.dim() == 4: # (B, n_head, T, head_dim)
+        if input.dim() == 4:
             intent_bucket.append(input.detach().cpu())
         return real_sigmoid(input)
 
@@ -207,11 +207,19 @@ def plot_single_head(attn_matrix, tokens, layer, head):
     fig.update_xaxes(tickangle=45)
     return fig
 
-def plot_vector_heatmap(vector_data, tokens, layer, head, component_name):
+def plot_vector_heatmap(vector_data, tokens, layer, head, component_name, n_head_expected):
     """Heatmap for Q, K, V, or Intent vectors. Shape (T, head_dim)."""
-    # vector_data is list of (B, n_head, T, head_dim). 
-    # Select layer, squeeze batch, select head -> (T, head_dim)
-    data = vector_data[layer][0, head].numpy() # (T, D)
+    # vector_data[layer] is (B, D1, D2, D3). Squeeze batch.
+    tensor = vector_data[layer][0]
+    
+    # Try to find the head axis. Common layouts: (n_head, T, D) or (T, n_head, D)
+    if tensor.shape[0] == n_head_expected:
+        data = tensor[head].numpy()
+    elif tensor.shape[1] == n_head_expected:
+        data = tensor[:, head].numpy()
+    else:
+        # Fallback
+        data = tensor[head].numpy()
     
     labels = token_labels(tokens)
     T, D = data.shape
@@ -482,7 +490,7 @@ if st.button("🔍 Visualize", type="primary") or "data" in st.session_state:
             elif "Intent" in comp: vec_data = data["intent"]
             
             if vec_data:
-                st.plotly_chart(plot_vector_heatmap(vec_data, toks, layer, head, comp),
+                st.plotly_chart(plot_vector_heatmap(vec_data, toks, layer, head, comp, n_heads),
                                 use_container_width=True)
             else:
                 st.warning(f"No data captured for {comp}")
