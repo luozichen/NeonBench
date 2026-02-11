@@ -73,16 +73,28 @@ def get_config(model_name):
     # neon053: IntentAttention with SiLU gating (instead of Sigmoid)
     # neon054: IntentAttention with SiLU (based on neon046 formula)
     # neon055: neon046 scaled up (d_ff=592)
-    # neon056: Double-Gated (Sigmoid + Tanh)
-    # neon057: Differential Intent (|Q-V|)
-    # neon058: Residual Intent (Additive, d_ff=512)
-    # neon059: Norm-Gated Intent
-    # neon060: Max-Pooled Intent
+    # neon056-060: Failed Calculated Intent Experiments
+    # neon061: Wide MLP ("Stable Winner"), 16x expansion
+    # neon062: MLP-Free (Attention only, 2x layers)
+    # neon063: Att-MLP (Attention inside MLP slot)
+    # neon064: Hadamard Head Merge (8 heads -> 4 merged)
+    # neon065: Big Single Head (Head dim = 2 * d_model)
     
-    all_models = [f"neon{i:03d}" for i in range(1, 61)]
+    all_models = [f"neon{i:03d}" for i in range(1, 66)]
     if model_name in all_models:
         if model_name in ['neon055', 'neon056', 'neon057', 'neon059', 'neon060']:
             config['d_ff'] = 592
+        
+        # Frankenstein Configs
+        if model_name == "neon061":
+            config['d_ff'] = 2736 # ~10x d_model (4x standard SwiGLU)
+        elif model_name == "neon062":
+            config['n_layers'] = 8 # Double layers because no MLP
+        elif model_name == "neon064":
+            config['n_head'] = 8
+        elif model_name == "neon065":
+            config['n_head'] = 1 # Single head
+            
         return config
     else:
         raise ValueError(f"Unknown model: {model_name}")

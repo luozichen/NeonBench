@@ -61,11 +61,16 @@ This document details the Neon transformer architectures, their configurations, 
 | neon053 | 3,148,544 | 1.3129 | IntentAttention + SiLU (unbounded I) |
 | neon054 | 2,903,040 | 1.4444 | Gated Calc Intent (SiLU): SiLU(W_g(Q+K+V)) |
 | neon055 | 3,148,800 | 1.2417 | neon046 scaled (d_ff=592) — Fair Comparison |
-| neon056 | 3,165,440 | — | Double-Gated Intent: σ(Mag) ⊙ tanh(Dir) |
-| neon057 | 3,148,800 | — | Differential Intent: σ(\|Q-V\|) |
-| neon058 | 2,902,784 | — | Residual Intent: Attn + SiLU(Q) (Add, not Gate) |
-| neon059 | 3,149,568 | — | Norm-Gated Intent: Gate sees \|\|Q+K+V\|\| |
-| neon060 | 3,148,800 | — | Max-Pooled Intent: Gate sees Max(Q,K,V) |
+| neon056 | 3,165,440 | 1.3369 | Double-Gated Intent: σ(Mag) ⊙ tanh(Dir) |
+| neon057 | 3,148,800 | 1.3418 | Differential Intent: σ(\|Q-V\|) |
+| neon058 | 2,902,784 | 1.4620 | Residual Intent: Attn + SiLU(Q) (Add, not Gate) |
+| neon059 | 3,149,568 | 1.2588 | Norm-Gated Intent: Gate sees \|\|Q+K+V\|\| |
+| neon060 | 3,148,800 | 1.3029 | Max-Pooled Intent: Gate sees Max(Q,K,V) |
+| neon061 | 9,985,024 | — | Wide MLP: d_ff ~10x d_model (2736) |
+| neon062 | 2,623,488 | — | MLP-Free: 8 layers of Attn+Res only |
+| neon063 | 3,410,944 | — | Att-MLP: MLP replaced by 2-head Attention |
+| neon064 | 3,148,800 | — | Hadamard-Merged Heads: 8 heads -> 4 merged |
+| neon065 | 3,150,848 | — | Big Single Head: 1 Head, 2x d_model width |
 
 ---
 
