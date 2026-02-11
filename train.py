@@ -80,7 +80,7 @@ def get_config(model_name):
     # neon064: Hadamard Head Merge (8 heads -> 4 merged)
     # neon065: Big Single Head (Head dim = 2 * d_model)
     
-    all_models = [f"neon{i:03d}" for i in range(1, 67)]
+    all_models = [f"neon{i:03d}" for i in range(1, 76)]
     if model_name in all_models:
         if model_name in ['neon055', 'neon056', 'neon057', 'neon059', 'neon060']:
             config['d_ff'] = 592
@@ -99,7 +99,30 @@ def get_config(model_name):
             # config['d_ff'] = 512 # Default is used, no override needed.
         elif model_name == "neon066":
             config['n_head'] = 1
-            config['d_ff'] = 172 # Drastic reduction to afford Big Head
+            # config['d_ff'] = 512 # Default is used, no override needed.
+        elif model_name == "neon067":
+            config['n_head'] = 2
+        elif model_name == "neon068":
+            config['n_head'] = 8
+        elif model_name == "neon069":
+            config['n_head'] = 16
+        elif model_name == "neon070":
+            config['d_ff'] = 576 # Increased from 512 to balance cost of Hydra Gate (-49k +32k vs -131k)
+        elif model_name == "neon071":
+            config['d_ff'] = 640 # Wide Hydra: ~3.3M Params
+        elif model_name == "neon072":
+            config['d_ff'] = 512 # Gated-Residual: Has both gates, keep d_ff standard. Prams ~3.3M? No.
+            # Linear Gate (131k) + Hydra (82k). Total ~213k gate cost. 
+            # Standard is 131k. Delta +82k per layer. +320k total.
+            # 512 is fine. It will be slightly larger.
+        elif model_name == "neon073":
+            config['d_ff'] = 576 # Multi-Head Hydra. Attn cost similar (16*4 = 64). Same scaling.
+        elif model_name == "neon074":
+            config['d_ff'] = 576 # Swish Hydra. Same cost.
+        elif model_name == "neon075":
+            config['d_ff'] = 576 # Negative Hydra. Same cost.
+
+        return config
             
         return config
     else:
