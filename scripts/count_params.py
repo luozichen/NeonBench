@@ -10,7 +10,7 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 def main():
-    models_to_count = [f"neon{i:03d}" for i in range(1, 51)]
+    models_to_count = [f"neon{i:03d}" for i in range(1, 52)]
 
     print(f"{'Model':<10} | {'Parameters':>12}")
     print("-" * 25)
