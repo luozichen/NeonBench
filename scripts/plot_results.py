@@ -29,7 +29,7 @@ def main():
     if args.models:
         models = [m.strip() for m in args.models.split(",")]
     else:
-        models = [f"neon{i:03d}" for i in range(1, 26)]
+        models = [f"neon{i:03d}" for i in range(1, 31)]
 
     tokenizers = [t.strip() for t in args.tokenizers.split(",")]
 
@@ -71,7 +71,8 @@ def main():
     plt.suptitle(f"Neon Models Validation Loss Comparison", fontsize=14, fontweight='bold')
     plt.tight_layout()
 
-    save_path = f"val_loss_comparison_{args.data_name}.png"
+    model_tag = f"{models[0]}-{models[-1]}" if len(models) > 2 else "_".join(models)
+    save_path = f"{model_tag}_{args.data_name}_val.png"
     plt.savefig(save_path, dpi=150)
     print(f"Plot saved to {save_path}")
 

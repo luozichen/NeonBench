@@ -51,7 +51,19 @@ def get_config(model_name):
 
     # neon025: Post-Norm neon016 (uses default 4-layer config, no overrides needed)
 
-    all_models = [f"neon{i:03d}" for i in range(1, 26)]
+    # --- 3M fair comparison models (neon026-030): d_ff scaled up ---
+    if model_name == "neon026":    # neon005 baseline scaled
+        config.update({'d_ff': 598})
+    elif model_name == "neon027":  # neon010 Gated SDPA scaled
+        config.update({'d_ff': 592})
+    elif model_name == "neon028":  # neon006 MLA scaled
+        config.update({'d_ff': 640})
+    elif model_name == "neon029":  # neon001 GPT-2 scaled
+        config.update({'d_ff': 891})
+    elif model_name == "neon030":  # neon002 RMSNorm scaled
+        config.update({'d_ff': 896})
+
+    all_models = [f"neon{i:03d}" for i in range(1, 31)]
     if model_name in all_models:
         return config
     else:

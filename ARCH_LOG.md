@@ -28,9 +28,14 @@ This document details the Neon transformer architectures, their configurations, 
 | neon020 | 3,148,544 | Source gate: attn(σ(I) ⊙ V) |
 | neon021 | 3,148,544 | Source gate: attn(I ⊙ σ(V)) |
 | neon022 | 3,148,544 | Source gate: attn(σ(I) ⊙ σ(V)) |
-| neon023 | 3,148,544 | 8-layer neon016 (deep, MLP-starved) |
-| neon024 | 3,148,544 | 8-layer neon016 + LayerDrop=0.1 |
+| neon023 | 6,034,688 | 8-layer neon016 (deep, MLP-starved) |
+| neon024 | 6,034,688 | 8-layer neon016 + LayerDrop=0.1 |
 | neon025 | 3,148,544 | neon016 + Post-Norm (instead of Pre-Norm) |
+| neon026 | 3,150,592 | neon005 scaled (d_ff 512→598) — fair baseline |
+| neon027 | 3,148,800 | neon010 scaled (d_ff 512→592) — Gated SDPA |
+| neon028 | 3,148,544 | neon006 scaled (d_ff 512→640) — MLA |
+| neon029 | 3,148,780 | neon001 scaled (d_ff 512→891) — GPT-2 |
+| neon030 | 3,148,544 | neon002 scaled (d_ff 512→896) — RMSNorm |
 
 ---
 
