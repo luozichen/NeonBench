@@ -12,8 +12,8 @@ This document details the Neon transformer architectures, their configurations, 
 | neon004 | 1,968,896 | 1.9451 | + Wide MLP (1024 d_ff) |
 | neon005 | 2,886,400 | 1.4673 | RoPE + RMSNorm + SwiGLU (new baseline) |
 | neon006 | 2,755,328 | 1.5467 | Multi-Latent Attention (MLA) |
-| neon007 | 2,889,984 | 3.0147 | QK-Norm |
-| neon008 | 2,888,704 | 6.0381 | Grouped-Query Attention (GQA) |
+| neon007 | 2,889,984 | 3.0147 | DeltaNet (Linear Attention) |
+| neon008 | 2,888,704 | 6.0381 | L2-Norm + LayerNorm (Unit Sphere) |
 | neon009 | 3,148,544 | 1.3010 | QKVI Intent Attention (separate I proj) |
 | neon010 | 2,903,040 | 1.3698 | Gated SDPA (query-derived gate) |
 | neon011 | 12,230,528 | — | 10M: Narrow & Deep (384d, 8L) |
