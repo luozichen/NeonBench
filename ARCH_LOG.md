@@ -4,60 +4,60 @@ This document details the Neon transformer architectures, their configurations, 
 
 ## Model Summary
 
-| Model | Params | Key Feature |
-|-------|--------|-------------|
-| neon001 | 2,371,072 | Baseline GPT-2 (GELU, LayerNorm) |
-| neon002 | 2,362,112 | + RMSNorm (replace LayerNorm) |
-| neon003 | 1,968,896 | + SwiGLU MLP |
-| neon004 | 1,968,896 | + Wide MLP (1024 d_ff) |
-| neon005 | 2,886,400 | RoPE + RMSNorm + SwiGLU (new baseline) |
-| neon006 | 2,755,328 | Multi-Latent Attention (MLA) |
-| neon007 | 2,889,984 | QK-Norm |
-| neon008 | 2,888,704 | Grouped-Query Attention (GQA) |
-| neon009 | 3,148,544 | QKVI Intent Attention (separate I proj) |
-| neon010 | 2,903,040 | Gated SDPA (query-derived gate) |
-| neon011 | 12,230,528 | 10M: Narrow & Deep (384d, 8L) |
-| neon012 | 16,285,312 | 10M: Wide & Medium (512d, 6L) |
-| neon013 | 8,538,880 | 10M: Balanced (320d, 8L) |
-| neon014 | 14,579,712 | 10M: MLP-Heavy (384d, 4× FF) |
-| neon015 | 3,148,544 | Result gate: I ⊙ attn (raw I, raw V) |
-| neon016 | 3,148,544 | **Result gate: σ(I) ⊙ attn** ⭐ best |
-| neon017 | 3,148,544 | Result gate: I ⊙ attn(σ(V)) |
-| neon018 | 3,148,544 | Result gate: σ(I) ⊙ attn(σ(V)) |
-| neon019 | 3,148,544 | Source gate: attn(I ⊙ V) |
-| neon020 | 3,148,544 | Source gate: attn(σ(I) ⊙ V) |
-| neon021 | 3,148,544 | Source gate: attn(I ⊙ σ(V)) |
-| neon022 | 3,148,544 | Source gate: attn(σ(I) ⊙ σ(V)) |
-| neon023 | 6,034,688 | 8-layer neon016 (deep, MLP-starved) |
-| neon024 | 6,034,688 | 8-layer neon016 + LayerDrop=0.1 |
-| neon025 | 3,148,544 | neon016 + Post-Norm (instead of Pre-Norm) |
-| neon026 | 3,150,592 | neon005 scaled (d_ff 512→598) — fair baseline |
-| neon027 | 3,148,800 | neon010 scaled (d_ff 512→592) — Gated SDPA |
-| neon028 | 3,148,544 | neon006 scaled (d_ff 512→640) — MLA |
-| neon029 | 3,148,780 | neon001 scaled (d_ff 512→891) — GPT-2 |
-| neon030 | 3,148,544 | neon002 scaled (d_ff 512→896) — RMSNorm |
-| neon031 | 2,886,400 | Calculated Intent: σ(Q ⊙ V) |
-| neon032 | 2,886,400 | Calculated Intent: σ(Q ⊙ K) |
-| neon033 | 2,886,400 | Calculated Intent: σ(K ⊙ V) |
-| neon034 | 2,886,400 | Calculated Intent: σ(Q ⊙ K ⊙ V) |
-| neon035 | ~2,886,912 | Calculated Intent: LayerNorm(Q + V) |
-| neon036 | 2,886,400 | Calculated Intent: L2-norm(Q + K + V) |
-| neon037 | 2,886,400 | Calculated Intent: σ(Q) ⊙ tanh(V) |
-| neon038 | 2,886,400 | Calculated Intent: Q + σ(K ⊙ V) |
-| neon039 | 2,886,400 | Calculated Intent: tanh(Q + K - V) |
-| neon040 | ~2,886,656 | Calculated Intent: RMSNorm(Q ⊙ V) |
-| neon041 | 2,903,040 | Gated Calc Intent: σ(W_g(Q ⊙ V) + b_g) |
-| neon042 | 2,903,040 | Gated Calc Intent: σ(W_g(Q ⊙ K) + b_g) |
-| neon043 | 2,903,040 | Gated Calc Intent: σ(W_g(K ⊙ V) + b_g) |
-| neon044 | 2,903,040 | Gated Calc Intent: σ(W_g(Q ⊙ K ⊙ V) + b_g) |
-| neon045 | 2,903,040 | Gated Calc Intent: σ(W_g(Q + V) + b_g) |
-| neon046 | 2,903,040 | Gated Calc Intent: σ(W_g(Q + K + V) + b_g) |
-| neon047 | 2,903,040 | Gated Calc Intent: σ(W_g(σ(Q)⊙tanh(V)) + b_g) |
-| neon048 | 2,903,040 | Gated Calc Intent: σ(W_g(Q + σ(K⊙V)) + b_g) |
-| neon049 | 2,903,040 | Gated Calc Intent: σ(W_g(Q + K - V) + b_g) |
-| neon050 | ~2,903,296 | Gated Calc Intent: σ(W_g(RMSNorm(Q⊙V)) + b_g) |
-| neon051 | 2,887,424 | Linear Mix Intent: σ(w_q Q + w_k K + w_v V + b) |
-| neon052 | 2,935,808 | Matrix Mix Intent: σ(Q W_q + K W_k + V W_v + b) |
+| Model | Params | ~10k Val Loss | Key Feature |
+|---|---|---|---|
+| neon001 | 2,371,072 | 1.7509 | Baseline GPT-2 (GELU, LayerNorm) |
+| neon002 | 2,362,112 | 1.7434 | + RMSNorm (replace LayerNorm) |
+| neon003 | 1,968,896 | 1.8868 | + SwiGLU MLP |
+| neon004 | 1,968,896 | 1.9451 | + Wide MLP (1024 d_ff) |
+| neon005 | 2,886,400 | 1.4673 | RoPE + RMSNorm + SwiGLU (new baseline) |
+| neon006 | 2,755,328 | 1.5467 | Multi-Latent Attention (MLA) |
+| neon007 | 2,889,984 | 3.0147 | QK-Norm |
+| neon008 | 2,888,704 | 6.0381 | Grouped-Query Attention (GQA) |
+| neon009 | 3,148,544 | 1.3010 | QKVI Intent Attention (separate I proj) |
+| neon010 | 2,903,040 | 1.3698 | Gated SDPA (query-derived gate) |
+| neon011 | 12,230,528 | — | 10M: Narrow & Deep (384d, 8L) |
+| neon012 | 16,285,312 | — | 10M: Wide & Medium (512d, 6L) |
+| neon013 | 8,538,880 | — | 10M: Balanced (320d, 8L) |
+| neon014 | 14,579,712 | — | 10M: MLP-Heavy (384d, 4× FF) |
+| neon015 | 3,148,544 | 1.3042 | Result gate: I ⊙ attn (raw I, raw V) |
+| neon016 | 3,148,544 | 1.2551 | **Result gate: σ(I) ⊙ attn** ⭐ best |
+| neon017 | 3,148,544 | 1.3764 | Result gate: I ⊙ attn(σ(V)) |
+| neon018 | 3,148,544 | 1.3808 | Result gate: σ(I) ⊙ attn(σ(V)) |
+| neon019 | 3,148,544 | 1.3150 | Source gate: attn(I ⊙ V) |
+| neon020 | 3,148,544 | 1.2809 | Source gate: attn(σ(I) ⊙ V) |
+| neon021 | 3,148,544 | 1.2842 | Source gate: attn(I ⊙ σ(V)) |
+| neon022 | 3,148,544 | 1.4234 | Source gate: attn(σ(I) ⊙ σ(V)) |
+| neon023 | 6,034,688 | 0.5260 | 8-layer neon016 (deep, MLP-starved) |
+| neon024 | 6,034,688 | 1.0800 | 8-layer neon016 + LayerDrop=0.1 |
+| neon025 | 3,148,544 | 1.3404 | neon016 + Post-Norm (instead of Pre-Norm) |
+| neon026 | 3,150,592 | 1.3553 | neon005 scaled (d_ff 512→598) — fair baseline |
+| neon027 | 3,148,800 | 1.2558 | neon010 scaled (d_ff 512→592) — Gated SDPA |
+| neon028 | 3,148,544 | 1.3554 | neon006 scaled (d_ff 512→640) — MLA |
+| neon029 | 3,148,780 | 1.4158 | neon001 scaled (d_ff 512→891) — GPT-2 |
+| neon030 | 3,148,544 | 1.3953 | neon002 scaled (d_ff 512→896) — RMSNorm |
+| neon031 | 2,886,400 | 1.3975 | Calculated Intent: σ(Q ⊙ V) |
+| neon032 | 2,886,400 | 1.3854 | Calculated Intent: σ(Q ⊙ K) |
+| neon033 | 2,886,400 | 1.3875 | Calculated Intent: σ(K ⊙ V) |
+| neon034 | 2,886,400 | 1.4229 | Calculated Intent: σ(Q ⊙ K ⊙ V) |
+| neon035 | ~2,886,912 | 1.3866 | Calculated Intent: LayerNorm(Q + V) |
+| neon036 | 2,886,400 | 1.4049 | Calculated Intent: L2-norm(Q + K + V) |
+| neon037 | 2,886,400 | 1.4264 | Calculated Intent: σ(Q) ⊙ tanh(V) |
+| neon038 | 2,886,400 | 1.3784 | Calculated Intent: Q + σ(K ⊙ V) |
+| neon039 | 2,886,400 | 1.4417 | Calculated Intent: tanh(Q + K - V) |
+| neon040 | ~2,886,656 | 1.5139 | Calculated Intent: RMSNorm(Q ⊙ V) |
+| neon041 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q ⊙ V) + b_g) |
+| neon042 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q ⊙ K) + b_g) |
+| neon043 | 2,903,040 | — | Gated Calc Intent: σ(W_g(K ⊙ V) + b_g) |
+| neon044 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q ⊙ K ⊙ V) + b_g) |
+| neon045 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q + V) + b_g) |
+| neon046 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q + K + V) + b_g) |
+| neon047 | 2,903,040 | — | Gated Calc Intent: σ(W_g(σ(Q)⊙tanh(V)) + b_g) |
+| neon048 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q + σ(K⊙V)) + b_g) |
+| neon049 | 2,903,040 | — | Gated Calc Intent: σ(W_g(Q + K - V) + b_g) |
+| neon050 | ~2,903,296 | — | Gated Calc Intent: σ(W_g(RMSNorm(Q⊙V)) + b_g) |
+| neon051 | 2,887,424 | — | Linear Mix Intent: σ(w_q Q + w_k K + w_v V + b) |
+| neon052 | 2,935,808 | — | Matrix Mix Intent: σ(Q W_q + K W_k + V W_v + b) |
 
 ---
 
@@ -71,13 +71,13 @@ This document details the Neon transformer architectures, their configurations, 
 
 | Model | Base | d_ff | Total Params | Purpose |
 |-------|------|------|--------------|---------|
-| neon016 | — | 512 | 3,148,544 | **Reference** (σ(I) Intent Attention) |
-| neon025 | neon016 | 512 | 3,148,544 | Post-Norm variant |
-| neon026 | neon005 | 598 | 3,150,592 | Modern baseline scaled |
-| neon027 | neon010 | 592 | 3,148,800 | Gated SDPA scaled |
-| neon028 | neon006 | 640 | 3,148,544 | MLA scaled |
-| neon029 | neon001 | 891 | 3,148,780 | GPT-2 scaled |
-| neon030 | neon002 | 896 | 3,148,544 | RMSNorm+GELU scaled |
+| neon016 | — | 1.2551 | 512 |
+| neon025 | neon016 | 1.3404 | 512 |
+| neon026 | neon005 | 1.3553 | 598 |
+| neon027 | neon010 | 1.2558 | 592 |
+| neon028 | neon006 | 1.3554 | 640 |
+| neon029 | neon001 | 1.4158 | 891 |
+| neon030 | neon002 | 1.3953 | 896 |
 
 All trained for 10k steps on `hp0.txt` with `tok1` (BPE).
 
@@ -574,10 +574,10 @@ Test how to best allocate ~10M parameters: more layers (depth), wider layers (wi
 
 | Model | d_model | Layers | d_ff | MLP Ratio | ~Params |
 |-------|---------|--------|------|-----------|---------|
-| neon011 | 384 | 8 | 768 | 2× | ~9.8M |
-| neon012 | 512 | 6 | 1024 | 2× | ~9.7M |
-| neon013 | 320 | 8 | 640 | 2× | ~9.5M |
-| neon014 | 384 | 6 | 1536 | 4× | ~10.2M |
+| neon011 | 384 | — | 8 |
+| neon012 | 512 | — | 6 |
+| neon013 | 320 | — | 8 |
+| neon014 | 384 | — | 6 |
 
 ### Key Questions
 1. **Depth vs Width:** Does 8 layers (neon011) beat 6 wider layers (neon012)?
@@ -607,14 +607,14 @@ $$\text{Output}_i = \sum_{j} A_{ij} \cdot (f(I_j) \odot g(V_j))$$
 
 | Model | Gating | f(I) | g(V) | Formula |
 |-------|--------|------|------|---------|
-| neon015 | Result | raw | raw | $I_i \odot \sum A V$ |
-| neon016 | Result | σ | raw | $\sigma(I_i) \odot \sum A V$ |
-| neon017 | Result | raw | σ | $I_i \odot \sum A \sigma(V)$ |
-| neon018 | Result | σ | σ | $\sigma(I_i) \odot \sum A \sigma(V)$ |
-| neon019 | Source | raw | raw | $\sum A (I_j \odot V_j)$ |
-| neon020 | Source | σ | raw | $\sum A (\sigma(I_j) \odot V_j)$ |
-| neon021 | Source | raw | σ | $\sum A (I_j \odot \sigma(V_j))$ |
-| neon022 | Source | σ | σ | $\sum A (\sigma(I_j) \odot \sigma(V_j))$ |
+| neon015 | Result | 1.3042 | raw |
+| neon016 | Result | 1.2551 | σ |
+| neon017 | Result | 1.3764 | raw |
+| neon018 | Result | 1.3808 | σ |
+| neon019 | Source | 1.3150 | raw |
+| neon020 | Source | 1.2809 | σ |
+| neon021 | Source | 1.2842 | raw |
+| neon022 | Source | 1.4234 | σ |
 
 ### Key Questions
 1. **Result vs Source gating:** Does it matter more to filter at the receiver or the sender?
@@ -730,9 +730,9 @@ This is the **Goldilocks combination** — constrain the gate, not the content.
 | Model | Gating | σ(I) | σ(V) | Rank | Notes |
 |-------|--------|------|------|------|-------|
 | **neon016** | Result | ✅ | ❌ | **1st** | **Winner** |
-| neon010 | Result | ✅ | ❌ | **5th** | Baseline (gate from Q, not I) |
-| neon009 | Result | ❌ | ❌ | **9th** | Original QKVI (raw I) |
-| neon022 | Source | ✅ | ✅ | **14th** | Worst (over-constrained) |
+| neon010 | Result | 1.3698 | ✅ |
+| neon009 | Result | 1.3010 | ❌ |
+| neon022 | Source | 1.4234 | ✅ |
 
 **neon016 beats neon010** by using a **dedicated intent projection** (I) instead of deriving the gate from Q.
 
