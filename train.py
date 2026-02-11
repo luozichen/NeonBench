@@ -80,7 +80,7 @@ def get_config(model_name):
     # neon064: Hadamard Head Merge (8 heads -> 4 merged)
     # neon065: Big Single Head (Head dim = 2 * d_model)
     
-    all_models = [f"neon{i:03d}" for i in range(1, 66)]
+    all_models = [f"neon{i:03d}" for i in range(1, 67)]
     if model_name in all_models:
         if model_name in ['neon055', 'neon056', 'neon057', 'neon059', 'neon060']:
             config['d_ff'] = 592
@@ -94,6 +94,12 @@ def get_config(model_name):
             config['n_head'] = 8
         elif model_name == "neon065":
             config['n_head'] = 1 # Single head
+        elif model_name == "neon066":
+            config['n_head'] = 1
+            # config['d_ff'] = 512 # Default is used, no override needed.
+        elif model_name == "neon066":
+            config['n_head'] = 1
+            config['d_ff'] = 172 # Drastic reduction to afford Big Head
             
         return config
     else:
