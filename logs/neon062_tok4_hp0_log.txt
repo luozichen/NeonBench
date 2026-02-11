@@ -8,3 +8,16 @@ Step 1500: Train Loss 2.7917, Val Loss 2.7323
 Step 2000: Train Loss 2.3694, Val Loss 2.4662
 Step 2500: Train Loss 2.3268, Val Loss 2.2660
 Step 3000: Train Loss 2.0062, Val Loss 2.0973
+Step 3500: Train Loss 1.9671, Val Loss 1.9593
+Step 4000: Train Loss 1.8255, Val Loss 1.8419
+Step 4500: Train Loss 1.6971, Val Loss 1.7488
+Step 5000: Train Loss 1.6770, Val Loss 1.6559
+Step 5500: Train Loss 1.5737, Val Loss 1.5863
+Step 6000: Train Loss 1.5738, Val Loss 1.5170
+Step 6500: Train Loss 1.3992, Val Loss 1.4708
+Step 7000: Train Loss 1.3700, Val Loss 1.4099
+Step 7500: Train Loss 1.3404, Val Loss 1.3586
+Step 8000: Train Loss 1.3470, Val Loss 1.3158
+Step 8500: Train Loss 1.1993, Val Loss 1.2841
+Step 9000: Train Loss 1.2292, Val Loss 1.2445
+Step 9500: Train Loss 1.2385, Val Loss 1.2116
