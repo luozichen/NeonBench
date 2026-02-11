@@ -31,9 +31,9 @@ class GatedDeltaNet(nn.Module):
         self.c_alpha = nn.Linear(self.d_model, self.d_model, bias=False) # Output gate
         
         # Short Conv for local context (Depthwise)
-        self.conv_q = nn.Conv1d(self.d_model, self.d_model, kernel_size=3, padding=1, groups=self.d_model)
-        self.conv_k = nn.Conv1d(self.d_model, self.d_model, kernel_size=3, padding=1, groups=self.d_model)
-        self.conv_v = nn.Conv1d(self.d_model, self.d_model, kernel_size=3, padding=1, groups=self.d_model)
+        self.conv_q = nn.Conv1d(self.d_model, self.d_model, kernel_size=3, padding=0, groups=self.d_model)
+        self.conv_k = nn.Conv1d(self.d_model, self.d_model, kernel_size=3, padding=0, groups=self.d_model)
+        self.conv_v = nn.Conv1d(self.d_model, self.d_model, kernel_size=3, padding=0, groups=self.d_model)
 
         self.c_proj = nn.Linear(self.d_model, self.d_model, bias=False)
         self.grp_norm = RMSNorm(self.d_model) # Norm before output gate? User image says "Zero-Centered RMSNorm"
@@ -41,12 +41,15 @@ class GatedDeltaNet(nn.Module):
     def forward(self, x, freqs_cos, freqs_sin):
         B, T, D = x.shape
         
-        # 1. Short Conv
+        # 1. Short Conv (Causal)
         # Transpose for Conv
         x_t = x.transpose(1, 2)
-        q = self.conv_q(x_t).transpose(1, 2)
-        k = self.conv_k(x_t).transpose(1, 2)
-        v = self.conv_v(x_t).transpose(1, 2)
+        # Left Pad 2, Right Pad 0 for Kernel 3
+        x_padded = F.pad(x_t, (2, 0)) 
+        
+        q = self.conv_q(x_padded).transpose(1, 2)
+        k = self.conv_k(x_padded).transpose(1, 2)
+        v = self.conv_v(x_padded).transpose(1, 2)
         
         # 2. Linear Projections
         q = self.c_q(q).view(B, T, self.n_head, self.head_dim)
@@ -58,37 +61,39 @@ class GatedDeltaNet(nn.Module):
         
         # 4. Attention (Delta Rule Approximation)
         # We compute A = LowerTriangular( Decay^(i-j) * (q_i * k_j) )
-        # Or simpler: RetNet style accumulation.
-        # Efficient Implementation for Short Context:
-        # Just use standard attention but replace Softmax with Decay masking.
-        
-        q = q.transpose(1, 2) # (B, H, T, D)
-        k = k.transpose(1, 2)
-        v = v.transpose(1, 2)
-        
-        # No RoPE usually for linear attention? 
-        # But Qwen2-Next image shows "Partial RoPE".
-        # Let's apply partial RoPE.
-        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
-        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
-        
-        # Compute retention scores
-        # (B, H, T, D) @ (B, H, D, T) -> (B, H, T, T)
-        scores = q @ k.transpose(-2, -1) 
-        
-        # Apply Causal Mask + Decay
-        # Decay matrix: D[i,j] = beta_product(j..i). 
-        # Simplified: Constant decay or learned per step?
-        # User image says "Gated Delta Rule".
-        # Let's assume standard causal masking for now to be safe and simple.
-        mask = torch.tril(torch.ones(T, T, device=x.device))
-        scores = scores * mask
-        
-        # Aggregate
-        # For true Delta Rule, it's linear.
-        # y = scores @ v?
-        # Standard: y = (scores * mask) @ v
-        y = scores @ v # (B, H, T, D)
+        if self.training:
+             # Just use standard attention but replace Softmax with Decay masking.
+             q = q.transpose(1, 2) # (B, H, T, D)
+             k = k.transpose(1, 2)
+             v = v.transpose(1, 2)
+             
+             q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+             k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+             
+             # Compute scores
+             scores = q @ k.transpose(-2, -1) 
+             # Scale scores? Linear attention usually doesn't scale by sqrt(d).
+             # But delta rule assumes k^T v.
+             # scores represents q_i k_j^T.
+             
+             # Apply Causal Mask
+             mask = torch.tril(torch.ones(T, T, device=x.device))
+             # IMPORTANT: To avoid huge values, we should probably normalize?
+             # But pure Delta Rule involves pure summation.
+             # Ideally we should implement the Recurrent form for inference.
+             # For now, let's keep the summation but mask out future.
+             
+             scores = scores * mask
+             y = scores @ v # (B, H, T, D)
+        else:
+             # Recurrent mode not implemented, fallback to parallel
+             q = q.transpose(1, 2) # (B, H, T, D)
+             k = k.transpose(1, 2)
+             v = v.transpose(1, 2)
+             q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+             k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+             scores = q @ k.transpose(-2, -1) * torch.tril(torch.ones(T, T, device=x.device))
+             y = scores @ v
         
         y = y.transpose(1, 2).contiguous().view(B, T, D)
         

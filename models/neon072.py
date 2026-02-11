@@ -14,7 +14,7 @@ class ResHydraMLP(nn.Module):
         super().__init__()
         d_model = config['d_model']
         d_ff = config['d_ff'] # Standard 512 likely
-        self.head_dim = 64
+        self.head_dim = config['d_model'] // config['n_head']
         
         # Standard Linear Gate
         self.w_gate = nn.Linear(d_model, d_ff, bias=False)
