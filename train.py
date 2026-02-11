@@ -62,8 +62,10 @@ def get_config(model_name):
         config.update({'d_ff': 891})
     elif model_name == "neon030":  # neon002 RMSNorm scaled
         config.update({'d_ff': 896})
+    # --- Calculated Intent models (neon031-040): use default config ---
+    # All have 3*d_model c_attn (no learned I), intent computed from Q/K/V
 
-    all_models = [f"neon{i:03d}" for i in range(1, 31)]
+    all_models = [f"neon{i:03d}" for i in range(1, 41)]
     if model_name in all_models:
         return config
     else:

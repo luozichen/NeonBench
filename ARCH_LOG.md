@@ -36,6 +36,16 @@ This document details the Neon transformer architectures, their configurations, 
 | neon028 | 3,148,544 | neon006 scaled (d_ff 512→640) — MLA |
 | neon029 | 3,148,780 | neon001 scaled (d_ff 512→891) — GPT-2 |
 | neon030 | 3,148,544 | neon002 scaled (d_ff 512→896) — RMSNorm |
+| neon031 | 2,886,400 | Calculated Intent: σ(Q ⊙ V) |
+| neon032 | 2,886,400 | Calculated Intent: σ(Q ⊙ K) |
+| neon033 | 2,886,400 | Calculated Intent: σ(K ⊙ V) |
+| neon034 | 2,886,400 | Calculated Intent: σ(Q ⊙ K ⊙ V) |
+| neon035 | ~2,886,912 | Calculated Intent: LayerNorm(Q + V) |
+| neon036 | 2,886,400 | Calculated Intent: L2-norm(Q + K + V) |
+| neon037 | 2,886,400 | Calculated Intent: σ(Q) ⊙ tanh(V) |
+| neon038 | 2,886,400 | Calculated Intent: Q + σ(K ⊙ V) |
+| neon039 | 2,886,400 | Calculated Intent: tanh(Q + K - V) |
+| neon040 | ~2,886,656 | Calculated Intent: RMSNorm(Q ⊙ V) |
 
 ---
 
