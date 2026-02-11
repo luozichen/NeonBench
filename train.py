@@ -69,8 +69,9 @@ def get_config(model_name):
     # Same formulas as neon031-040 + tiny W_g linear gate
 
     # neon051: Linear combination intent (w_q Q + w_k K + w_v V + b)
+    # neon052: Matrix combination intent (Q W_q + K W_k + V W_v + b)
     
-    all_models = [f"neon{i:03d}" for i in range(1, 52)]
+    all_models = [f"neon{i:03d}" for i in range(1, 53)]
     if model_name in all_models:
         return config
     else:

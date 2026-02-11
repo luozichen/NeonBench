@@ -57,6 +57,7 @@ This document details the Neon transformer architectures, their configurations, 
 | neon049 | 2,903,040 | Gated Calc Intent: σ(W_g(Q + K - V) + b_g) |
 | neon050 | ~2,903,296 | Gated Calc Intent: σ(W_g(RMSNorm(Q⊙V)) + b_g) |
 | neon051 | 2,887,424 | Linear Mix Intent: σ(w_q Q + w_k K + w_v V + b) |
+| neon052 | 2,935,808 | Matrix Mix Intent: σ(Q W_q + K W_k + V W_v + b) |
 
 ---
 
