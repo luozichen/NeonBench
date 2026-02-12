@@ -89,6 +89,9 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon080** | 2.89M | **Scaling Study (Width)**: Match neon016 via d_ff=384. |
 | **neon081** | 2.87M | **Scaling Study (Context)**: Match neon016 via k=9, d_ff=378. |
 | **neon082** | 2.89M | **Scaling Study (Fair Hydra)**: ResHydra (neon072) with d_ff=416. |
+| **neon083** | 2.87M | **Modulation Hydra**: `SiLU(Linear) * Sigmoid(Conv9)`. |
+| **neon084** | 2.88M | **Dilated Hydra**: `kernel=5, dilation=4` (RF=17). |
+| **neon085** | 2.89M | **Dual-Scale Hydra**: Parallel `k=3` and `k=9` gate paths. |
 
 ---
 
@@ -191,9 +194,9 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **⭐ neon077** | 2.82M | **0.9172** | **Conv-Gated Hydra**. |
 | neon078 | 2.86M | 1.4483 | Hybrid DeltaNet. |
 | neon079 | 2.87M | 1.1056 | Qwen3-Next Hybrid. |
-| **neon080** | 2.89M | *Training..* | Scaling Study (Width). |
-| **neon081** | 2.87M | *Training..* | Scaling Study (Context). |
-| **neon082** | 2.89M | *Training..* | Scaling Study (Fair Hydra). |
+| **neon080** | 2.89M | 0.8875 | Scaling Study (Width). |
+| **⭐ neon081** | **2.87M** | **0.8812** | **Scaling Study (Context)**. **NEW SOTA.** |
+| **neon082** | 2.89M | 0.9886 | Scaling Study (Fair Hydra). |
 
 ### 🧪 Benchmark: Wiki103 / Tok1 & Tok4
 *WikiText-103 Dataset (100MB).*

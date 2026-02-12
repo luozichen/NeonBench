@@ -97,7 +97,7 @@ def get_config(model_name):
             config['d_ff'] = 592
         
         # Frankenstein Configs
-        if model_name in ['neon061', 'neon062', 'neon063', 'neon064', 'neon065', 'neon066', 'neon067', 'neon068', 'neon069', 'neon070', 'neon071', 'neon072', 'neon073', 'neon074', 'neon075', 'neon076', 'neon077', 'neon078', 'neon079', 'neon080', 'neon081', 'neon082']:
+        if model_name in ['neon061', 'neon062', 'neon063', 'neon064', 'neon065', 'neon066', 'neon067', 'neon068', 'neon069', 'neon070', 'neon071', 'neon072', 'neon073', 'neon074', 'neon075', 'neon076', 'neon077', 'neon078', 'neon079', 'neon080', 'neon081', 'neon082', 'neon083', 'neon084', 'neon085']:
             config['d_model'], config['n_layers'], config['n_head'] = 256, 4, 4
             if model_name == 'neon061': config['d_ff'] = 2736 # ~10M
             elif model_name == 'neon066': config['d_ff'] = 172 # match neon016
@@ -111,6 +111,9 @@ def get_config(model_name):
             elif model_name == 'neon080': config['d_ff'] = 384 # Match neon016 Width
             elif model_name == 'neon081': config['d_ff'] = 378 # Match neon016 Context
             elif model_name == 'neon082': config['d_ff'] = 416 # Match neon016 ResHydra
+            elif model_name == 'neon083': config['d_ff'] = 378 # Match neon016 (k=9 Modulation)
+            elif model_name == 'neon084': config['d_ff'] = 382 # Match neon016 (k=5 Dilated)
+            elif model_name == 'neon085': config['d_ff'] = 381 # Match neon016 (Dual Scale)
             else: config['d_ff'] = 512
             # Linear Gate (131k) + Hydra (82k). Total ~213k gate cost. 
             # Standard is 131k. Delta +82k per layer. +320k total.
