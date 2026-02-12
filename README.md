@@ -210,6 +210,8 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon088** | 2.89M | 0.8944 | Competitive Hydra (Max-Pool). |
 | **neon089** | 2.89M | 0.8768 | Dense Pyramidal (k=3,5,7,9). |
 | **neon090** | 2.89M | 0.8786 | Asymmetric Gated Hydra. |
+| **neon091** | 9.72M | 0.1962 | 10M Hydra Scaling (k=9). |
+| **⭐ neon092** | **9.72M** | **0.1961** | **10M Dual-Scale Hydra**. **[10M SOTA]** |
 
 ### 🧪 Benchmark: Wiki103 / Tok1 & Tok4
 *WikiText-103 Dataset (100MB).*
@@ -223,9 +225,11 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | neon014 | tok1 | 14.19M | 2.1199 | MLP-Heavy Wiki. |
 | **neon016** | tok4 | 2.89M | 3.2885 | Wiki Tok4 Baseline. |
 | **neon077** | tok4 | 2.82M | 3.2880 | Conv-Gated Hydra Wiki. |
-| **⭐ neon081** | tok4 | **2.87M** | **3.2750** | **Wiki SOTA**. Context wins. |
+| **⭐ neon081** | tok4 | **2.87M** | **3.2750** | **Wiki 3M SOTA**. |
+| **neon091** | tok4 | 9.72M | 3.0797 | 10M Hydra Wiki. |
+| **⭐ neon092** | tok4 | **9.72M** | **3.0575** | **10M Wiki SOTA**. Dual-Scale logic. |
 | **neon085** | tok4 | 2.89M | 3.2905 | Dual-Scale (Overfit risk?). |
-| **⭐ neon061** | tok4 | 9.72M | 3.0940 | Wide MLP Wiki. |
+| **⭐ neon061** | tok4 | 9.72M | 3.0940 | Legacy 10M SOTA. |
 | neon065 | tok4 | 4.20M | 3.3171 | Big Single Head Wiki. |
 | neon066 | tok4 | 2.89M | 3.3377 | Fair Fight Big Head Wiki. |
 | neon063 | tok4 | 3.94M | 3.3141 | Attention-in-MLP Wiki. |
