@@ -122,6 +122,7 @@ def get_config(model_name):
             elif model_name == 'neon091': config['d_ff'] = 2050 # Match neon061 (9.72M)
             elif model_name == 'neon092': config['d_ff'] = 2049 # Match neon061 (9.72M)
             elif model_name == 'neon093': config['n_layers'], config['d_ff'] = 8, 1240 # Match neon061 (9.72M)
+            elif model_name == 'neon094': config['d_ff'] = 2113 # Hydra MLP but Standard Attention
             else: config['d_ff'] = 512
         
         return config
