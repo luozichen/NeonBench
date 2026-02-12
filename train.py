@@ -97,11 +97,11 @@ def get_config(model_name):
             config['d_ff'] = 592
         
         # Frankenstein Configs
-        if model_name in ['neon061', 'neon062', 'neon063', 'neon064', 'neon065', 'neon066', 'neon067', 'neon068', 'neon069', 'neon070', 'neon071', 'neon072', 'neon073', 'neon074', 'neon075', 'neon076', 'neon077', 'neon078', 'neon079', 'neon080', 'neon081', 'neon082', 'neon083', 'neon084', 'neon085']:
+        if model_name in [f"neon{i:03d}" for i in range(61, 101)]:
             config['d_model'], config['n_layers'], config['n_head'] = 256, 4, 4
             if model_name == 'neon061': config['d_ff'] = 2736 # ~10M
             elif model_name == 'neon066': config['d_ff'] = 172 # match neon016
-            elif model_name == 'neon070': config['d_ff'] = 576
+            elif model_name in ['neon070', 'neon073', 'neon074', 'neon075']: config['d_ff'] = 576
             elif model_name == 'neon071': config['d_ff'] = 640
             elif model_name == 'neon072': config['d_ff'] = 512
             elif model_name == 'neon076': config['d_model'], config['d_ff'] = 240, 480
@@ -114,36 +114,11 @@ def get_config(model_name):
             elif model_name == 'neon083': config['d_ff'] = 378 # Match neon016 (k=9 Modulation)
             elif model_name == 'neon084': config['d_ff'] = 382 # Match neon016 (k=5 Dilated)
             elif model_name == 'neon085': config['d_ff'] = 381 # Match neon016 (Dual Scale)
+            elif model_name == 'neon086': config['d_ff'] = 380 # Match neon016 (Res Context)
+            elif model_name == 'neon087': config['d_ff'] = 368 # Match neon016 (Pyramidal)
+            elif model_name == 'neon088': config['d_ff'] = 381 # Match neon016 (Competitive)
             else: config['d_ff'] = 512
-            # Linear Gate (131k) + Hydra (82k). Total ~213k gate cost. 
-            # Standard is 131k. Delta +82k per layer. +320k total.
-            # 512 is fine. It will be slightly larger.
-        elif model_name == "neon073":
-            config['d_ff'] = 576 # Multi-Head Hydra. Attn cost similar (16*4 = 64). Same scaling.
-        elif model_name == "neon074":
-            config['d_ff'] = 576 # Swish Hydra. Same cost.
-        elif model_name == "neon075":
-            config['d_ff'] = 576 # Negative Hydra. Same cost.
-        elif model_name == "neon076":
-            config['d_model'] = 240 # Reduce model dim
-            config['block_size'] = 256
-            config['d_ff'] = 480 # Target 3.15M
-            config['n_head'] = 4 
-        elif model_name == "neon077":
-            config['d_ff'] = 368 # Target 3.15M
-        elif model_name == "neon078":
-            config['n_layers'] = 4 
-            config['d_ff'] = 500 # Adjusted to match 3.15M params.
-        elif model_name == "neon079":
-            config['n_layers'] = 4 
-            # Qwen3Next Layers are heavy.
-            # In_proj_qkvz (4*d^2) + In_proj_ba (2*d*h) + Out_proj (d^2) + Conv (3*d) + Linears in Attn.
-            # Standard Attn: 4*d^2.
-            # DeltaNet: ~5*d^2.
-            # So similar to neon078 logic.
-            # Let's start with d_ff = 480.
-            config['d_ff'] = 480 
-
+        
         return config
             
         return config
