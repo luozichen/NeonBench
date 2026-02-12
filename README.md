@@ -203,9 +203,11 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon083** | 2.87M | 0.9462 | Modulation Hydra. |
 | **neon084** | 2.88M | 0.8989 | Dilated Hydra (RF=17). |
 | **⭐ neon085** | **2.89M** | **0.8670** | **Dual-Scale Hydra**. **[PROJECT SOTA]** |
-| **neon086** | 2.88M | *Training..* | Res-Hydra (Residual Context). |
-| **neon087** | 2.86M | *Training..* | Pyramidal Hydra (k=3, 9, 27). |
-| **neon088** | 2.89M | *Training..* | Competitive Hydra (Max-Pool). |
+| **neon086** | 2.88M | 0.9168 | Res-Hydra (Residual Context). |
+| **neon087** | 2.86M | 0.9018 | Pyramidal Hydra (k=3, 9, 27). |
+| **neon088** | 2.89M | 0.8944 | Competitive Hydra (Max-Pool). |
+| **neon089** | 2.89M | *Training..* | Dense Pyramidal (k=3,5,7,9). |
+| **neon090** | 2.89M | *Training..* | Asymmetric Gated Hydra. |
 
 ### 🧪 Benchmark: Wiki103 / Tok1 & Tok4
 *WikiText-103 Dataset (100MB).*
