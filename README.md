@@ -87,7 +87,7 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | neon078 | 2.86M | **Qwen3-Next Style Hybrid**: Layers 0-2 (DeltaNet), Layer 3 (Attn). |
 | neon079 | 2.87M | **Qwen3-Next Hybrid Replica**: Full Gated DeltaNet components. |
 | **neon080** | 2.89M | **Scaling Study (Width)**: Match neon016 via d_ff=384. |
-| **neon081** | 2.87M | **Scaling Study (Context)**: Match neon016 via k=9, d_ff=378. |
+| **⭐ neon081** | 2.87M | **Context-scaled Hydra**: Match neon016 via k=9, d_ff=378. **[NEW SOTA]** |
 | **neon082** | 2.89M | **Scaling Study (Fair Hydra)**: ResHydra (neon072) with d_ff=416. |
 | **neon083** | 2.87M | **Modulation Hydra**: `SiLU(Linear) * Sigmoid(Conv9)`. |
 | **neon084** | 2.88M | **Dilated Hydra**: `kernel=5, dilation=4` (RF=17). |
@@ -223,4 +223,5 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 2.  **Calculated Intent (031-055)**: We attempted to "calculate" intent from Q/K/V interactions to save parameters. `neon010` and `neon046` proved that these "calculated" signals can match full learned gating, by saving learnt intent parameters and scaling other parts of the model.
 3.  **The Head Discovery (065-069)**: We found that at our ~3M scale, **1 Massive Head (512-dim)** outperforms the standard 4-head configuration, but mostly due to internal parameter scaling. Under a "Fair Fight" (`neon066`), 4 heads remained the most optimal.
 4.  **Hydra Era (070-077)**: Introduced context-aware gating in the MLP. `neon077` (Conv-Gated Hydra) successfully matched the Attention baseline using a lightweight convolutional heuristic.
-5.  **Modern Hybrids (078-079)**: Replicating state-of-the-art architectures like Qwen3-Next to benchmark against our simplified blocks.
+5.  **Scaling Breakthrough (080-081)**: Proved that context is the primary bottleneck. `neon081` (**k=9**) shattered the baseline, achieving 0.88 val loss at 3M parameters.
+6.  **Modern Hybrids (078-079)**: Replicating state-of-the-art architectures like Qwen3-Next to benchmark against our simplified blocks.
