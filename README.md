@@ -22,7 +22,7 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | neon013 | 8.21M | Balanced (8 layers × 320 dim, 2× MLP). |
 | neon014 | 14.19M | MLP-Heavy (6 layers × 384 dim, 4× MLP expansion). |
 | **neon015** | 2.89M | Result gating, raw I, raw V. Formula: $I_i \odot \Sigma_j(A_{ij} V_j)$. |
-| **⭐ neon016** | 2.89M | **Result gating, σ(I), raw V.** Identical to neon9 but with Sigmoid non-linearity. |
+| **⭐ neon016** | 2.89M | **Result gating, σ(I), raw V.** Identical to neon9 but with Sigmoid non-linearity. ([Detailed Docs](docs/neon016.md)) |
 | neon017 | 2.89M | Result gating, raw I, σ(V). |
 | neon018 | 2.89M | Result gating, σ(I), σ(V). |
 | neon019 | 2.89M | Source gating, raw I, raw V. Formula: $\Sigma_j A_{ij} (I_j \odot V_j)$. |
@@ -87,11 +87,11 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | neon078 | 2.86M | **Qwen3-Next Style Hybrid**: Layers 0-2 (DeltaNet), Layer 3 (Attn). |
 | neon079 | 2.87M | **Qwen3-Next Hybrid Replica**: Full Gated DeltaNet components. |
 | **neon080** | 2.89M | **Scaling Study (Width)**: Match neon016 via d_ff=384. |
-| **⭐ neon081** | 2.87M | **Context-scaled Hydra**: Match neon016 via k=9, d_ff=378. **[MILESTONE]** |
+| **⭐ neon081** | 2.87M | **Context-scaled Hydra**: Match neon016 via k=9, d_ff=378. **[MILESTONE]** ([Detailed Docs](docs/neon081.md)) |
 | **neon082** | 2.89M | **Scaling Study (Fair Hydra)**: ResHydra (neon072) with d_ff=416. |
 | **neon083** | 2.87M | **Modulation Hydra**: `SiLU(Linear) * Sigmoid(Conv9)`. |
 | **neon084** | 2.88M | **Dilated Hydra**: `kernel=5, dilation=4` (RF=17). |
-| **⭐ neon085** | **2.89M** | **Dual-Scale Hydra**: Parallel `k=3` and `k=9` gate paths. **[PROJECT SOTA]** |
+| **⭐ neon085** | **2.89M** | **Dual-Scale Hydra**: Parallel `k=3` and `k=9` gate paths. **[PROJECT SOTA]** ([Detailed Docs](docs/neon085.md)) |
 | **neon086** | 2.88M | **Res-Hydra**: Context gate with residual `x` connection. |
 | **neon087** | 2.86M | **Pyramidal Hydra**: Triple scale `k=3, 9, 27` (RF=27). |
 | **neon088** | 2.89M | **Competitive Hydra**: `Max(k3, k9)` feature selection. |
