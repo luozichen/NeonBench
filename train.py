@@ -119,6 +119,8 @@ def get_config(model_name):
             elif model_name == 'neon088': config['d_ff'] = 381 # Match neon016 (Competitive)
             elif model_name == 'neon089': config['d_ff'] = 378 # Match neon016 (Dense Pyramidal)
             elif model_name == 'neon090': config['d_ff'] = 381 # Match neon016 (Asymmetric)
+            elif model_name == 'neon091': config['d_ff'] = 2050 # Match neon061 (9.72M)
+            elif model_name == 'neon092': config['d_ff'] = 2049 # Match neon061 (9.72M)
             else: config['d_ff'] = 512
         
         return config

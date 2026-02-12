@@ -95,6 +95,8 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon086** | 2.88M | **Res-Hydra**: Context gate with residual `x` connection. |
 | **neon087** | 2.86M | **Pyramidal Hydra**: Triple scale `k=3, 9, 27` (RF=27). |
 | **neon088** | 2.89M | **Competitive Hydra**: `Max(k3, k9)` feature selection. |
+| **neon091** | 9.72M | **10M Hydra**: Scaled `neon081` (k=9) to match `neon061`. |
+| **neon092** | 9.72M | **10M Dual-Scale Hydra**: Scaled `neon085` (k=3+9) to match `neon061`. |
 
 ---
 
@@ -206,8 +208,8 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon086** | 2.88M | 0.9168 | Res-Hydra (Residual Context). |
 | **neon087** | 2.86M | 0.9018 | Pyramidal Hydra (k=3, 9, 27). |
 | **neon088** | 2.89M | 0.8944 | Competitive Hydra (Max-Pool). |
-| **neon089** | 2.89M | *Training..* | Dense Pyramidal (k=3,5,7,9). |
-| **neon090** | 2.89M | *Training..* | Asymmetric Gated Hydra. |
+| **neon089** | 2.89M | 0.8768 | Dense Pyramidal (k=3,5,7,9). |
+| **neon090** | 2.89M | 0.8786 | Asymmetric Gated Hydra. |
 
 ### 🧪 Benchmark: Wiki103 / Tok1 & Tok4
 *WikiText-103 Dataset (100MB).*
@@ -219,6 +221,10 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | neon012 | tok1 | 15.76M | 2.1280 | Wide & Medium Wiki. |
 | neon013 | tok1 | 8.21M | 2.2307 | Balanced Wiki. |
 | neon014 | tok1 | 14.19M | 2.1199 | MLP-Heavy Wiki. |
+| **neon016** | tok4 | 2.89M | 3.2885 | Wiki Tok4 Baseline. |
+| **neon077** | tok4 | 2.82M | 3.2880 | Conv-Gated Hydra Wiki. |
+| **⭐ neon081** | tok4 | **2.87M** | **3.2750** | **Wiki SOTA**. Context wins. |
+| **neon085** | tok4 | 2.89M | 3.2905 | Dual-Scale (Overfit risk?). |
 | **⭐ neon061** | tok4 | 9.72M | 3.0940 | Wide MLP Wiki. |
 | neon065 | tok4 | 4.20M | 3.3171 | Big Single Head Wiki. |
 | neon066 | tok4 | 2.89M | 3.3377 | Fair Fight Big Head Wiki. |
