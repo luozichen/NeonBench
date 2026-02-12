@@ -86,6 +86,9 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **⭐ neon077** | 2.82M | **Conv-Gated Hydra**: Linear + Causal Conv Gate. **Personal SOTA.** |
 | neon078 | 2.86M | **Qwen3-Next Style Hybrid**: Layers 0-2 (DeltaNet), Layer 3 (Attn). |
 | neon079 | 2.87M | **Qwen3-Next Hybrid Replica**: Full Gated DeltaNet components. |
+| **neon080** | 2.89M | **Scaling Study (Width)**: Match neon016 via d_ff=384. |
+| **neon081** | 2.87M | **Scaling Study (Context)**: Match neon016 via k=9, d_ff=378. |
+| **neon082** | 2.89M | **Scaling Study (Fair Hydra)**: ResHydra (neon072) with d_ff=416. |
 
 ---
 
