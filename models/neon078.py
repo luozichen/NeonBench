@@ -1,4 +1,4 @@
-"""Neon078: Qwen2-Next Style Hybrid.
+"""Neon078: Qwen3-Next Style Hybrid.
 Layers 0-2: Gated DeltaNet (Approximated via Decaying Linear Attention).
 Layer 3: Gated Attention (Standard Intent Attention).
 """
