@@ -87,11 +87,11 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | neon078 | 2.86M | **Qwen3-Next Style Hybrid**: Layers 0-2 (DeltaNet), Layer 3 (Attn). |
 | neon079 | 2.87M | **Qwen3-Next Hybrid Replica**: Full Gated DeltaNet components. |
 | **neon080** | 2.89M | **Scaling Study (Width)**: Match neon016 via d_ff=384. |
-| **⭐ neon081** | 2.87M | **Context-scaled Hydra**: Match neon016 via k=9, d_ff=378. **[NEW SOTA]** |
+| **⭐ neon081** | 2.87M | **Context-scaled Hydra**: Match neon016 via k=9, d_ff=378. **[MILESTONE]** |
 | **neon082** | 2.89M | **Scaling Study (Fair Hydra)**: ResHydra (neon072) with d_ff=416. |
 | **neon083** | 2.87M | **Modulation Hydra**: `SiLU(Linear) * Sigmoid(Conv9)`. |
 | **neon084** | 2.88M | **Dilated Hydra**: `kernel=5, dilation=4` (RF=17). |
-| **neon085** | 2.89M | **Dual-Scale Hydra**: Parallel `k=3` and `k=9` gate paths. |
+| **⭐ neon085** | **2.89M** | **Dual-Scale Hydra**: Parallel `k=3` and `k=9` gate paths. **[PROJECT SOTA]** |
 | **neon086** | 2.88M | **Res-Hydra**: Context gate with residual `x` connection. |
 | **neon087** | 2.86M | **Pyramidal Hydra**: Triple scale `k=3, 9, 27` (RF=27). |
 | **neon088** | 2.89M | **Competitive Hydra**: `Max(k3, k9)` feature selection. |
@@ -194,15 +194,16 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | neon074 | 2.84M | 1.0653 | Swish Hydra. |
 | neon075 | 2.84M | 1.0084 | Negative Hydra. |
 | neon076 | 2.83M | 1.0399 | Light Hydra. |
+| neon079 | 2.87M | 1.1056 | Qwen3-Next Hybrid. |
+| **neon080** | 2.89M | 0.8875 | Scaling Study (Width). |
+| **⭐ neon081** | **2.87M** | **0.8812** | **Context-scaled Hydra**. **[MILESTONE]** |
+| **neon082** | 2.89M | 0.9886 | Scaling Study (Fair Hydra). |
 | **neon083** | 2.87M | 0.9462 | Modulation Hydra. |
 | **neon084** | 2.88M | 0.8989 | Dilated Hydra (RF=17). |
 | **⭐ neon085** | **2.89M** | **0.8670** | **Dual-Scale Hydra**. **[PROJECT SOTA]** |
-| **⭐ neon077** | 2.82M | **0.9172** | **Conv-Gated Hydra**. |
-| neon078 | 2.86M | 1.4483 | Hybrid DeltaNet. |
-| neon079 | 2.87M | 1.1056 | Qwen3-Next Hybrid. |
-| **neon080** | 2.89M | 0.8875 | Scaling Study (Width). |
-| **⭐ neon081** | **2.87M** | **0.8812** | **Scaling Study (Context)**. **NEW SOTA.** |
-| **neon082** | 2.89M | 0.9886 | Scaling Study (Fair Hydra). |
+| **neon086** | 2.88M | *Training..* | Res-Hydra (Residual Context). |
+| **neon087** | 2.86M | *Training..* | Pyramidal Hydra (k=3, 9, 27). |
+| **neon088** | 2.89M | *Training..* | Competitive Hydra (Max-Pool). |
 
 ### 🧪 Benchmark: Wiki103 / Tok1 & Tok4
 *WikiText-103 Dataset (100MB).*
