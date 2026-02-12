@@ -96,7 +96,7 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon087** | 2.86M | **Pyramidal Hydra**: Triple scale `k=3, 9, 27` (RF=27). |
 | **neon088** | 2.89M | **Competitive Hydra**: `Max(k3, k9)` feature selection. |
 | **neon091** | 9.72M | **10M Hydra**: Scaled `neon081` (k=9) to match `neon061`. |
-| **neon092** | 9.72M | **10M Dual-Scale Hydra**: Scaled `neon085` (k=3+9) to match `neon061`. |
+| **⭐ neon092** | 9.72M | **10M Dual-Scale Hydra**: Scaled `neon085` (k=3+9) to match `neon061`. **[10M SOTA]** |
 
 ---
 

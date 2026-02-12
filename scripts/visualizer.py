@@ -101,6 +101,8 @@ def capture_forward(model, input_ids):
     v_bucket = []
     intent_bucket = []  # Stores (B, n_head, T, head_dim)
     mlp_bucket = []
+    conv_bucket = [] # Stores convolutional intermediate feature maps
+    gate_bucket = [] # Stores the final multiplication gate
 
     # Original functions
     real_sdpa = F.scaled_dot_product_attention
@@ -139,6 +141,17 @@ def capture_forward(model, input_ids):
             intent_bucket.append(input.detach().cpu())
         return real_silu(input, inplace=inplace)
 
+    # 3. Hydra Convolution Hook (Monkey-patch Conv1d)
+    real_conv1d = F.conv1d
+    def spy_conv1d(input, weight, bias=None, stride=1, padding=0, dilation=1, groups=1):
+        out = real_conv1d(input, weight, bias, stride, padding, dilation, groups)
+        if groups > 1 and out.dim() == 3: # Likely a Depthwise/Hydra conv
+            conv_bucket.append({
+                'kernel': weight.shape[2],
+                'data': out.detach().cpu()
+            })
+        return out
+
     # 3. MLP Hook
     hooks = []
     for block in model.blocks:
@@ -158,7 +171,8 @@ def capture_forward(model, input_ids):
             # Detect architecture style
             # neon015/055 (SwiGLU) uses 'w_down'
             # neon001 (GPT-2) uses 'c_proj'
-            target_layer = getattr(block.mlp, 'w_down', getattr(block.mlp, 'c_proj', block.mlp))
+            # Hydra (070+) uses 'w2'
+            target_layer = getattr(block.mlp, 'w2', getattr(block.mlp, 'w_down', getattr(block.mlp, 'c_proj', block.mlp)))
             
             hooks.append(target_layer.register_forward_hook(make_hook()))
 
@@ -166,6 +180,7 @@ def capture_forward(model, input_ids):
     F.scaled_dot_product_attention = spy_sdpa
     torch.sigmoid = spy_sigmoid
     F.silu = spy_silu
+    F.conv1d = spy_conv1d
     
     try:
         with torch.no_grad():
@@ -176,6 +191,7 @@ def capture_forward(model, input_ids):
         F.scaled_dot_product_attention = real_sdpa
         torch.sigmoid = real_sigmoid
         F.silu = real_silu
+        F.conv1d = real_conv1d
         for h in hooks:
             h.remove()
             
@@ -186,6 +202,7 @@ def capture_forward(model, input_ids):
         "v": v_bucket,
         "intent": intent_bucket,
         "mlp": mlp_bucket,
+        "conv": conv_bucket,
         "last_logits": last_logits
     }
 
@@ -574,6 +591,12 @@ if st.button("🔍 Visualize", type="primary") or "data" in st.session_state:
         components = ["Attention Matrix (T×T)", "Query Vector (T×D)", "Key Vector (T×D)", "Value Vector (T×D)"]
         if data["intent"]:
             components.append("Intent Vector (T×D)")
+        
+        # Hydra specific components
+        if data["conv"]:
+            components.append("Conv Gate k=3 (Feature Map)")
+            if len(data["conv"]) > n_layers: # Likely Dual Scale
+                components.append("Conv Gate k=9 (Feature Map)")
             
         with c3:
             comp = st.selectbox("Component", components, key="sh_comp")
@@ -584,6 +607,32 @@ if st.button("🔍 Visualize", type="primary") or "data" in st.session_state:
                             use_container_width=True)
             st.plotly_chart(plot_attention_received(attn_np, toks, layer, head),
                             use_container_width=True)
+        elif "Conv" in comp:
+            # Filter conv_bucket for this layer
+            # Hydra has L layers, each with 1 or 2 convs
+            # Approximate mapping: layer * n_convs_per_layer
+            n_convs = 2 if "Dual" in info['model_name'] or "085" in info['model_name'] or "092" in info['model_name'] else 1
+            idx = layer * n_convs + (1 if "k=9" in comp or "k=5" in comp else 0)
+            
+            if idx < len(data["conv"]):
+                conv_vals = data["conv"][idx]['data'][0].numpy()
+                # conv_vals is (D, T). Transpose to (T, D) for token-per-row view.
+                fig = go.Figure(go.Heatmap(
+                    z=conv_vals.T, 
+                    x=[f"d{i}" for i in range(conv_vals.shape[0])],
+                    y=token_labels(toks),
+                    colorscale="Viridis"
+                ))
+                fig.update_layout(
+                    title=f"Layer {layer} — {comp} Feature Map", 
+                    height=max(420, len(toks) * 22 + 120),
+                    yaxis=dict(autorange="reversed"),
+                    xaxis_title="Dimension",
+                    yaxis_title="Token"
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("Convolution data index out of range for this model.")
         else:
             # Map selection to bucket
             if "Query" in comp: vec_data = data["q"]
