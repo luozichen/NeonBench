@@ -1,0 +1,3521 @@
+--- neon001 ---
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class LayerNorm(nn.Module):
+    def __init__(self, ndim, bias=True):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(ndim))
+        self.bias = nn.Parameter(torch.zeros(ndim)) if bias else None
+    def forward(self, input):
+        return F.layer_norm(input, self.weight.shape, self.weight, self.bias, 1e-5)
+
+def apply_rotary_emb(x, freqs_cos, freqs_sin):
+    d = x.shape[-1]
+    x_even, x_odd = x[..., :d:2], x[..., 1:d:2]
+    cos = freqs_cos[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    sin = freqs_sin[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    return torch.cat([x_even * cos - x_odd * sin, x_even * sin + x_odd * cos], dim=-1)
+
+class CausalSelfAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        self.c_attn = nn.Linear(config['d_model'], 3 * config['d_model'], bias=True)
+        self.c_proj = nn.Linear(config['d_model'], config['d_model'], bias=True)
+        
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class MLP(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.c_fc = nn.Linear(config['d_model'], config['d_ff'], bias=True)
+        self.gelu = nn.GELU()
+        self.c_proj = nn.Linear(config['d_ff'], config['d_model'], bias=True)
+    def forw
+
+--- neon002 ---
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim, eps=1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+    def forward(self, x):
+        return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
+
+def apply_rotary_emb(x, freqs_cos, freqs_sin):
+    d = x.shape[-1]
+    x_even, x_odd = x[..., :d:2], x[..., 1:d:2]
+    cos = freqs_cos[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    sin = freqs_sin[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    return torch.cat([x_even * cos - x_odd * sin, x_even * sin + x_odd * cos], dim=-1)
+
+class CausalSelfAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        self.c_attn = nn.Linear(config['d_model'], 3 * config['d_model'], bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(config['d_model'], config['d_model'], bias=False)
+        
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class MLP(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.c_fc = nn.Linear(config['d_model'], config['d_ff'], bias=False)
+        self.gelu = nn.GELU()
+  
+
+--- neon003 ---
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim, eps=1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+    def forward(self, x):
+        return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
+
+def apply_rotary_emb(x, freqs_cos, freqs_sin):
+    # x: [B, T, H, D]
+    d = x.shape[-1]
+    x_even, x_odd = x[..., :d:2], x[..., 1:d:2]
+    cos = freqs_cos[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    sin = freqs_sin[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    return torch.cat([x_even * cos - x_odd * sin, x_even * sin + x_odd * cos], dim=-1)
+
+class MQAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        
+        # MQA: Multiple Query heads, but only 1 Key and 1 Value head
+        self.q_proj = nn.Linear(config['d_model'], config['d_model'], bias=False)
+        self.k_proj = nn.Linear(config['d_model'], self.head_dim, bias=False)
+        self.v_proj = nn.Linear(config['d_model'], self.head_dim, bias=False)
+        
+        # QK Norm
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        
+        self.c_proj = nn.Linear(config['d_model'], config['d_model'], bias=False)
+        
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        
+        q = self.q_proj(x).view(B, T, self.n_head, self.head_dim)
+        k = self.k_proj(x).view(B, T, 1, self.head_dim) # Single head
+        v = self.v_proj(x).view(B, T, 1, self.head_dim) # Single head
+        
+        # Apply QK-Norm
+        q = self.q_norm(q)
+        k = self.k_norm(k)
+        
+        # Apply RoPE
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        
+        # Broadcast K and V to match Query heads for 
+
+--- neon004 ---
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim, eps=1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+    def forward(self, x):
+        return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
+
+def apply_rotary_emb(x, freqs_cos, freqs_sin):
+    d = x.shape[-1]
+    x_even, x_odd = x[..., :d:2], x[..., 1:d:2]
+    cos = freqs_cos[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    sin = freqs_sin[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    return torch.cat([x_even * cos - x_odd * sin, x_even * sin + x_odd * cos], dim=-1)
+
+class MQAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        self.q_proj = nn.Linear(config['d_model'], config['d_model'], bias=False)
+        self.k_proj = nn.Linear(config['d_model'], self.head_dim, bias=False)
+        self.v_proj = nn.Linear(config['d_model'], self.head_dim, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(config['d_model'], config['d_model'], bias=False)
+        
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q = self.q_proj(x).view(B, T, self.n_head, self.head_dim)
+        k = self.k_proj(x).view(B, T, 1, self.head_dim)
+        v = self.v_proj(x).view(B, T, 1, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class SharedWideMLPBlock(nn.Module):
+    def __init__(self, config):
+       
+
+--- neon005 ---
+"""Neon005: neon002 + SwiGLU activation (replaces GELU MLP)."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim, eps=1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+    def forward(self, x):
+        return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
+
+def apply_rotary_emb(x, freqs_cos, freqs_sin):
+    d = x.shape[-1]
+    x_even, x_odd = x[..., :d:2], x[..., 1:d:2]
+    cos = freqs_cos[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    sin = freqs_sin[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    return torch.cat([x_even * cos - x_odd * sin, x_even * sin + x_odd * cos], dim=-1)
+
+class CausalSelfAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        self.c_attn = nn.Linear(config['d_model'], 3 * config['d_model'], bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(config['d_model'], config['d_model'], bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class SwiGLU_MLP(nn.Module):
+    """SwiGLU: gate * up with SiLU activation, then down-project."""
+    def __init__(self, config):
+    
+
+--- neon006 ---
+"""Neon006: neon005 + MLA (Multi-head Latent Attention) from DeepSeek-V2.
+KV is compressed into a low-rank latent before up-projecting to K and V."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim, eps=1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+    def forward(self, x):
+        return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
+
+def apply_rotary_emb(x, freqs_cos, freqs_sin):
+    d = x.shape[-1]
+    x_even, x_odd = x[..., :d:2], x[..., 1:d:2]
+    cos = freqs_cos[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    sin = freqs_sin[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    return torch.cat([x_even * cos - x_odd * sin, x_even * sin + x_odd * cos], dim=-1)
+
+class MLAttention(nn.Module):
+    """Multi-head Latent Attention: compress KV through a shared bottleneck."""
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        d_latent = config.get('d_latent', d_model // 2)
+
+        # Q projection (standard)
+        self.q_proj = nn.Linear(d_model, d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+
+        # KV compression: down-project to latent, then up-project to K and V
+        self.kv_down = nn.Linear(d_model, d_latent, bias=False)
+        self.k_up = nn.Linear(d_latent, d_model, bias=False)
+        self.v_up = nn.Linear(d_latent, d_model, bias=False)
+        self.k_norm = RMSNorm(self.head_dim)
+
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q = self.q_proj(x)
+
+        # Compress KV through latent bottleneck
+        c_kv = self.kv_down(x)          # (B, T, d_latent)
+        k = self.k_up(c_kv)             # (B, T, d_model)
+        v = self.v_up(c_kv)
+
+--- neon007 ---
+"""Neon007: neon005 + DeltaNet (Linear Attention with Delta Rule).
+Replaces softmax attention with a sequential recurrence using the delta rule."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim, eps=1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+    def forward(self, x):
+        return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
+
+class DeltaNetAttention(nn.Module):
+    """DeltaNet: linear attention with delta rule memory updates.
+    S_t = S_{t-1} + beta_t * (v_t - S_{t-1}^T k_t) outer k_t
+    o_t = S_t^T q_t
+    No RoPE needed — recurrence provides inherent ordering."""
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+
+        self.q_proj = nn.Linear(d_model, d_model, bias=False)
+        self.k_proj = nn.Linear(d_model, d_model, bias=False)
+        self.v_proj = nn.Linear(d_model, d_model, bias=False)
+        self.beta_proj = nn.Linear(d_model, self.n_head, bias=False)  # per-head gate
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+
+        q = self.q_proj(x).view(B, T, self.n_head, self.head_dim)
+        k = self.k_proj(x).view(B, T, self.n_head, self.head_dim)
+        v = self.v_proj(x).view(B, T, self.n_head, self.head_dim)
+
+        # L2 normalize keys for recurrence stability
+        k = F.normalize(k, dim=-1)
+
+        # Beta gate: controls update strength
+        beta = torch.sigmoid(self.beta_proj(x))  # (B, T, n_head)
+
+        # Transpose to (B, n_head, T, head_dim)
+        q = q.transpose(1, 2)
+        k = k.transpose(1, 2)
+        v = v.transpose(1, 2)
+        beta = beta.transpose(1, 2).unsqueeze(-1)  # (B, n_head, T, 1)
+
+        # Delta rule recurrence
+
+
+--- neon008 ---
+"""Neon008: neon005 + L2 Normalization + LayerNorm.
+Experimental: all hidden states normalized to unit sphere (||h||_2 = 1).
+Uses LayerNorm (with bias) instead of RMSNorm. Inspired by quantum mechanics."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class RMSNorm(nn.Module):
+    """Kept for QK-Norm only."""
+    def __init__(self, dim, eps=1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+    def forward(self, x):
+        return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
+
+def apply_rotary_emb(x, freqs_cos, freqs_sin):
+    d = x.shape[-1]
+    x_even, x_odd = x[..., :d:2], x[..., 1:d:2]
+    cos = freqs_cos[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    sin = freqs_sin[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    return torch.cat([x_even * cos - x_odd * sin, x_even * sin + x_odd * cos], dim=-1)
+
+class CausalSelfAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        self.c_attn = nn.Linear(config['d_model'], 3 * config['d_model'], bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(config['d_model'], config['d_model'], bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = y.transpose(1, 2).contiguous().view
+
+--- neon009 ---
+"""Neon009: neon005 + QKVI Intent Attention.
+Adds a 4th projection I (Intent) that modulates attention output element-wise.
+Output = I ⊙ Softmax(QK^T / sqrt(d_k)) V"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim, eps=1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+    def forward(self, x):
+        return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
+
+def apply_rotary_emb(x, freqs_cos, freqs_sin):
+    d = x.shape[-1]
+    x_even, x_odd = x[..., :d:2], x[..., 1:d:2]
+    cos = freqs_cos[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    sin = freqs_sin[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    return torch.cat([x_even * cos - x_odd * sin, x_even * sin + x_odd * cos], dim=-1)
+
+class QKVIAttention(nn.Module):
+    """Q, K, V, I (Intent) attention.
+    I is a learned per-position modulation that preserves query-side information
+    which is otherwise lost after the softmax aggregation."""
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)  # Q, K, V
+        self.i_proj = nn.Linear(d_model, d_model, bias=False)       # Intent
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        intent = self.i_proj(x)  # (B, T, d_model)
+
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+
+        q, k = self.q_norm(q), self.k
+
+--- neon010 ---
+"""Neon010: neon005 + Gated SDPA.
+Gate is computed from Q: Gate(Q) = sigma(W_g Q + b_g).
+Output = Gate(Q) ⊙ Softmax(QK^T / sqrt(d_k)) V"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim, eps=1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+    def forward(self, x):
+        return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
+
+def apply_rotary_emb(x, freqs_cos, freqs_sin):
+    d = x.shape[-1]
+    x_even, x_odd = x[..., :d:2], x[..., 1:d:2]
+    cos = freqs_cos[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    sin = freqs_sin[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    return torch.cat([x_even * cos - x_odd * sin, x_even * sin + x_odd * cos], dim=-1)
+
+class GatedAttention(nn.Module):
+    """Gated Scaled Dot-Product Attention.
+    Gate is derived from Q via a linear+sigmoid transform, providing
+    per-dimension control over attention output."""
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)  # Q, K, V
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+
+        # Gate: sigma(W_g Q + b_g), per-head with bias
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim, bias=True)
+
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+
+        q, k, v = self.c_attn(x).split(C, dim=2)
+
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, 
+
+--- neon011 ---
+"""Neon011: 10M scale — Narrow & Deep (8 layers × 384 dim, 2× MLP).
+Same architecture as neon010 (Gated SDPA + SwiGLU), larger config."""
+from models.neon010 import RMSNorm, apply_rotary_emb, GatedAttention, SwiGLU_MLP, Block
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class Neon011(nn.Module):
+    def __init__(self, config, warm_embeddings=None):
+        super().__init__()
+        self.config = config
+        self.token_emb = nn.Embedding(config['vocab_size'], config['d_model'])
+        if warm_embeddings is not None:
+            assert warm_embeddings.shape == (config['vocab_size'], config['d_model'])
+            self.token_emb.weight.data.copy_(warm_embeddings)
+        self.blocks = nn.ModuleList([Block(config) for _ in range(config['n_layers'])])
+        self.ln_f = RMSNorm(config['d_model'])
+        self.head = nn.Linear(config['d_model'], config['vocab_size'], bias=False)
+        self.token_emb.weight = self.head.weight
+        dim = config['d_model'] // config['n_head']
+        inv_freq = 1.0 / (10000.0 ** (torch.arange(0, dim, 2).float() / dim))
+        t = torch.arange(config['block_size']).float()
+        freqs = torch.outer(t, inv_freq)
+        self.register_buffer("freqs_cos", torch.cos(freqs))
+        self.register_buffer("freqs_sin", torch.sin(freqs))
+
+    def forward(self, idx, targets=None):
+        x = self.token_emb(idx)
+        for block in self.blocks:
+            x = block(x, self.freqs_cos, self.freqs_sin)
+        logits = self.head(self.ln_f(x))
+        loss = F.cross_entropy(logits.view(-1, self.config['vocab_size']), targets.view(-1)) if targets is not None else None
+        return logits, loss
+
+
+--- neon012 ---
+"""Neon012: 10M scale — Wide & Medium (6 layers × 512 dim, 2× MLP).
+Same architecture as neon010 (Gated SDPA + SwiGLU), larger config."""
+from models.neon010 import RMSNorm, apply_rotary_emb, GatedAttention, SwiGLU_MLP, Block
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class Neon012(nn.Module):
+    def __init__(self, config, warm_embeddings=None):
+        super().__init__()
+        self.config = config
+        self.token_emb = nn.Embedding(config['vocab_size'], config['d_model'])
+        if warm_embeddings is not None:
+            assert warm_embeddings.shape == (config['vocab_size'], config['d_model'])
+            self.token_emb.weight.data.copy_(warm_embeddings)
+        self.blocks = nn.ModuleList([Block(config) for _ in range(config['n_layers'])])
+        self.ln_f = RMSNorm(config['d_model'])
+        self.head = nn.Linear(config['d_model'], config['vocab_size'], bias=False)
+        self.token_emb.weight = self.head.weight
+        dim = config['d_model'] // config['n_head']
+        inv_freq = 1.0 / (10000.0 ** (torch.arange(0, dim, 2).float() / dim))
+        t = torch.arange(config['block_size']).float()
+        freqs = torch.outer(t, inv_freq)
+        self.register_buffer("freqs_cos", torch.cos(freqs))
+        self.register_buffer("freqs_sin", torch.sin(freqs))
+
+    def forward(self, idx, targets=None):
+        x = self.token_emb(idx)
+        for block in self.blocks:
+            x = block(x, self.freqs_cos, self.freqs_sin)
+        logits = self.head(self.ln_f(x))
+        loss = F.cross_entropy(logits.view(-1, self.config['vocab_size']), targets.view(-1)) if targets is not None else None
+        return logits, loss
+
+
+--- neon013 ---
+"""Neon013: 10M scale — Balanced (8 layers × 320 dim, 2× MLP).
+Same architecture as neon010 (Gated SDPA + SwiGLU), larger config."""
+from models.neon010 import RMSNorm, apply_rotary_emb, GatedAttention, SwiGLU_MLP, Block
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class Neon013(nn.Module):
+    def __init__(self, config, warm_embeddings=None):
+        super().__init__()
+        self.config = config
+        self.token_emb = nn.Embedding(config['vocab_size'], config['d_model'])
+        if warm_embeddings is not None:
+            assert warm_embeddings.shape == (config['vocab_size'], config['d_model'])
+            self.token_emb.weight.data.copy_(warm_embeddings)
+        self.blocks = nn.ModuleList([Block(config) for _ in range(config['n_layers'])])
+        self.ln_f = RMSNorm(config['d_model'])
+        self.head = nn.Linear(config['d_model'], config['vocab_size'], bias=False)
+        self.token_emb.weight = self.head.weight
+        dim = config['d_model'] // config['n_head']
+        inv_freq = 1.0 / (10000.0 ** (torch.arange(0, dim, 2).float() / dim))
+        t = torch.arange(config['block_size']).float()
+        freqs = torch.outer(t, inv_freq)
+        self.register_buffer("freqs_cos", torch.cos(freqs))
+        self.register_buffer("freqs_sin", torch.sin(freqs))
+
+    def forward(self, idx, targets=None):
+        x = self.token_emb(idx)
+        for block in self.blocks:
+            x = block(x, self.freqs_cos, self.freqs_sin)
+        logits = self.head(self.ln_f(x))
+        loss = F.cross_entropy(logits.view(-1, self.config['vocab_size']), targets.view(-1)) if targets is not None else None
+        return logits, loss
+
+
+--- neon014 ---
+"""Neon014: 10M scale — MLP-Heavy (6 layers × 384 dim, 4× MLP expansion).
+Same architecture as neon010 (Gated SDPA + SwiGLU), with d_ff = 4 * d_model."""
+from models.neon010 import RMSNorm, apply_rotary_emb, GatedAttention, SwiGLU_MLP, Block
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class Neon014(nn.Module):
+    def __init__(self, config, warm_embeddings=None):
+        super().__init__()
+        self.config = config
+        self.token_emb = nn.Embedding(config['vocab_size'], config['d_model'])
+        if warm_embeddings is not None:
+            assert warm_embeddings.shape == (config['vocab_size'], config['d_model'])
+            self.token_emb.weight.data.copy_(warm_embeddings)
+        self.blocks = nn.ModuleList([Block(config) for _ in range(config['n_layers'])])
+        self.ln_f = RMSNorm(config['d_model'])
+        self.head = nn.Linear(config['d_model'], config['vocab_size'], bias=False)
+        self.token_emb.weight = self.head.weight
+        dim = config['d_model'] // config['n_head']
+        inv_freq = 1.0 / (10000.0 ** (torch.arange(0, dim, 2).float() / dim))
+        t = torch.arange(config['block_size']).float()
+        freqs = torch.outer(t, inv_freq)
+        self.register_buffer("freqs_cos", torch.cos(freqs))
+        self.register_buffer("freqs_sin", torch.sin(freqs))
+
+    def forward(self, idx, targets=None):
+        x = self.token_emb(idx)
+        for block in self.blocks:
+            x = block(x, self.freqs_cos, self.freqs_sin)
+        logits = self.head(self.ln_f(x))
+        loss = F.cross_entropy(logits.view(-1, self.config['vocab_size']), targets.view(-1)) if targets is not None else None
+        return logits, loss
+
+
+--- neon015 ---
+"""Neon015: QKVI per-head Intent Attention — Result gating, raw I, raw V.
+Formula: Output_i = I_i ⊙ Σ_j(A_ij V_j)
+Intent is projected per-head (same as Q, K, V)."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim, eps=1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+    def forward(self, x):
+        return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
+
+def apply_rotary_emb(x, freqs_cos, freqs_sin):
+    d = x.shape[-1]
+    x_even, x_odd = x[..., :d:2], x[..., 1:d:2]
+    cos = freqs_cos[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    sin = freqs_sin[:x.shape[1]].view(1, x.shape[1], 1, -1)
+    return torch.cat([x_even * cos - x_odd * sin, x_even * sin + x_odd * cos], dim=-1)
+
+class IntentAttention(nn.Module):
+    """QKVI Attention: Q, K, V, I all projected per-head.
+    Result gating: Output = I ⊙ Attn(Q, K, V)"""
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)  # Q, K, V, I
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+ 
+
+--- neon016 ---
+"""Neon016: QKVI per-head Intent Attention — Result gating, σ(I), raw V.
+Formula: Output_i = σ(I_i) ⊙ Σ_j(A_ij V_j)"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = torch.sigmoid(intent) * attn_out  # σ(I), raw V
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+class Neon016(nn.Module):
+    def __init__(s
+
+--- neon017 ---
+"""Neon017: QKVI per-head Intent Attention — Result gating, raw I, σ(V).
+Formula: Output_i = I_i ⊙ Σ_j(A_ij σ(V_j))"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        v_sig = torch.sigmoid(v)  # σ(V) before attention
+        attn_out = F.scaled_dot_product_attention(q, k, v_sig, is_causal=True)
+        y = intent * attn_out  # raw I, σ(V)
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return 
+
+--- neon018 ---
+"""Neon018: QKVI per-head Intent Attention — Result gating, σ(I), σ(V).
+Formula: Output_i = σ(I_i) ⊙ Σ_j(A_ij σ(V_j))"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        v_sig = torch.sigmoid(v)  # σ(V) before attention
+        attn_out = F.scaled_dot_product_attention(q, k, v_sig, is_causal=True)
+        y = torch.sigmoid(intent) * attn_out  # σ(I), σ(V)
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+
+--- neon019 ---
+"""Neon019: QKVI per-head Intent Attention — Source gating, raw I, raw V.
+Formula: Output_i = Σ_j A_ij (I_j ⊙ V_j)"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        v_gated = intent * v  # Source gating: I_j ⊙ V_j
+        attn_out = F.scaled_dot_product_attention(q, k, v_gated, is_causal=True)
+        y = attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+class Neon019(nn.Modu
+
+--- neon020 ---
+"""Neon020: QKVI per-head Intent Attention — Source gating, σ(I), raw V.
+Formula: Output_i = Σ_j A_ij (σ(I_j) ⊙ V_j)"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        v_gated = torch.sigmoid(intent) * v  # Source gating: σ(I_j) ⊙ V_j
+        attn_out = F.scaled_dot_product_attention(q, k, v_gated, is_causal=True)
+        y = attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+c
+
+--- neon021 ---
+"""Neon021: QKVI per-head Intent Attention — Source gating, raw I, σ(V).
+Formula: Output_i = Σ_j A_ij (I_j ⊙ σ(V_j))"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        v_gated = intent * torch.sigmoid(v)  # Source gating: I_j ⊙ σ(V_j)
+        attn_out = F.scaled_dot_product_attention(q, k, v_gated, is_causal=True)
+        y = attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+c
+
+--- neon022 ---
+"""Neon022: QKVI per-head Intent Attention — Source gating, σ(I), σ(V).
+Formula: Output_i = Σ_j A_ij (σ(I_j) ⊙ σ(V_j))"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        v_gated = torch.sigmoid(intent) * torch.sigmoid(v)  # Source: σ(I_j) ⊙ σ(V_j)
+        attn_out = F.scaled_dot_product_attention(q, k, v_gated, is_causal=True)
+        y = attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+      
+
+--- neon023 ---
+"""Neon023: 8-layer neon016 (Result gating, σ(I), raw V) — MLP-starved deep variant.
+Supports LayerDrop via config['layerdrop'] (default 0.0).
+During training, each block is skipped with probability layerdrop.
+During eval, all blocks run (full depth)."""
+import random
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = torch.sigmoid(intent) * attn_out  # σ(I), raw V
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+   
+
+--- neon024 ---
+"""Neon024: Same architecture as Neon023 (8-layer neon016), trained with LayerDrop=0.1.
+This is not a separate architecture — it reuses Neon023 with a different training config."""
+from models.neon023 import Neon023 as Neon024
+
+
+--- neon025 ---
+"""Neon025: Post-Norm variant of neon016 (Result gating, σ(I), raw V).
+Pre-Norm (neon016):  x = x + attn(LN(x))   ← norm BEFORE sublayer
+Post-Norm (neon025): x = LN(x + attn(x))   ← norm AFTER sublayer
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = torch.sigmoid(intent) * attn_out  # σ(I), raw V
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    """Post-Norm block: norm is applied AFTER the residual addition."""
+    def __init__(self, config):
+        super().__init__()
+        self.attn = IntentAttention(config)
+        self.mlp = SwiGLU_MLP(config)
+        self.ln1 = RMSNorm(config['d_model'])
+        self.ln2 = RMSNorm(config['d_model'])
+    def forward(self, x, f_cos, f_
+
+--- neon026 ---
+"""Neon026: neon005 (modern baseline) scaled to ~3M params via d_ff increase.
+Tests: is intent attention better than just a bigger MLP?"""
+from models.neon005 import Neon005 as Neon026
+
+
+--- neon027 ---
+"""Neon027: neon010 (Gated SDPA) scaled to ~3M params via d_ff increase.
+Alternative gating mechanism vs intent attention, at equal param count."""
+from models.neon010 import Neon010 as Neon027
+
+
+--- neon028 ---
+"""Neon028: neon006 (MLA) scaled to ~3M params via d_ff increase.
+Multi-head Latent Attention with bigger MLP at equal param count."""
+from models.neon006 import Neon006 as Neon028
+
+
+--- neon029 ---
+"""Neon029: neon001 (GPT-2 baseline) scaled to ~3M params via d_ff increase.
+Old-school architecture at equal param count — how much do modern tricks matter?"""
+from models.neon001 import Neon001 as Neon029
+
+
+--- neon030 ---
+"""Neon030: neon002 (RMSNorm + GELU) scaled to ~3M params via d_ff increase.
+Isolates the RMSNorm effect: neon029 (LayerNorm) vs neon030 (RMSNorm) at equal params."""
+from models.neon002 import Neon002 as Neon030
+
+
+--- neon031 ---
+"""Neon031: Calculated Intent — σ(Q ⊙ V).
+Alignment between want (Q) and have (V). Zero extra params vs baseline."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)  # QKV only
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.sigmoid(q * v)  # σ(Q ⊙ V)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+class Neon031(nn.Module):
+    def __init__(self, config, warm_embeddings=None):
+     
+
+--- neon032 ---
+"""Neon032: Calculated Intent — σ(Q ⊙ K).
+Query-key match strength: how relevant is this search result? Zero extra params."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.sigmoid(q * k)  # σ(Q ⊙ K)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+class Neon032(nn.Module):
+    def __init__(self, config, warm_embeddings=None):
+        
+
+--- neon033 ---
+"""Neon033: Calculated Intent — σ(K ⊙ V).
+Title-content consistency: does the key match its value? Zero extra params."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.sigmoid(k * v)  # σ(K ⊙ V)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+class Neon033(nn.Module):
+    def __init__(self, config, warm_embeddings=None):
+        super
+
+--- neon034 ---
+"""Neon034: Calculated Intent — σ(Q ⊙ K ⊙ V).
+Triple interaction: all three projections aligned. Zero extra params."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.sigmoid(q * k * v)  # σ(Q ⊙ K ⊙ V)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+class Neon034(nn.Module):
+    def __init__(self, config, warm_embeddings=None):
+       
+
+--- neon035 ---
+"""Neon035: Calculated Intent — LayerNorm(Q + V).
+Combined direction with learnable scale/shift. Only 2*head_dim extra params."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.i_norm = nn.LayerNorm(self.head_dim)  # 2*head_dim params (scale+shift)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = self.i_norm(q + v)  # LayerNorm(Q + V)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        ret
+
+--- neon036 ---
+"""Neon036: Calculated Intent — normalize(Q + K + V).
+L2-normalized sum of all three: unified intent direction. Zero extra params."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = F.normalize(q + k + v, dim=-1)  # L2-norm(Q + K + V)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+class Neon036(nn.Module):
+    def __init__(self, config, war
+
+--- neon037 ---
+"""Neon037: Calculated Intent — σ(Q) ⊙ tanh(V).
+Gated-bounded: Query gates Value. Both bounded independently. Zero extra params."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.sigmoid(q) * torch.tanh(v)  # σ(Q) ⊙ tanh(V)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+class Neon037(nn.Module):
+    def __init__(self, config, warm_em
+
+--- neon038 ---
+"""Neon038: Calculated Intent — Q + σ(K ⊙ V).
+Query biased by key-value alignment. Zero extra params."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = q + torch.sigmoid(k * v)  # Q + σ(K ⊙ V)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+class Neon038(nn.Module):
+    def __init__(self, config, warm_embeddings=None):
+        super().__ini
+
+--- neon039 ---
+"""Neon039: Calculated Intent — tanh(Q + K - V).
+Gap-based: what's missing to bridge query to key given what you have. Zero extra params."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.tanh(q + k - v)  # tanh(Q + K - V)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+class Neon039(nn.Module):
+    def __init__(self, config, warm_emb
+
+--- neon040 ---
+"""Neon040: Calculated Intent — RMSNorm(Q ⊙ V).
+Product with RMS normalization for stable magnitude. Only head_dim extra params."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.i_norm = RMSNorm(self.head_dim)  # head_dim params (scale only)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = self.i_norm(q * v)  # RMSNorm(Q ⊙ V)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+c
+
+--- neon041 ---
+"""Neon041: Gated Calculated Intent — σ(W_g(Q ⊙ V) + b_g).
+Same as neon031 but with tiny learned gate mixing dimensions."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim, bias=True)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.sigmoid(self.w_gate(q * v))  # σ(W_g(Q ⊙ V) + b_g)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        ret
+
+--- neon042 ---
+"""Neon042: Gated Calculated Intent — σ(W_g(Q ⊙ K) + b_g).
+Same as neon032 but with tiny learned gate."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim, bias=True)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.sigmoid(self.w_gate(q * k))  # σ(W_g(Q ⊙ K) + b_g)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+class Neon0
+
+--- neon043 ---
+"""Neon043: Gated Calculated Intent — σ(W_g(K ⊙ V) + b_g).
+Same as neon033 but with tiny learned gate."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim, bias=True)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.sigmoid(self.w_gate(k * v))  # σ(W_g(K ⊙ V) + b_g)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+class Neon0
+
+--- neon044 ---
+"""Neon044: Gated Calculated Intent — σ(W_g(Q ⊙ K ⊙ V) + b_g).
+Same as neon034 but with tiny learned gate."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim, bias=True)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.sigmoid(self.w_gate(q * k * v))  # σ(W_g(Q ⊙ K ⊙ V) + b_g)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        return x
+
+
+--- neon045 ---
+"""Neon045: Gated Calculated Intent — σ(W_g(Q + V) + b_g).
+Same as neon035 but with tiny learned gate instead of LayerNorm."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim, bias=True)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.sigmoid(self.w_gate(q + v))  # σ(W_g(Q + V) + b_g)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+        
+
+--- neon046 ---
+"""Neon046: Gated Calculated Intent — σ(W_g(Q + K + V) + b_g).
+Same as neon036 but with tiny learned gate instead of L2-norm."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim, bias=True)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.sigmoid(self.w_gate(q + k + v))  # σ(W_g(Q + K + V) + b_g)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x)
+
+--- neon047 ---
+"""Neon047: Gated Calculated Intent — σ(W_g(σ(Q) ⊙ tanh(V)) + b_g).
+Same as neon037 but with tiny learned gate on top."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim, bias=True)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        raw = torch.sigmoid(q) * torch.tanh(v)  # σ(Q) ⊙ tanh(V)
+        intent = torch.sigmoid(self.w_gate(raw))  # + learned gate
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, 
+
+--- neon048 ---
+"""Neon048: Gated Calculated Intent — σ(W_g(Q + σ(K ⊙ V)) + b_g).
+Same as neon038 but with tiny learned gate on top."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim, bias=True)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        raw = q + torch.sigmoid(k * v)  # Q + σ(K ⊙ V)
+        intent = torch.sigmoid(self.w_gate(raw))  # + learned gate
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+     
+
+--- neon049 ---
+"""Neon049: Gated Calculated Intent — σ(W_g(Q + K - V) + b_g).
+Same as neon039 but with tiny learned gate instead of tanh."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim, bias=True)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.sigmoid(self.w_gate(q + k - v))  # σ(W_g(Q + K - V) + b_g)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x))
+ 
+
+--- neon050 ---
+"""Neon050: Gated Calculated Intent — σ(W_g(Q ⊙ V) + b_g) with RMSNorm pre-gate.
+Same as neon040 but with tiny learned gate after RMSNorm."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.i_norm = RMSNorm(self.head_dim)  # pre-gate normalization
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim, bias=True)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        raw = self.i_norm(q * v)  # RMSNorm(Q ⊙ V)
+        intent = torch.sigmoid(self.w_gate(raw))  # + learned gate
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def f
+
+--- neon051 ---
+"""Neon051: Linear Combination Intent — σ(w_q Q + w_k K + w_v V + b).
+Learns to linearly mix Q, K, V per dimension before gating. 
+Adds 3*head_dim params (element-wise mixing weights)."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        
+        # Learnable mixing weights per dimension: w_q, w_k, w_v, bias
+        # Using Parameter directly for element-wise scaling (diagonal matrix equivalent)
+        self.w_q = nn.Parameter(torch.zeros(self.head_dim))
+        self.w_k = nn.Parameter(torch.zeros(self.head_dim))
+        self.w_v = nn.Parameter(torch.zeros(self.head_dim))
+        self.bias = nn.Parameter(torch.zeros(self.head_dim))
+        
+        # Initialize to balanced mix or something reasonable? 
+        # Zeros + sigmoid(0)=0.5 might be a safe start, or use small random noise
+        nn.init.normal_(self.w_q, std=0.02)
+        nn.init.normal_(self.w_k, std=0.02)
+        nn.init.normal_(self.w_v, std=0.02)
+        
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        
+        # I = σ(w_q Q + w_k K + w_v V + b)
+        # Broadcasting weights across Batch, Time, Heads
+        # w_q shape (D,) broadcasts to (B, T, H, D)
+        intent = torch.sigmoid(q * self.w_q + k * self.w_k + v * self.w_v + se
+
+--- neon052 ---
+"""Neon052: Matrix Intent — σ(Q W_q + K W_k + V W_v + b).
+Learns full linear mixing of Q, K, V per head before gating.
+Adds 3 * head_dim^2 + head_dim params per layer."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        
+        # Matrix weights per head (shared across heads, acting on head_dim)
+        # nn.Linear(head_dim, head_dim) acts on the last dimension
+        self.w_q = nn.Linear(self.head_dim, self.head_dim, bias=False)
+        self.w_k = nn.Linear(self.head_dim, self.head_dim, bias=False)
+        self.w_v = nn.Linear(self.head_dim, self.head_dim, bias=False)
+        self.bias = nn.Parameter(torch.zeros(self.head_dim))
+        
+        # Initialize small to start near neutral?
+        # Standard init is probably fine, scaling will handle it
+        
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        
+        # I = σ(Q W_q + K W_k + V W_v + b)
+        # Linear layers apply to last dim: (..., D) @ (D, D) -> (..., D)
+        intent = torch.sigmoid(self.w_q(q) + self.w_k(k) + self.w_v(v) + self.bias)
+        
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose
+
+--- neon053 ---
+"""Neon053: QKVI Intent Attention with SiLU gating.
+Identical to neon016, but uses SiLU(I) instead of Sigmoid(I).
+Tests if the gate needs to be bounded [0,1] or if unbounded modulation is better."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        
+        # Modulate by intent: Output = SiLU(I) ⊙ attn_out
+        # SiLU = I * sigmoid(I)
+        y = F.silu(intent) * attn_out
+        
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def f
+
+--- neon054 ---
+"""Neon054: Gated Calculated Intent with SiLU — σ(W_g(Q + K + V) + b_g).
+Same as neon046 but uses SiLU(gate) for unbounded modulation."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim, bias=True)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        
+        # neon054: SiLU(gate)
+        intent = F.silu(self.w_gate(q + k + v))
+        
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x
+
+--- neon055 ---
+"""Neon055: Gated Calculated Intent (Comparison) — neon046 with larger d_ff.
+Identical to neon046 structure.
+Config 'd_ff' should be set to 592 in training script."""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim, bias=True)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = torch.sigmoid(self.w_gate(q + k + v))  # σ(W_g(Q + K + V) + b_g)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = intent * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = SwiGLU_MLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin
+
+--- neon056 ---
+"""Neon056: Double-Gated Calculated Intent Attention.
+Formula: Output_t = Sum_s [ A_ts * V_s ]
+         Intent_mag = Sigmoid(W_mag(Q_t + K_t + V_t) + b_mag)
+         Intent_dir = Tanh(W_dir(Q_t + K_t + V_t) + b_dir)
+         Gate = Intent_mag * Intent_dir
+         Final = Gate * Output
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class DoubleGatedIntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+        
+        # Double Gate Projections (Mag: Sigmoid, Dir: Tanh)
+        self.w_mag = nn.Linear(self.head_dim, self.head_dim)
+        self.w_dir = nn.Linear(self.head_dim, self.head_dim)
+
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+
+        # Standard SDPA
+        y = F.scaled_dot_product_attention(
+            q.transpose(1, 2),
+            k.transpose(1, 2),
+            v.transpose(1, 2),
+            is_causal=True
+        ).transpose(1, 2) # (B, T, H, D)
+
+        # Calculated Intent Context
+        intent_context = q + k + v  # (B, T, H, D)
+        
+        # Double Gating
+        gate_mag = torch.sigmoid(self.w_mag(intent_context))
+        gate_dir = torch.tanh(self.w_dir(intent_context))
+        
+ 
+
+--- neon057 ---
+"""Neon057: Differential Calculated Intent Attention.
+Formula: Output_t = Sum_s [ A_ts * V_s ]
+         Diff = |Q - V| + |K - V|  (Element-wise absolute difference)
+         Intent = Sigmoid(W_diff(Diff) + b)
+         Final = Intent * Output
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class DifferentialIntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+        
+        # Differential Gate Projection
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim)
+
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+
+        # Standard SDPA
+        y = F.scaled_dot_product_attention(
+            q.transpose(1, 2),
+            k.transpose(1, 2),
+            v.transpose(1, 2),
+            is_causal=True
+        ).transpose(1, 2) # (B, T, H, D)
+
+        # Calculated Intent Context: Differential
+        # Measure alignment distance
+        diff = torch.abs(q - v) + torch.abs(k - v)
+        
+        gate = torch.sigmoid(self.w_gate(diff))
+        
+        # Apply gate
+        y = y * gate
+        
+        y = y.contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, 
+
+--- neon058 ---
+"""Neon058: Residual Intent Attention (Additive).
+Formula: Output_t = Sum_s [ A_ts * V_s ]
+         Intent = W_i(SiLU(Q))  # Additive Query Bias, independent of Attention
+         Final = Output + Intent
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class ResidualIntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+        
+        # Residual Intent Projection (Full d_model width for simplicity, added post-proj)
+        # We project FROM d_model (Q pre-split) TO d_model
+        # But wait, Q is split. Let's do per-head for consistency.
+        self.w_intent = nn.Linear(self.head_dim, self.head_dim, bias=False)
+
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+
+        q, k = self.q_norm(q), self.k_norm(k)
+        
+        # Calculate Intent BEFORE RoPE (Semantic intent, not positional)
+        # Or AFTER? Let's do BEFORE to capture raw query semantics.
+        # Use SiLU activation as feature extractor
+        intent = self.w_intent(F.silu(q)) # (B, T, H, D)
+        
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+
+        # Standard SDPA
+        y = F.scaled_dot_product_attention(
+            q.transpose(1, 2),
+            k.transpose(1, 2),
+            v.transpose(1, 2),
+            is_causal=True
+
+
+--- neon059 ---
+"""Neon059: Norm-Gated Calculated Intent Attention.
+Formula: Output_t = Sum_s [ A_ts * V_s ]
+         Context = [Q+K+V, ||Q||, ||K||, ||V||] (Concatenate vectors with their norms)
+         Intent = Sigmoid(W_g(Context) + b)
+         Final = Intent * Output
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class NormGatedIntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+        
+        # Gate Projection input is (head_dim + 3) -> head_dim
+        # We append norm(Q), norm(K), norm(V) as scalars to each vector dimension?
+        # No, that's broadcasting. We append scalars to the feature dimension.
+        self.w_gate = nn.Linear(self.head_dim + 3, self.head_dim)
+
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+
+        # Standard SDPA
+        y = F.scaled_dot_product_attention(
+            q.transpose(1, 2),
+            k.transpose(1, 2),
+            v.transpose(1, 2),
+            is_causal=True
+        ).transpose(1, 2) # (B, T, H, D)
+
+        # Calculated Intent Context: Norm-augmented
+        base_context = q + k + v    # (B, T, H, D)
+        
+        # Calculate L2 norms
+        q_norm = torch.norm(q, p
+
+--- neon060 ---
+"""Neon060: Max-Pooled Calculated Intent Attention.
+Formula: Output_t = Sum_s [ A_ts * V_s ]
+         Context = Max(Q, K, V)  (Element-wise Max Pooling)
+         Intent = Sigmoid(W_g(Context) + b)
+         Final = Intent * Output
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class MaxPooledIntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+        
+        self.w_gate = nn.Linear(self.head_dim, self.head_dim)
+
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v = self.c_attn(x).split(C, dim=2)
+
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+
+        # Standard SDPA
+        y = F.scaled_dot_product_attention(
+            q.transpose(1, 2),
+            k.transpose(1, 2),
+            v.transpose(1, 2),
+            is_causal=True
+        ).transpose(1, 2) # (B, T, H, D)
+
+        # Calculated Intent Context: Max Pooling
+        # Use simple element-wise max.
+        # torch.max(a, b) does elementwise.
+        context = torch.max(q, k)
+        context = torch.max(context, v)
+        
+        gate = torch.sigmoid(self.w_gate(context))
+        
+        # Apply gate
+        y = y * gate
+        
+        y = y.contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    de
+
+--- neon061 ---
+"""Neon061: Wide MLP ("Stable Winner").
+Base: neon016 (Learned Intent).
+Change: Massive MLP expansion. d_ff is set to a very large value (approx 16x expansion ratio).
+      Standard SwiGLU uses 8/3 * d_model. Here we use roughly 4x that width.
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+# Re-use IntentAttention from neon016
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = torch.sigmoid(intent) * attn_out  # Result gating
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        # MLP will use the massively expanded d_ff from config
+
+--- neon062 ---
+"""Neon062: MLP-Free Attention Stack.
+Base: neon016 (Learned Intent).
+Change: Remove MLP entirely. Block is just Attention + Residual.
+      We will double the number of layers in train.py config to compensate for lost params.
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb
+
+# Re-use IntentAttention from neon016 (copied here for self-containment)
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = torch.sigmoid(intent) * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        # No MLP here!
+        
+    def forward(self, x, f_cos, f_sin):
+        # Only Attention Residual
+        x = x
+
+--- neon063 ---
+"""Neon063: Attention-in-MLP.
+Base: neon016 (Learned Intent).
+Change: MLP is replaced by a Multi-Head Attention mechanism.
+      The 'Feed-Forward' step becomes a second Attention step.
+      - 2 Heads.
+      - Each head expands 2x.
+      - Uses IntentAttention logic.
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb
+
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = torch.sigmoid(intent) * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class HeadedMLP(nn.Module):
+    """The 'MLP' that is actually an Attention mechanism."""
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = 2 # Fixed 2 heads as per request
+        d_model = config['d_model']
+        # Each head expands to 2x size
+        # So effective head_dim = d_model * 2
+
+--- neon064 ---
+"""Neon064: Hadamard Head Merge.
+Base: neon016 (Learned Intent).
+Change: 8 Heads. Merged pairwise via Hadamard product.
+      H1 * H2 -> Merged1
+      H3 * H4 -> Merged2 ...
+      Concat(Merged1..4) -> Output
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class HadamardHeadAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = 8 # Fixed 8 heads as requested
+        self.head_dim = config['d_model'] // config['n_head'] # This will be smaller if d_model is same
+        # Wait, usually we want to keep head_dim consistent?
+        # If we use 8 heads with standard d_model (256), head_dim becomes 32 (vs 64).
+        # This seems fine.
+        d_model = config['d_model']
+        
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False) # Q, K, V, I
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        
+        # Projection: We have 4 merged heads outputting. 
+        # Each merged head is (head_dim). So total = 4 * head_dim.
+        # But 4 * head_dim = 4 * (d_model/8) = d_model / 2.
+        # We need to project back to d_model.
+        self.c_proj = nn.Linear(d_model // 2, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        
+        q, k = self.q_norm(q), self.k_norm(k)
+        
+        # RoPE needs to match head_dim. If using global freqs (dim=64) and we are dim=32, this fails.
+        # We need to slice global freqs.
+        f_cos = freqs_cos[..., :self.head_dim//2]
+        f_sin = freqs_sin[..., :self.head_dim//2]
+        
+        q = apply_rotary_emb
+
+--- neon065 ---
+"""Neon065: Big Single Head.
+Base: neon016 (Learned Intent).
+Change: n_head = 1.
+      Head dimension = 2 * d_model (scales UP for attention).
+      Projects: d_model -> 4 * (2*d_model).
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+class BigHeadAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = 1
+        d_model = config['d_model']
+        self.head_dim = d_model * 2 # Double the size
+        
+        self.c_attn = nn.Linear(d_model, 4 * self.head_dim, bias=False) # Q, K, V, I
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        
+        self.c_proj = nn.Linear(self.head_dim, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(self.head_dim, dim=2)
+        
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        
+        q, k = self.q_norm(q), self.k_norm(k)
+        
+        # RoPE logic. 
+        # Global freqs are for d_model/4 (64). Here we need 512.
+        # We must generate local freqs or assume they are passed correctly?
+        # The main model usually generates freqs based on ITS logic.
+        # Model __init__ generates freqs. We should modify __init__ to gen freqs for THIS head dim.
+        # See Neon065 __init__.
+        
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = torch.sigmoid(intent) * attn_out
+        
+        y = y.transp
+
+--- neon066 ---
+"""Neon066: The Fair Fight Big Head.
+Base: neon065 (Big Single Head, 2x d_model).
+Change: MLP width (d_ff) is drastically reduced to match neon016 parameter count.
+      - neon065 adds ~1.3M parameters via Attention.
+      - we must remove ~1.3M parameters via MLP.
+      - d_ff will be ~172 instead of 512.
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+# Same as Neon065
+class BigHeadAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = 1
+        d_model = config['d_model']
+        self.head_dim = d_model # Standard Single Head (256) 
+        
+        self.c_attn = nn.Linear(d_model, 4 * self.head_dim, bias=False) 
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        
+        self.c_proj = nn.Linear(self.head_dim, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(self.head_dim, dim=2)
+        
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        
+        q, k = self.q_norm(q), self.k_norm(k)
+        
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = torch.sigmoid(intent) * attn_out
+        
+        y = y.transpose(1, 2).contiguous().view(B, T, self.head_dim)
+        return self.c_proj(y)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = BigHeadAtt
+
+--- neon067 ---
+"""Neon067: 2 Heads.
+Variant of neon016 (Learned Intent).
+Config: n_head=2 (Head Dim 128).
+"""
+from models.neon016 import Neon016 as Neon067
+
+
+--- neon068 ---
+"""Neon068: 8 Heads.
+Variant of neon016 (Learned Intent).
+Config: n_head=8 (Head Dim 32).
+"""
+from models.neon016 import Neon016 as Neon068
+
+
+--- neon069 ---
+"""Neon069: 16 Heads.
+Variant of neon016 (Learned Intent).
+Config: n_head=16 (Head Dim 16).
+"""
+from models.neon016 import Neon016 as Neon069
+
+
+--- neon070 ---
+"""Neon070: The Hydra MLP (Context-Aware Gating).
+Base: neon016 (Learned Intent).
+Change: MLP Gate is replaced by a lightweight Attention Mechanism.
+      - Standard SwiGLU: y = SiLU(x W_g) * (x W_1) * W_2
+      - Hydra MLP: y = Sigmoid(Attn(x)) * (x W_1) * W_2
+      - This allows the MLP to activate based on context, not just token identity.
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb
+
+# Standard IntentAttention from neon016
+class IntentAttention(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.n_head = config['n_head']
+        self.head_dim = config['d_model'] // config['n_head']
+        d_model = config['d_model']
+        self.c_attn = nn.Linear(d_model, 4 * d_model, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.c_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, C = x.shape
+        q, k, v, intent = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
+        intent = intent.view(B, T, self.n_head, self.head_dim)
+        q, k = self.q_norm(q), self.k_norm(k)
+        q = apply_rotary_emb(q, freqs_cos, freqs_sin)
+        k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        intent = intent.transpose(1, 2)
+        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = torch.sigmoid(intent) * attn_out
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return self.c_proj(y)
+
+class HydraMLP(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        d_model = config['d_model']
+        d_ff = config['d_ff']
+        self.head_dim = 64 # Small dedicated head for g
+
+--- neon071 ---
+"""Neon071: Wide Hydra.
+Same as neon070 (Hydra MLP) but scaled up.
+d_ff = 640 (vs 576).
+"""
+from models.neon070 import Neon070 as Neon071
+
+
+--- neon072 ---
+"""Neon072: Gated-Residual Hydra.
+Combines standard Linear Gate (SiLU) with Hydra Attention Gate (Sigmoid).
+Gate = SiLU(x W_g) + Sigmoid(Attn(x))
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb
+# Reuse IntentAttention for the main block
+from models.neon070 import IntentAttention
+
+class ResHydraMLP(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        d_model = config['d_model']
+        d_ff = config['d_ff'] # Standard 512 likely
+        self.head_dim = config['d_model'] // config['n_head']
+        
+        # Standard Linear Gate
+        self.w_gate = nn.Linear(d_model, d_ff, bias=False)
+        
+        # Hydra Gate Components
+        self.c_gate_attn = nn.Linear(d_model, 3 * self.head_dim, bias=False)
+        self.c_gate_proj = nn.Linear(self.head_dim, d_ff, bias=False)
+        
+        self.w1 = nn.Linear(d_model, d_ff, bias=False) # Up
+        self.w2 = nn.Linear(d_ff, d_model, bias=False) # Down
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, D = x.shape
+        
+        # 1. Compute Standard Gate
+        linear_gate = F.silu(self.w_gate(x))
+        
+        # 2. Compute Hydra Attention Gate
+        q, k, v = self.c_gate_attn(x).split(self.head_dim, dim=2)
+        f_cos = freqs_cos[..., :self.head_dim//2]
+        f_sin = freqs_sin[..., :self.head_dim//2]
+        
+        q = q.view(B, T, 1, self.head_dim)
+        k = k.view(B, T, 1, self.head_dim)
+        v = v.view(B, T, 1, self.head_dim)
+        
+        q = apply_rotary_emb(q, f_cos, f_sin)
+        k = apply_rotary_emb(k, f_cos, f_sin)
+        
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        context = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        context = context.transpose(1, 2).contiguous().view(B, T, self.head_dim)
+        
+        attn_gate = torch.sigmoid(self.c_gate_proj(context))
+        
+        # 3. Combine Gates (Add)
+        gat
+
+--- neon073 ---
+"""Neon073: Multi-Head Hydra.
+Hydra MLP uses 4 Attention Heads (Dim 16) instead of 1 (Dim 64).
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb
+from models.neon070 import IntentAttention
+
+class MultiHeadHydraMLP(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        d_model = config['d_model']
+        d_ff = config['d_ff']
+        self.n_gate_head = 4
+        self.head_dim = 16 # Total 64
+        
+        self.c_gate_attn = nn.Linear(d_model, 3 * self.n_gate_head * self.head_dim, bias=False)
+        self.c_gate_proj = nn.Linear(self.n_gate_head * self.head_dim, d_ff, bias=False)
+        
+        self.w1 = nn.Linear(d_model, d_ff, bias=False)
+        self.w2 = nn.Linear(d_ff, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, D = x.shape
+        
+        q, k, v = self.c_gate_attn(x).split(self.n_gate_head * self.head_dim, dim=2)
+        
+        # Use partial freqs for dim=16
+        f_cos = freqs_cos[..., :self.head_dim//2]
+        f_sin = freqs_sin[..., :self.head_dim//2]
+        
+        q = q.view(B, T, self.n_gate_head, self.head_dim)
+        k = k.view(B, T, self.n_gate_head, self.head_dim)
+        v = v.view(B, T, self.n_gate_head, self.head_dim)
+        
+        q = apply_rotary_emb(q, f_cos, f_sin)
+        k = apply_rotary_emb(k, f_cos, f_sin)
+        
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        
+        context = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        context = context.transpose(1, 2).contiguous().view(B, T, -1)
+        
+        gate = torch.sigmoid(self.c_gate_proj(context))
+        
+        h = gate * self.w1(x)
+        return self.w2(h)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+    
+
+--- neon074 ---
+"""Neon074: Swish-Gated Hydra.
+Gate = x * Sigmoid(Attn(x)).
+Context-Aware Swish activation.
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb
+from models.neon070 import IntentAttention
+
+class SwishHydraMLP(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        d_model = config['d_model']
+        d_ff = config['d_ff']
+        self.head_dim = 64
+        
+        self.c_gate_attn = nn.Linear(d_model, 3 * self.head_dim, bias=False)
+        self.c_gate_proj = nn.Linear(self.head_dim, d_ff, bias=False) # Projects context to gate width
+        
+        # Note: We still project x to d_ff via w1.
+        # But instead of xW_g gating, we use Context Gating.
+        # Wait, Swish is x * Sigmoid(x).
+        # Here we do (x W1) * Sigmoid(Context).
+        # This is basically neon070.
+        # Oh, if we want TRUE Swish-Gated Hydra:
+        # y = (x W1) * Sigmoid(Attn(x W1?)). No Attn is on x.
+        # Let's keep it consistent: Gate = Sigmoid(Attn(x)).
+        # But multiply by xW1? Yes.
+        # Ah, maybe I meant: Gate = Context * Sigmoid(Context)? No.
+        # Let's stick to neon070 logic but maybe remove the PROJECTION?
+        # No, context is 64 dim. d_ff is 576. We need projection.
+        
+        self.w1 = nn.Linear(d_model, d_ff, bias=False)
+        self.w2 = nn.Linear(d_ff, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, D = x.shape
+        q, k, v = self.c_gate_attn(x).split(self.head_dim, dim=2)
+        f_cos = freqs_cos[..., :self.head_dim//2]
+        f_sin = freqs_sin[..., :self.head_dim//2]
+        q = q.view(B, T, 1, self.head_dim)
+        k = k.view(B, T, 1, self.head_dim)
+        v = v.view(B, T, 1, self.head_dim)
+        q = apply_rotary_emb(q, f_cos, f_sin)
+        k = apply_rotary_emb(k, f_cos, f_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        context = F.scaled_dot_product_attenti
+
+--- neon075 ---
+"""Neon075: Negative Hydra.
+Gate = Tanh(Attn(x)).
+Allows inhibition (negative activation).
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb
+from models.neon070 import IntentAttention
+
+class NegHydraMLP(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        d_model = config['d_model']
+        d_ff = config['d_ff']
+        self.head_dim = 64
+        self.c_gate_attn = nn.Linear(d_model, 3 * self.head_dim, bias=False)
+        self.c_gate_proj = nn.Linear(self.head_dim, d_ff, bias=False)
+        self.w1 = nn.Linear(d_model, d_ff, bias=False)
+        self.w2 = nn.Linear(d_ff, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, D = x.shape
+        q, k, v = self.c_gate_attn(x).split(self.head_dim, dim=2)
+        f_cos = freqs_cos[..., :self.head_dim//2]
+        f_sin = freqs_sin[..., :self.head_dim//2]
+        q = q.view(B, T, 1, self.head_dim)
+        k = k.view(B, T, 1, self.head_dim)
+        v = v.view(B, T, 1, self.head_dim)
+        q = apply_rotary_emb(q, f_cos, f_sin)
+        k = apply_rotary_emb(k, f_cos, f_sin)
+        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        context = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        context = context.transpose(1, 2).contiguous().view(B, T, self.head_dim)
+        
+        # Change: Tanh activation instead of Sigmoid
+        gate = torch.tanh(self.c_gate_proj(context))
+        
+        h = gate * self.w1(x)
+        return self.w2(h)
+
+class Block(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.ln1 = RMSNorm(config['d_model'])
+        self.attn = IntentAttention(config)
+        self.ln2 = RMSNorm(config['d_model'])
+        self.mlp = NegHydraMLP(config)
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+        x = x + self.mlp(self.ln2(x), f_cos, f_sin)
+        return x
+
+clas
+
+--- neon076 ---
+"""Neon076: Light Residual Hydra.
+Same architecture as neon072 (Dual Gated).
+Running with d_model=240 to match parameter count of baseline.
+"""
+from models.neon072 import Neon072 as Neon076
+
+
+--- neon077 ---
+"""Neon077: Conv-Gated Hydra.
+Replaces Attention Gate with a lightweight Causal Depthwise Convolution.
+Gate = SiLU(x W_g) + Sigmoid(Conv1D(x))
+Provides local context awareness with O(T) complexity.
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb
+from models.neon070 import IntentAttention
+
+class ConvHydraMLP(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        d_model = config['d_model']
+        d_ff = config['d_ff']
+        self.kernel_size = 3
+        # Depthwise Conv: groups = in_channels
+        # Project first? No, use d_model channels directly or project down?
+        # Conv on d_model is cheap if depthwise. Params: 3 * d_model (768 params). Tiny!
+        # But we need to project output to d_ff to be a gate.
+        # So: x -> Conv(d_model) -> Proj(d_ff).
+        
+        self.conv = nn.Conv1d(d_model, d_model, kernel_size=self.kernel_size, groups=d_model, bias=False)
+        self.c_gate_proj = nn.Linear(d_model, d_ff, bias=False)
+        
+        self.w_gate = nn.Linear(d_model, d_ff, bias=False) # Linear Gate
+        self.w1 = nn.Linear(d_model, d_ff, bias=False)
+        self.w2 = nn.Linear(d_ff, d_model, bias=False)
+
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, D = x.shape
+        
+        # 1. Linear Gate
+        linear_gate = F.silu(self.w_gate(x))
+        
+        # 2. Conv Gate
+        # Transpose for Conv1d: (B, D, T)
+        x_t = x.transpose(1, 2)
+        
+        # Causal Padding: (kernel_size - 1) on left, 0 on right
+        x_padded = F.pad(x_t, (self.kernel_size - 1, 0))
+        
+        conv_out = self.conv(x_padded)
+        # Transpose back: (B, T, D)
+        conv_out = conv_out.transpose(1, 2)
+        
+        # Project to d_ff and Sigmoid
+        conv_gate = torch.sigmoid(self.c_gate_proj(conv_out))
+        
+        # 3. Combine
+        gate = linear_gate + conv_gate
+        
+        h = gate * self.w1(x)
+        return s
+
+--- neon078 ---
+"""Neon078: Qwen2-Next Style Hybrid.
+Layers 0-2: Gated DeltaNet (Approximated via Decaying Linear Attention).
+Layer 3: Gated Attention (Standard Intent Attention).
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+# --- Components ---
+
+class GatedDeltaNet(nn.Module):
+    """
+    Approximation of Gated DeltaNet using Masked Attention with Decay.
+    Mathematically equivalent to the recurrent form but trained in parallel O(T^2).
+    """
+    def __init__(self, config):
+        super().__init__()
+        self.d_model = config['d_model']
+        self.n_head = config['n_head']
+        self.head_dim = self.d_model // self.n_head
+        
+        # Projections
+        # q, k, v
+        self.c_q = nn.Linear(self.d_model, self.d_model, bias=False)
+        self.c_k = nn.Linear(self.d_model, self.d_model, bias=False)
+        self.c_v = nn.Linear(self.d_model, self.d_model, bias=False)
+        
+        # Gates / Decay
+        self.c_beta = nn.Linear(self.d_model, self.n_head, bias=False) # Decay rate per head
+        self.c_alpha = nn.Linear(self.d_model, self.d_model, bias=False) # Output gate
+        
+        # Short Conv for local context (Depthwise)
+        self.conv_q = nn.Conv1d(self.d_model, self.d_model, kernel_size=3, padding=0, groups=self.d_model)
+        self.conv_k = nn.Conv1d(self.d_model, self.d_model, kernel_size=3, padding=0, groups=self.d_model)
+        self.conv_v = nn.Conv1d(self.d_model, self.d_model, kernel_size=3, padding=0, groups=self.d_model)
+
+        self.c_proj = nn.Linear(self.d_model, self.d_model, bias=False)
+        self.grp_norm = RMSNorm(self.d_model) # Norm before output gate? User image says "Zero-Centered RMSNorm"
+        
+    def forward(self, x, freqs_cos, freqs_sin):
+        B, T, D = x.shape
+        
+        # 1. Short Conv (Causal)
+        # Transpose for Conv
+        x_t = x.transpose(1, 2)
+        # Left Pad 2, Right Pad 0 for Kernel 3
+        x
+
+--- neon079 ---
+"""Neon079: Qwen3-Next Hybrid Replica.
+Layers 0-2: Qwen3NextGatedDeltaNet (Conv -> SiLU -> L2 -> Delta Rule -> NormGated).
+Layer 3: Qwen3NextAttention (MHA with Output Gating).
+"""
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+from models.neon015 import RMSNorm, apply_rotary_emb, SwiGLU_MLP
+
+# --- Qwen3-Next Utilities ---
+
+class Qwen3NextRMSNormGated(nn.Module):
+    def __init__(self, hidden_size, eps=1e-6):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(hidden_size))
+        self.variance_epsilon = eps
+
+    def forward(self, hidden_states, gate=None):
+        input_dtype = hidden_states.dtype
+        hidden_states = hidden_states.to(torch.float32)
+        variance = hidden_states.pow(2).mean(-1, keepdim=True)
+        # Norm before gate
+        hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
+        hidden_states = self.weight * hidden_states.to(input_dtype)
+        if gate is not None:
+            hidden_states = hidden_states * F.silu(gate.to(torch.float32))
+
+        return hidden_states.to(input_dtype)
+
+def l2norm(x: torch.FloatTensor, dim: int = -1, eps: float = 1e-6):
+    inv_norm = torch.rsqrt((x * x).sum(dim=dim, keepdim=True) + eps)
+    return x * inv_norm
+
+class Qwen3NextGatedDeltaNet(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.d_model = config['d_model']
+        self.n_head = config['n_head']
+        self.head_dim = self.d_model // self.n_head
+        
+        self.conv_kernel_size = 3
+        # Projections
+        # Input -> Q, K, V, Z (4 parts)
+        self.in_proj_qkvz = nn.Linear(self.d_model, 4 * self.d_model, bias=False)
+        
+        # Input -> Beta, Alpha (2 parts)
+        self.in_proj_ba = nn.Linear(self.d_model, 2 * self.n_head, bias=False)
+        
+        # Conv
+        # Grouped conv. Groups = Channels.
+        self.conv_dim = 3 * self.d_model # Q, K, V only
+        self.conv1d = nn.Conv1d(
+            in_channels=3 * se
+

@@ -1,0 +1,81 @@
+﻿Model      | Params     | d_ff   | Norm         | Pos    | Act          | Bias 
+--------------------------------------------------------------------------------
+neon001    | 2,371,072  | 512    | Unknown      | RoPE   | GELU         | True 
+neon002    | 2,362,112  | 512    | RMSNorm      | RoPE   | GELU         | False
+neon003    | 1,968,896  | 512    | RMSNorm      | RoPE   | GELU         | False
+neon004    | 1,968,896  | 512    | RMSNorm      | RoPE   | Unknown      | False
+neon005    | 2,886,400  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon006    | 2,755,328  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon007    | 2,889,984  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon008    | 2,888,704  | 512    | LayerNorm    | RoPE   | SwiGLU (SiLU) | False
+neon009    | 3,148,544  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon010    | 2,903,040  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon011    | 12,230,528 | 768    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon012    | 16,285,312 | 1024   | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon013    | 8,538,880  | 640    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon014    | 14,579,712 | 1536   | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon015    | 3,148,544  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon016    | 3,148,544  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon017    | 3,148,544  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon018    | 3,148,544  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon019    | 3,148,544  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon020    | 3,148,544  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon021    | 3,148,544  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon022    | 3,148,544  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon023    | 6,034,688  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon024    | 6,034,688  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon025    | 3,148,544  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon026    | 3,150,592  | 598    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon027    | 3,148,800  | 592    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon028    | 3,148,544  | 640    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon029    | 3,148,780  | 891    | Unknown      | RoPE   | GELU         | True 
+neon030    | 3,148,544  | 896    | RMSNorm      | RoPE   | GELU         | False
+neon031    | 2,886,400  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon032    | 2,886,400  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon033    | 2,886,400  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon034    | 2,886,400  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon035    | 2,886,912  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon036    | 2,886,400  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon037    | 2,886,400  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon038    | 2,886,400  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon039    | 2,886,400  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon040    | 2,886,656  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon041    | 2,903,040  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon042    | 2,903,040  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon043    | 2,903,040  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon044    | 2,903,040  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon045    | 2,903,040  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon046    | 2,903,040  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon047    | 2,903,040  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon048    | 2,903,040  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon049    | 2,903,040  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon050    | 2,903,296  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon051    | 2,887,424  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon052    | 2,935,808  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon053    | 3,148,544  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon054    | 2,903,040  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon055    | 3,148,800  | 592    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon056    | 3,165,440  | 592    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon057    | 3,148,800  | 592    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon058    | 2,902,784  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon059    | 3,149,568  | 592    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon060    | 3,148,800  | 592    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon061    | 9,980,672  | 2736   | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon062    | 2,886,912  | 512    | RMSNorm      | RoPE   | Unknown      | False
+neon063    | 4,199,168  | 512    | RMSNorm      | RoPE   | Unknown      | False
+neon064    | 3,017,216  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon065    | 4,462,848  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon066    | 3,150,080  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon067    | 3,149,056  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon068    | 3,148,288  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon069    | 3,148,160  | 512    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon070    | 3,099,392  | 576    | RMSNorm      | RoPE   | Unknown      | False
+neon071    | 3,246,848  | 640    | RMSNorm      | RoPE   | Unknown      | False
+neon072    | 3,476,224  | 512    | RMSNorm      | RoPE   | Unknown      | False
+neon073    | 3,099,392  | 576    | RMSNorm      | RoPE   | Unknown      | False
+neon074    | 3,099,392  | 576    | RMSNorm      | RoPE   | Unknown      | False
+neon075    | 3,099,392  | 576    | RMSNorm      | RoPE   | Unknown      | False
+neon076    | 3,070,800  | 480    | RMSNorm      | RoPE   | Unknown      | False
+neon077    | 3,086,080  | 368    | RMSNorm      | RoPE   | Unknown      | False
+neon078    | 3,124,352  | 500    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
+neon079    | 3,129,240  | 480    | RMSNorm      | RoPE   | SwiGLU (SiLU) | False
