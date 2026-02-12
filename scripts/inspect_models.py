@@ -98,8 +98,10 @@ def main():
     print(f"{'Model':<10} | {'Non-Emb Params':<15} | {'Total':<10} | {'d_ff':<6} | {'Norm':<5} | {'Pos':<7} | {'Act':<7} | {'Bias'}")
     print("-" * 90)
     
-    for i in range(1, 80):
-        name = f"neon{i:03d}"
+    # Check if specific models provided in CLI
+    target_models = sys.argv[1:] if len(sys.argv) > 1 else [f"neon{i:03d}" for i in range(1, 101)]
+    
+    for name in target_models:
         if not os.path.exists(f"models/{name}.py"):
              continue
         info = inspect_model(name)

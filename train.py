@@ -80,38 +80,38 @@ def get_config(model_name):
     # neon064: Hadamard Head Merge (8 heads -> 4 merged)
     # neon065: Big Single Head (Head dim = 2 * d_model)
     
-    all_models = [f"neon{i:03d}" for i in range(1, 80)]
+    all_models = [f"neon{i:03d}" for i in range(1, 101)]
     if model_name in all_models:
+        if model_name in ['neon011', 'neon012', 'neon013', 'neon014']:
+            config['max_iters'] = 20000 # Scaling tests
+        if model_name == 'neon011': # Narrow & Deep
+            config['n_layers'], config['d_model'], config['d_ff'] = 8, 384, 768
+        elif model_name == 'neon012': # Wide & Medium
+            config['n_layers'], config['d_model'], config['d_ff'] = 6, 512, 1024
+        elif model_name == 'neon013': # Balanced
+            config['n_layers'], config['d_model'], config['d_ff'] = 8, 320, 640
+        elif model_name == 'neon014': # MLP-Heavy
+            config['n_layers'], config['d_model'], config['d_ff'] = 6, 384, 1536
+            
         if model_name in ['neon055', 'neon056', 'neon057', 'neon059', 'neon060']:
             config['d_ff'] = 592
         
         # Frankenstein Configs
-        if model_name == "neon061":
-            config['d_ff'] = 2736 # ~10x d_model (4x standard SwiGLU)
-        elif model_name == "neon062":
-            config['n_layers'] = 8 # Double layers because no MLP
-        elif model_name == "neon064":
-            config['n_head'] = 8
-        elif model_name == "neon065":
-            config['n_head'] = 1 # Single head
-        elif model_name == "neon066":
-            config['n_head'] = 1
-            # config['d_ff'] = 512 # Default is used, no override needed.
-        elif model_name == "neon066":
-            config['n_head'] = 1
-            # config['d_ff'] = 512 # Default is used, no override needed.
-        elif model_name == "neon067":
-            config['n_head'] = 2
-        elif model_name == "neon068":
-            config['n_head'] = 8
-        elif model_name == "neon069":
-            config['n_head'] = 16
-        elif model_name == "neon070":
-            config['d_ff'] = 576 # Increased from 512 to balance cost of Hydra Gate (-49k +32k vs -131k)
-        elif model_name == "neon071":
-            config['d_ff'] = 640 # Wide Hydra: ~3.3M Params
-        elif model_name == "neon072":
-            config['d_ff'] = 512 # Gated-Residual: Has both gates, keep d_ff standard. Prams ~3.3M? No.
+        if model_name in ['neon061', 'neon062', 'neon063', 'neon064', 'neon065', 'neon066', 'neon067', 'neon068', 'neon069', 'neon070', 'neon071', 'neon072', 'neon073', 'neon074', 'neon075', 'neon076', 'neon077', 'neon078', 'neon079', 'neon080', 'neon081', 'neon082']:
+            config['d_model'], config['n_layers'], config['n_head'] = 256, 4, 4
+            if model_name == 'neon061': config['d_ff'] = 2736 # ~10M
+            elif model_name == 'neon066': config['d_ff'] = 172 # match neon016
+            elif model_name == 'neon070': config['d_ff'] = 576
+            elif model_name == 'neon071': config['d_ff'] = 640
+            elif model_name == 'neon072': config['d_ff'] = 512
+            elif model_name == 'neon076': config['d_model'], config['d_ff'] = 240, 480
+            elif model_name == 'neon077': config['d_ff'] = 368
+            elif model_name == 'neon078': config['d_ff'] = 500
+            elif model_name == 'neon079': config['d_ff'] = 480
+            elif model_name == 'neon080': config['d_ff'] = 384 # Match neon016 Width
+            elif model_name == 'neon081': config['d_ff'] = 378 # Match neon016 Context
+            elif model_name == 'neon082': config['d_ff'] = 416 # Match neon016 ResHydra
+            else: config['d_ff'] = 512
             # Linear Gate (131k) + Hydra (82k). Total ~213k gate cost. 
             # Standard is 131k. Delta +82k per layer. +320k total.
             # 512 is fine. It will be slightly larger.
