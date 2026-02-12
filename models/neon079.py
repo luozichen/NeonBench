@@ -31,13 +31,6 @@ def l2norm(x: torch.FloatTensor, dim: int = -1, eps: float = 1e-6):
     inv_norm = torch.rsqrt((x * x).sum(dim=dim, keepdim=True) + eps)
     return x * inv_norm
 
-# Pure PyTorch implementation of chunk_gated_delta_rule
-# Simplified for parallel training (Non-chunked for short context to save complexity?)
-# No, let's use the chunk logic provided or a simplified parallel scan.
-# For 256 context, simple masked attention is fine and fastest to implement correctly.
-# The official code `torch_chunk_gated_delta_rule` is quite complex.
-# I will implement the mathematical equivalent using standard attention ops + decay mask.
-
 class Qwen3NextGatedDeltaNet(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -45,46 +38,17 @@ class Qwen3NextGatedDeltaNet(nn.Module):
         self.n_head = config['n_head']
         self.head_dim = self.d_model // self.n_head
         
-        # In Qwen3-Next:
-        # key_dim = head_k_dim * num_k_heads
-        # value_dim = head_v_dim * num_v_heads
-        # We assume standard MHA logic: n_head for both.
-        
         self.conv_kernel_size = 3
         # Projections
         # Input -> Q, K, V, Z (4 parts)
-        # Input -> Beta, Alpha (2 parts)
-        
-        # We'll use two linears as in source
-        # qkvz: [d_model, d_model * 2 + d_model * (2?)]
-        # Actually Q, K have same dim. V has same dim. Z has same dim (value_dim).
-        # So 4 * d_model output.
         self.in_proj_qkvz = nn.Linear(self.d_model, 4 * self.d_model, bias=False)
         
-        # ba: [d_model, 2 * d_model? No, beta is per head? alpha/g is per head?]
-        # Source says: beta is [num_k_heads, head_k_dim]? No.
-        # Source: `projection_size_ba = self.num_v_heads * 2`.
-        # Beta and Alpha are SCALARS per head? Or Vectors?
-        # `beta = b.sigmoid()`. `b` shape `[..., num_v_heads]`.
-        # So Beta and Alpha are per-head scalars (or vectors of size 1).
-        # This is different from my previous "Linear Attention" which had full vectors.
-        # Checking `torch_chunk_gated_delta_rule`:
-        # `beta` shape: `[batch, n_head, seq, head_dim]`?
-        # Source: `beta = F.pad(beta, (0, pad_size))`... `v_beta = value * beta.unsqueeze(-1)`.
-        # If beta is unsqueezed, it implies beta was `[B, H, L]`.
-        # So Beta is per-head, per-token scalar. 
-        # Correct. 
-        
+        # Input -> Beta, Alpha (2 parts)
         self.in_proj_ba = nn.Linear(self.d_model, 2 * self.n_head, bias=False)
         
         # Conv
         # Grouped conv. Groups = Channels.
-        self.conv_dim = 3 * self.d_model # Q, K, V only? Code says qkvz?
-        # Code: `self.conv_dim = self.key_dim * 2 + self.value_dim`.
-        # Wait, Z is NOT convolved?
-        # `mixed_qkv = torch.cat((query, key, value), dim=-1)` -> Conv.
-        # Z comes from split but NOT put into mixed_qkv for conv.
-        # So Conv covers Q, K, V.
+        self.conv_dim = 3 * self.d_model # Q, K, V only
         self.conv1d = nn.Conv1d(
             in_channels=3 * self.d_model,
             out_channels=3 * self.d_model,
@@ -110,7 +74,6 @@ class Qwen3NextGatedDeltaNet(nn.Module):
         ba = self.in_proj_ba(x)     # [B, T, 2*H]
         
         # Split Q, K, V, Z
-        # Assuming d_qn = d_k = d_v = d_z = D
         q, k, v, z = qkvz.split(self.d_model, dim=-1)
         b, a = ba.split(self.n_head, dim=-1)
         
@@ -136,15 +99,20 @@ class Qwen3NextGatedDeltaNet(nn.Module):
         # 4. Prepare Beta / G
         # b: [B, T, H]
         beta = torch.sigmoid(b)
+        
+        if torch.isnan(self.A_log).any():
+             # Safety for A_log if it somehow gets messed up
+             with torch.no_grad():
+                  self.A_log.data.nan_to_num_(nan=0.0)
+
         # g (decay) = -exp(A_log) * softplus(a + dt_bias)
         g = -self.A_log.exp() * F.softplus(a + self.dt_bias)
-        # g is log-space decay? No, `g = g.cumsum() ... decay_mask = (g - g).exp()`.
-        # So `g` here is the log-decay rate? Or "dt * A"?
-        # Yes, `g` acts as the exponent.
         
+        # STABILITY CLAMP: Ensure g is strictly negative (or zero).
+        # Should be guaranteed by formula, but precision issues can cause drift.
+        g = torch.clamp(g, max=0.0)
+
         # 5. Delta Rule (Parallel / Masked Attn form)
-        # A_ij = (q_i k_j^T) * Decay(i, j)
-        # Decay(i, j) = exp( sum(g_k) for k in j+1..i )
         
         q = q.transpose(1, 2) # [B, H, T, D]
         k = k.transpose(1, 2)
@@ -152,32 +120,33 @@ class Qwen3NextGatedDeltaNet(nn.Module):
         beta = beta.transpose(1, 2).unsqueeze(-1) # [B, H, T, 1]
         g = g.transpose(1, 2) # [B, H, T]
         
-        # Apply Beta to V and K?
-        # Code: `v_beta = value * beta`. `k_beta = key * beta`.
         v = v * beta
         k = k * beta
         
-        # Compute Scores
         scores = q @ k.transpose(-2, -1) # [B, H, T, T]
         
-        # Compute Decay Mask
-        # g_cumsum: [B, H, T]
         g_cumsum = g.cumsum(dim=-1)
-        # decay(i, j) = exp( G_i - G_j ) for i >= j
-        # [T, 1] - [1, T]
+        
+        # decay(i, j) = exp( G_i - G_j )
+        # Since g <= 0, G_i <= G_j for i > j. So diff <= 0. Exp(diff) <= 1.
         decay_mask = (g_cumsum.unsqueeze(-1) - g_cumsum.unsqueeze(-2))
-        decay_mask = torch.exp(decay_mask)
-        # Causal masking
+        
+        # Explicit mask for causality to avoid computing exp on irrelevant parts
         mask = torch.tril(torch.ones(T, T, device=x.device))
+        decay_mask = decay_mask.masked_fill(mask == 0, -float('inf'))
+        
+        decay_mask = torch.exp(decay_mask)
+        
+        # STABILITY CLAMP: Ensure <= 1.0
+        decay_mask = torch.clamp(decay_mask, max=1.0)
+        
         scores = scores * decay_mask * mask
         
-        # Output
         y = scores @ v # [B, H, T, D]
         
         y = y.transpose(1, 2).reshape(B, T, D)
         
         # 6. Output Norm & Gate
-        # Output Gate Z was computed earlier
         y = self.norm(y, gate=z)
         
         return self.out_proj(y)
@@ -195,9 +164,6 @@ class Qwen3NextAttention(nn.Module):
         self.v_proj = nn.Linear(self.d_model, self.d_model, bias=False)
         
         # Output Gate Proj
-        # "Chunk(q_proj(x), 2)" -> Query, Gate?
-        # No, specific code: `q_proj` output size is `num_heads * head_dim * 2`.
-        # So Q Projector outputs Query AND Gate.
         self.q_gate_proj = nn.Linear(self.d_model, 2 * self.d_model, bias=False) # Combined Q+Gate
         
         self.o_proj = nn.Linear(self.d_model, self.d_model, bias=False)
@@ -222,7 +188,7 @@ class Qwen3NextAttention(nn.Module):
         q = self.q_norm(q)
         k = self.k_norm(k)
         
-        # RoPE (Full for now, can perform partial if needed)
+        # RoPE
         q = apply_rotary_emb(q, freqs_cos, freqs_sin)
         k = apply_rotary_emb(k, freqs_cos, freqs_sin)
         
@@ -240,8 +206,7 @@ class Qwen3NextAttention(nn.Module):
 class Qwen3NextBlock(nn.Module):
     def __init__(self, config, layer_idx):
         super().__init__()
-        self.ln1 = RMSNorm(config['d_model']) # Use standard RMSNorm for block input? 
-        # Code: `Qwen3NextRMSNorm`. Consistent with my RMSNorm.
+        self.ln1 = RMSNorm(config['d_model'])
         
         if layer_idx < 3:
             self.attn = Qwen3NextGatedDeltaNet(config)
@@ -253,7 +218,7 @@ class Qwen3NextBlock(nn.Module):
         
     def forward(self, x, f_cos, f_sin):
         x = x + self.attn(self.ln1(x), f_cos, f_sin)
-        x = x + self.mlp(self.ln2(x)) # Note: Qwen3-Next code might pass f_cos to MLP? No SwiGLU doesn't use it.
+        x = x + self.mlp(self.ln2(x))
         return x
 
 class Neon079(nn.Module):
@@ -268,7 +233,7 @@ class Neon079(nn.Module):
         self.ln_f = RMSNorm(config['d_model'])
         self.head = nn.Linear(config['d_model'], config['vocab_size'], bias=False)
         self.token_emb.weight = self.head.weight
-
+        
         dim = config['d_model'] // config['n_head']
         inv_freq = 1.0 / (10000.0 ** (torch.arange(0, dim, 2).float() / dim))
         t = torch.arange(config['block_size']).float()
