@@ -80,7 +80,7 @@ def get_config(model_name):
     # neon064: Hadamard Head Merge (8 heads -> 4 merged)
     # neon065: Big Single Head (Head dim = 2 * d_model)
     
-    all_models = [f"neon{i:03d}" for i in range(1, 79)]
+    all_models = [f"neon{i:03d}" for i in range(1, 80)]
     if model_name in all_models:
         if model_name in ['neon055', 'neon056', 'neon057', 'neon059', 'neon060']:
             config['d_ff'] = 592
@@ -131,6 +131,15 @@ def get_config(model_name):
         elif model_name == "neon078":
             config['n_layers'] = 4 
             config['d_ff'] = 500 # Adjusted to match 3.15M params.
+        elif model_name == "neon079":
+            config['n_layers'] = 4 
+            # Qwen3Next Layers are heavy.
+            # In_proj_qkvz (4*d^2) + In_proj_ba (2*d*h) + Out_proj (d^2) + Conv (3*d) + Linears in Attn.
+            # Standard Attn: 4*d^2.
+            # DeltaNet: ~5*d^2.
+            # So similar to neon078 logic.
+            # Let's start with d_ff = 480.
+            config['d_ff'] = 480 
 
         return config
             
