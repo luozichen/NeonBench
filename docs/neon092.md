@@ -11,6 +11,8 @@ Neon092 represents the current Project SOTA at the 10M parameter scale. It is a 
 
 ## 🏗️ Architectural Core
 
+![Neon092 Architecture Flow Chart](../neon092_flow_chart.jpg)
+
 The fundamental innovation is the **Dual-Scale Hydra MLP**. Unlike a standard MLP which projects tokens pointwise, Neon092 uses two parallel depthwise convolutional heads in the gate path.
 
 ### 1. The Gating Formula
