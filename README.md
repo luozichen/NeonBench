@@ -16,7 +16,7 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | neon007 | 2.63M | + DeltaNet (Associative Memory Recurrence). |
 | neon008 | 2.63M | + L2 Normalized Unit Sphere States. |
 | **⭐ neon009** | 2.89M | **QKVI Attention**: I is a Learnt Intention. |
-| **neon010** | 2.64M | **Calculated Intent**: Gated SDPA (Gate derived from Q). |
+| **⭐ neon010** | 2.64M | **Calculated Intent**: Gated SDPA (Gate derived from Q). |
 | neon011 | 11.84M | Narrow & Deep (8 layers × 384 dim, 2× MLP). |
 | neon012 | 15.76M | Wide & Medium (6 layers × 512 dim, 2× MLP). |
 | neon013 | 8.21M | Balanced (8 layers × 320 dim, 2× MLP). |
@@ -52,7 +52,7 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | neon043 | 2.64M | Gated Calculated Intent — σ(W_g(K ⊙ V) + b_g). |
 | neon044 | 2.64M | Gated Calculated Intent — σ(W_g(Q ⊙ K ⊙ V) + b_g). |
 | neon045 | 2.64M | Gated Calculated Intent — σ(W_g(Q + V) + b_g). |
-| **neon046** | 2.64M | Gated Calculated Intent — σ(W_g(Q + K + V) + b_g). (Promising). |
+| **⭐ neon046** | 2.64M | **Gated Calculated Intent** — σ(W_g(Q + K + V) + b_g). (Milestone). |
 | neon047 | 2.64M | Gated Calculated Intent — σ(W_g(σ(Q) ⊙ tanh(V)) + b_g). |
 | neon048 | 2.64M | Gated Calculated Intent — σ(W_g(Q + σ(K ⊙ V)) + b_g). |
 | neon049 | 2.64M | Gated Calculated Intent — σ(W_g(Q + K - V) + b_g). |
@@ -71,19 +71,19 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | neon062 | 2.62M | MLP-Free: Double layers, no MLP. |
 | neon063 | 3.94M | Attention-in-MLP: MLP replaced by 2nd Attention step. |
 | neon064 | 2.76M | Hadamard Head Merge: n_head=8 merged pairwise. |
-| **⭐ neon065** | 4.20M | **Big Single Head**: 1 Head, d_head=512. |
+| **neon065** | 4.20M | Big Single Head: 1 Head, d_head=512. |
 | neon066 | 2.89M | Fair Fight Big Head: d_head=512, d_ff reduced to match params. |
 | neon067 | 2.89M | 2 Heads (Head Dim 128). |
 | **neon068** | 2.89M | **8 Heads (Head Dim 32)**. (Best Multi-Head Baseline). |
 | neon069 | 2.89M | 16 Heads (Head Dim 16). |
 | **neon070** | 2.84M | **Hydra MLP**: Gate = Sigmoid(Attn(x)). Context-aware activation. |
 | neon071 | 2.98M | Wide Hydra: d_ff=640. |
-| **⭐ neon072** | 3.21M | **Gated-Residual Hydra**: SiLU(Linear) + Sigmoid(Attn). |
+| **neon072** | 3.21M | Gated-Residual Hydra: SiLU(Linear) + Sigmoid(Attn). |
 | neon073 | 2.84M | Multi-Head Hydra. |
 | neon074 | 2.84M | Swish-Gated Hydra. |
 | neon075 | 2.84M | Negative Hydra: Inhibitory Tanh gating. |
 | neon076 | 2.83M | Light Residual Hydra: neon072 with d_model=240. |
-| **neon077** | 2.82M | **Conv-Gated Hydra**: Linear + Causal Conv Gate. O(T). |
+| **⭐ neon077** | 2.82M | **Conv-Gated Hydra**: Linear + Causal Conv Gate. **Personal SOTA.** |
 | neon078 | 2.86M | **Qwen3-Next Style Hybrid**: Layers 0-2 (DeltaNet), Layer 3 (Attn). |
 | neon079 | 2.87M | **Qwen3-Next Hybrid Replica**: Full Gated DeltaNet components. |
 
@@ -91,67 +91,127 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 ## 📊 Benchmarks
 
-### 🧪 Benchmark A: HP0 / Tok1 (1k Vocab)
-*Focus: Original Playground. 1,024 Vocab.*
+### 🧪 Benchmark: HP0 / Tok1 (1k Vocab)
+*Vocabulary Size: 1,024. Embeddings (with Head): ~0.26M.*
 
 | Model | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- |
 | neon001 | 2.11M | 1.7509 | Baseline GPT-2. |
+| neon002 | 2.10M | 1.7434 | RMSNorm Baseline. |
+| neon003 | 1.71M | 1.8868 | MQA Baseline. |
+| neon004 | 1.71M | 1.9451 | Shared MLP. |
 | neon005 | 2.62M | 1.4673 | SwiGLU Baseline. |
-| neon009 | 2.89M | 1.3010 | QKVI Learnt Intent. |
-| neon016 | 2.89M | 1.2551 | Result Intent σ(I). |
-| neon020 | 2.89M | 1.2809 | Source Intent σ(I). |
-| neon023 | 5.77M | 0.5260 | Overfit deep variant. |
-| neon046 | 2.64M | 1.3524 | Gated Calc Intent (Q+K+V). |
+| neon006 | 2.49M | 1.5467 | MLA Baseline. |
+| neon007 | 2.63M | 3.0147 | DeltaNet (Fail). |
+| neon008 | 2.63M | 6.0381 | Unit Sphere (Fail). |
+| **⭐ neon009** | 2.89M | **1.3010** | **QKVI Attention**. |
+| **⭐ neon010** | 2.64M | 1.3698 | **Calculated Intent**. |
+| **⭐ neon016** | 2.89M | **1.2551** | **Result Gating σ(I).** |
+| neon017 | 2.89M | 1.3764 | Result raw I, σ(V). |
+| neon018 | 2.89M | 1.3808 | Result σ(I), σ(V). |
+| neon019 | 2.89M | 1.3150 | Source raw I, raw V. |
+| **neon020** | 2.89M | 1.2809 | Source Gating σ(I). |
+| neon021 | 2.89M | 1.2842 | Source raw I, σ(V). |
+| neon022 | 2.89M | 1.4234 | Source σ(I), σ(V). |
+| neon023 | 5.77M | 0.5260 | Overfit deep. |
+| neon024 | 5.77M | 1.0800 | Deep + LayerDrop. |
+| neon025 | 2.89M | 1.3404 | Post-Norm Study. |
+| neon026 | 2.89M | 1.3553 | No-Intent Control. |
+| neon027 | 2.89M | 1.2558 | Scaled Calc-Intent. |
+| neon028 | 2.89M | 1.3554 | MLA Control. |
+| neon029 | 2.89M | 1.4158 | LayerNorm Baseline. |
+| neon030 | 2.89M | 1.3953 | RMSNorm Baseline. |
+| neon031 | 2.62M | 1.3975 | Calc σ(Q⊙V). |
+| neon032 | 2.62M | 1.3854 | Calc σ(Q⊙K). |
+| neon033 | 2.62M | 1.3875 | Calc σ(K⊙V). |
+| neon034 | 2.62M | 1.4229 | Calc σ(Q⊙K⊙V). |
+| neon035 | 2.62M | 1.3866 | Calc LN(Q+V). |
+| neon036 | 2.62M | 1.4049 | Calc norm(Q+K+V). |
+| neon037 | 2.62M | 1.4264 | Calc σ(Q)⊙tanh(V). |
+| neon038 | 2.62M | 1.3784 | Calc Q+σ(KV). |
+| neon039 | 2.62M | 1.4417 | Calc tanh(gap). |
+| neon040 | 2.62M | 1.5139 | Calc RMS(Q⊙V). |
+| neon041 | 2.64M | 1.3754 | Gated Calc (QV). |
+| neon042 | 2.64M | 1.3774 | Gated Calc (QK). |
+| neon043 | 2.64M | 1.3780 | Gated Calc (KV). |
+| neon044 | 2.64M | 1.3905 | Gated Calc (QKV_prod). |
+| neon045 | 2.64M | 1.3618 | Gated Calc (Q+V). |
+| **⭐ neon046** | 2.64M | 1.3524 | **Gated Calc (Q+K+V)**. |
+| neon047 | 2.64M | 1.3758 | Gated Calc Bounded. |
+| neon048 | 2.64M | 1.3609 | Gated Calc Biased. |
+| neon049 | 2.64M | 1.3594 | Gated Calc Gap. |
+| neon050 | 2.64M | 1.3740 | Gated Calc + Norm. |
+| neon051 | 2.63M | 1.3938 | Linear Combination. |
+| neon052 | 2.67M | 1.3447 | Matrix Intent. |
+| neon053 | 2.89M | 1.3129 | QKVI SiLU. |
+| neon054 | 2.64M | 1.4444 | Gated Calc SiLU. |
 | neon055 | 2.89M | 1.2417 | Scaled Calc Intent. |
+| neon056 | 2.90M | 1.3369 | Double Gated. |
+| neon057 | 2.89M | 1.3418 | Differential Intent. |
+| neon058 | 2.64M | 1.4620 | Residual Additive. |
+| neon059 | 2.89M | 1.2588 | Norm Gated. |
+| neon060 | 2.89M | 1.3029 | Max Pooled. |
 
-### 🧪 Benchmark B: HP0 / Tok3 (2k Vocab)
-*Focus: Medium Vocab.*
+### 🧪 Benchmark: HP0 / Tok3 (2k Vocab)
+*Vocabulary Size: ~2,048. Embeddings: ~0.52M.*
 
 | Model | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- |
-| neon016 | 2.89M | 1.1610 | Learned Intent. |
+| **⭐ neon016** | 2.89M | 1.1610 | Learned Intent. |
 | neon027 | 2.89M | 1.1683 | Gated SDPA Baseline. |
-| neon055 | 2.89M | 1.1601 | Gated Calc Intent. |
+| neon055 | 2.89M | 1.1601 | Scaled Gated Calc Intent. |
 
-### 🧪 Benchmark C: HP0 / Tok4 (4k Vocab)
-*Focus: Core Baseline. 4,096 Vocab.*
-
-| Model | Params (Ex-Emb) | Val Loss | Summary |
-| :--- | :--- | :--- | :--- |
-| **neon016** | 2.89M | 0.9174 | Standard Baseline. |
-| **neon061** | 9.72M | **0.2364** | Wide MLP Winner. |
-| **neon065** | 4.20M | **0.7833** | Big Single Head Winner. |
-| **neon072** | 3.21M | **0.8577** | Best Hybrid (ResHydra). |
-| **neon077** | 2.82M | 0.9172 | O(T) Baseline Match. |
-| neon079 | 2.87M | 1.1056 | Qwen3-Next Replica. |
-
-### 🧪 Benchmark D: Wiki103 / Tok1 (1k Vocab)
-*Focus: High Data Volume.*
+### 🧪 Benchmark: HP0 / Tok4 (4k Vocab)
+*Vocabulary Size: 4,096. Embeddings: ~1.05M.*
 
 | Model | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- |
-| neon010 | 2.64M | 2.5903 | Gated SDPA baseline. |
-| neon011 | 11.84M | 2.1547 | Narrow & Deep Wiki-specialist. |
-| neon012 | 15.76M | 2.1280 | Wide & Medium Wiki-specialist. |
-| neon014 | 14.19M | 2.1199 | MLP-Heavy Wiki-specialist. |
+| **⭐ neon016** | 2.89M | 0.9174 | Standard Baseline. |
+| neon027 | 2.89M | 0.9297 | Gated SDPA Baseline. |
+| neon055 | 2.89M | 0.9434 | Gated Calc Intent. |
+| **⭐ neon061** | 9.72M | **0.2364** | Wide MLP Winner. |
+| neon062 | 2.62M | 1.2116 | MLP-Free Stack. |
+| neon063 | 3.94M | 1.1605 | Attention-in-MLP. |
+| neon064 | 2.76M | 1.2970 | Hadamard Merge. |
+| neon065 | 4.20M | 0.7833 | Big Single Head. |
+| neon066 | 2.89M | 1.0632 | Fair Fight Big Head. |
+| neon067 | 2.89M | 1.0060 | 2 Heads. |
+| **neon068** | 2.89M | **0.9214** | **8 Heads Baseline**. |
+| neon069 | 2.89M | 0.9259 | 16 Heads. |
+| neon070 | 2.84M | 1.1269 | Pure Hydra MLP. |
+| neon071 | 2.98M | 1.0495 | Wide Hydra. |
+| neon072 | 3.21M | 0.8577 | ResHydra Hybrid. |
+| neon073 | 2.84M | 1.1571 | Multi-Head Hydra. |
+| neon074 | 2.84M | 1.0653 | Swish Hydra. |
+| neon075 | 2.84M | 1.0084 | Negative Hydra. |
+| neon076 | 2.83M | 1.0399 | Light Hydra. |
+| **⭐ neon077** | 2.82M | **0.9172** | **Conv-Gated Hydra**. |
+| neon078 | 2.86M | 1.4483 | Hybrid DeltaNet. |
+| neon079 | 2.87M | 1.1056 | Qwen3-Next Hybrid. |
 
-### 🧪 Benchmark E: Wiki103 / Tok4 (4k Vocab)
-*Focus: Maximum Complexity.*
+### 🧪 Benchmark: Wiki103 / Tok1 & Tok4
+*WikiText-103 Dataset (100MB).*
 
-| Model | Params (Ex-Emb) | Val Loss | Summary |
-| :--- | :--- | :--- | :--- |
-| neon061 | 9.72M | 3.0940 | Wide MLP. |
-| neon065 | 4.20M | 3.3171 | Big Single Head. |
-| neon066 | 2.89M | 3.3377 | Fair Fight Big Head. |
-| neon062 | 2.62M | 3.3475 | MLP-Free Stack. |
+| Model | Tok | Params (Ex-Emb) | Val Loss | Summary |
+| :--- | :--- | :--- | :--- | :--- |
+| neon010 | tok1 | 2.64M | 2.5903 | Gated SDPA. |
+| neon011 | tok1 | 11.84M | 2.1547 | Narrow & Deep Wiki. |
+| neon012 | tok1 | 15.76M | 2.1280 | Wide & Medium Wiki. |
+| neon013 | tok1 | 8.21M | 2.2307 | Balanced Wiki. |
+| neon014 | tok1 | 14.19M | 2.1199 | MLP-Heavy Wiki. |
+| **⭐ neon061** | tok4 | 9.72M | 3.0940 | Wide MLP Wiki. |
+| neon065 | tok4 | 4.20M | 3.3171 | Big Single Head Wiki. |
+| neon066 | tok4 | 2.89M | 3.3377 | Fair Fight Big Head Wiki. |
+| neon063 | tok4 | 3.94M | 3.3141 | Attention-in-MLP Wiki. |
+| neon062 | tok4 | 2.62M | 3.3475 | MLP-Free Wiki. |
+| neon064 | tok4 | 2.76M | 3.4275 | Hadamard Merge Wiki. |
 
 ---
 
 ## 📈 Key Discovery Timeline
 
 1.  **Intent Evolution (001-022)**: We proved that **Result Gating** (gating the attention output) is significantly better than **Source Gating** (gating before attention). σ(I) is essential.
-2.  **Calculated Intent (031-055)**: We attempted to "calculate" intent from Q/K/V interactions to save parameters. While efficient, it peaked at `neon055` and couldn't cleanly beat learned intent at equal scale.
-3.  **The Head Discovery (065-069)**: We found that at our ~3M scale, **1 Massive Head (512-dim)** outperforms the standard 8-head configuration. 4 heads is the "sweet spot" for multi-head setups.
-4.  **Hydra Era (070-077)**: Introduced context-aware gating in the MLP. `neon072` (ResHydra) successfully combined linear heuristics with global attention gating for a new SOTA hybrid.
+2.  **Calculated Intent (031-055)**: We attempted to "calculate" intent from Q/K/V interactions to save parameters. While efficient, `neon010` and `neon046` proved that these "calculated" signals can match full learned gating at reduced parameter cost.
+3.  **The Head Discovery (065-069)**: We found that at our ~3M scale, **1 Massive Head (512-dim)** outperforms the standard 8-head configuration, but mostly due to internal parameter scaling. Under a "Fair Fight" (`neon066`), 8 heads remained extremely competitive.
+4.  **Hydra Era (070-077)**: Introduced context-aware gating in the MLP. `neon077` (Conv-Gated Hydra) successfully matched the Attention baseline using a lightweight convolutional heuristic.
 5.  **Modern Hybrids (078-079)**: Replicating state-of-the-art architectures like Qwen3-Next to benchmark against our simplified blocks.
