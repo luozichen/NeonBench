@@ -194,6 +194,8 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | neon074 | 2.84M | 1.0653 | Swish Hydra. |
 | neon075 | 2.84M | 1.0084 | Negative Hydra. |
 | neon076 | 2.83M | 1.0399 | Light Hydra. |
+| **⭐ neon077** | 2.82M | **0.9172** | **Conv-Gated Hydra**. |
+| neon078 | 2.86M | 1.4483 | Hybrid DeltaNet. |
 | neon079 | 2.87M | 1.1056 | Qwen3-Next Hybrid. |
 | **neon080** | 2.89M | 0.8875 | Scaling Study (Width). |
 | **⭐ neon081** | **2.87M** | **0.8812** | **Context-scaled Hydra**. **[MILESTONE]** |
