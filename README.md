@@ -191,6 +191,9 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **⭐ neon077** | 2.82M | **0.9172** | **Conv-Gated Hydra**. |
 | neon078 | 2.86M | 1.4483 | Hybrid DeltaNet. |
 | neon079 | 2.87M | 1.1056 | Qwen3-Next Hybrid. |
+| **neon080** | 2.89M | *Training..* | Scaling Study (Width). |
+| **neon081** | 2.87M | *Training..* | Scaling Study (Context). |
+| **neon082** | 2.89M | *Training..* | Scaling Study (Fair Hydra). |
 
 ### 🧪 Benchmark: Wiki103 / Tok1 & Tok4
 *WikiText-103 Dataset (100MB).*
