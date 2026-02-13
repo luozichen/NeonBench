@@ -1,7 +1,7 @@
 """Neon134: Mamba-Hydra Hybrid (Grouped-Matrix Optimized).
 Uses a Grouped Matrix-Parallel Scan (one decay per head).
-Greatly reduces memory footprint and eliminates NaNs via Shifted-Log stability.
-Calibration: d_ff = 612.
+Fixed broadcasting logic for shared intent signals.
+Calibration: d_ff = 571.
 """
 import torch
 import torch.nn as nn
@@ -18,7 +18,7 @@ class GroupedMatrixRecurrentAttention(nn.Module):
         self.qkv_proj = nn.Linear(d_model, 3 * d_model, bias=False)
         self.intent_proj = nn.Linear(d_model, self.head_dim, bias=False)
         
-        # SSM Decay: One scalar per head (rather than per-dimension)
+        # SSM Decay: One scalar per head
         self.ssm_a_proj = nn.Linear(d_model, self.n_head, bias=False)
         
         self.conv_q = nn.Conv1d(d_model, d_model, kernel_size=3, groups=d_model, bias=True)
@@ -34,53 +34,40 @@ class GroupedMatrixRecurrentAttention(nn.Module):
         i_raw = self.intent_proj(x) # [B, T, head_dim]
         
         # --- 1. GROUPED MATRIX-PARALLEL SCAN ---
-        # Predict one decay per head: [B, T, n_head]
-        log_a = F.logsigmoid(self.ssm_a_proj(x)) 
+        log_a = F.logsigmoid(self.ssm_a_proj(x)) # [B, T, n_head]
         L = torch.cumsum(log_a, dim=1) # [B, T, n_head]
         
-        # Reshape to [B, n_head, T, 1] for relative calculation
-        L = L.transpose(1, 2).unsqueeze(-1)
-        
-        # Stable Relative Transition: exp(L_t - L_j)
         # rel_L: [B, n_head, T, T]
-        rel_L = L - L.transpose(-2, -1)
+        L_heads = L.transpose(1, 2).unsqueeze(-1)
+        rel_L = L_heads - L_heads.transpose(-2, -1)
         
-        # Causal mask and exp (rel_L is always <= 0 for t >= j, so it's stable)
         mask = torch.tril(torch.ones(T, T, device=x.device)).view(1, 1, T, T)
-        M = torch.exp(rel_L) * mask # Decay matrix per head
+        M = torch.exp(rel_L) * mask # Stable: exp(neg)
         
-        # Input contribution: x' = (1-a) * i_raw
-        gate_a = torch.sigmoid(self.ssm_a_proj(x)) # [B, T, n_head]
-        # Broadcoast gate_a [B, T, n_head, 1] to i_raw [B, T, n_head, head_dim]
-        # But we can just use 1 gate per head for efficiency
-        x_prime = (1 - gate_a).unsqueeze(-1) * i_raw.view(B, T, self.n_head, self.head_dim)
+        # Broadcasting fixed: [B, T, n_head, 1] * [B, T, 1, head_dim]
+        gate_a = torch.sigmoid(self.ssm_a_proj(x))
+        x_prime = (1 - gate_a).unsqueeze(-1) * i_raw.unsqueeze(2) # [B, T, n_head, head_dim]
+        x_prime_T = x_prime.transpose(1, 2) # [B, n_head, T, head_dim]
         
-        # Parallel integration: [B, n_head, T, head_dim]
-        # x_prime_T: [B, n_head, T, head_dim]
-        x_prime_T = x_prime.transpose(1, 2)
-        intent = torch.matmul(M, x_prime_T) # [B, n_head, T, head_dim]
-        intent = intent.transpose(1, 2).reshape(B, T, self.head_dim)
+        # Recurrent Context: [B, n_head, T, head_dim]
+        intent = torch.matmul(M, x_prime_T) 
         # --- End Scan ---
 
         # 2. Attention logic
         q = self.conv_q(F.pad(q_raw.transpose(1, 2), (2, 0))).transpose(1, 2)
         k = self.conv_k(F.pad(k_raw.transpose(1, 2), (2, 0))).transpose(1, 2)
         
-        q = q.view(B, T, self.n_head, self.head_dim)
-        k = k.view(B, T, self.n_head, self.head_dim)
-        v = v.view(B, T, self.n_head, self.head_dim)
-        intent = intent.view(B, T, 1, self.head_dim) # Gating is head-shared
+        q = q.view(B, T, self.n_head, self.head_dim).transpose(1, 2)
+        k = k.view(B, T, self.n_head, self.head_dim).transpose(1, 2)
+        v = v.view(B, T, self.n_head, self.head_dim).transpose(1, 2)
         
         q, k = self.q_norm(q), self.k_norm(k)
         q = apply_rotary_emb(q, freqs_cos, freqs_sin)
         k = apply_rotary_emb(k, freqs_cos, freqs_sin)
         
-        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
-        intent = intent.transpose(1, 2)
-        
         attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
-        # Note: intent here is only the gating from the Recurrent Scan
-        # which effectively filters the attention result.
+        
+        # Apply head-specific recurrent gate intent
         y = torch.sigmoid(intent) * attn_out
         y = y.transpose(1, 2).contiguous().view(B, T, C)
         return self.c_proj(y)
