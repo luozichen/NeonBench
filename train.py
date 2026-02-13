@@ -162,7 +162,7 @@ def get_config(model_name):
             elif model_name == 'neon131': config['d_ff'] = 570 # Qwen-NexT Synergy (Centered)
             elif model_name == 'neon132': config['d_ff'] = 530 # Fourier Hydra
             elif model_name == 'neon133': config['d_ff'] = 550 # Commander Head (R=8)
-            elif model_name == 'neon134': config['d_ff'] = 550 # Mamba Hybrid
+            elif model_name == 'neon134': config['d_ff'] = 571 # Grouped Mamba Hybrid
             elif model_name == 'neon135': config['d_ff'] = 405 # Holographic
             else: config['d_ff'] = 512
         
