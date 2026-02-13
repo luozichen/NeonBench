@@ -134,6 +134,8 @@ def get_config(model_name):
             elif model_name == 'neon103': config['d_ff'] = 437 # Inv Sandwich
             elif model_name == 'neon104': config['d_ff'] = 472 # 3x SwiGLU, 1x Hydra
             elif model_name == 'neon105': config['d_ff'] = 472 # 1x Hydra, 3x SwiGLU
+            elif model_name == 'neon106': config['d_ff'] = 381 # Dual-Gate Pure
+            elif model_name == 'neon107': config['d_ff'] = 505 # Massive Reach Pure (RF 65)
             else: config['d_ff'] = 512
         
         return config

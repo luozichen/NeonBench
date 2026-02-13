@@ -99,6 +99,19 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **⭐ neon092** | 9.72M | **10M Dual-Scale Hydra**: Scaled `neon085` (k=3+9) to match `neon061`. **[10M SOTA]** ([Detailed Docs](docs/neon092.md)) |
 | **neon093** | 9.72M | **10M Deep Standard**: 8-layer pure Transformer baseline for scaling audit. |
 | **neon094** | 9.72M | **10M Hydra-Base**: Dual-Scale Hydra MLP (k=3+9) but with **Standard Attention**. |
+| **neon095** | 2.89M | **Progressive Hydra**: Kernel size increases with depth (k=3, 5, 9, 17). |
+| **neon096** | 2.89M | **Heterogeneous Stack**: Alternating Dual-Scale Hydra and SwiGLU layers. |
+| **neon097** | 2.89M | **Triple-Scale Hydra**: Parallel k=3, 5, and 9 gate paths. |
+| **neon098** | 2.89M | **Dilated Hydra (RF=65)**: Massive reach with k=3 (dense) + k=17 (dilated, d=4). |
+| **neon099** | 2.89M | **Residual Hydra**: Multiplicative residual gating logic. |
+| **⭐ neon100** | **2.89M** | **Pure Hydra**: Convolutional-only gate (no linear identity path). **Project SOTA.** |
+| **neon101** | 2.89M | **Progressive Specialization**: 2x SwiGLU -> 2x Dual-Scale Hydra. |
+| **neon102** | 2.89M | **Sandwich Hydra**: Hydra-SwiGLU-SwiGLU-Hydra stack. |
+| **neon103** | 2.89M | **Inverted Sandwich**: SwiGLU-Hydra-Hydra-SwiGLU stack. |
+| **neon104** | 2.89M | **Late Bloomer Hydra**: 3x SwiGLU -> 1x Hydra (L3). |
+| **neon105** | 2.89M | **Early Starter Hydra**: 1x Hydra (L0) -> 3x SwiGLU. |
+| **neon106** | 2.89M | **Dual-Decision Pure Hydra**: Independent sigmoid gates for k=3 and k=9. |
+| **neon107** | 2.89M | **Massive Reach Pure Hydra**: Pure architecture with k=17 dilated (RF=65). |
 
 ---
 
@@ -217,27 +230,32 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon094** | 9.72M | 0.2067 | 10M Hydra-Base (No Intent). |
 | **neon061** | 9.72M | 0.2364 | Legacy Wide MLP baseline. |
 | **neon093** | 9.72M | 0.2512 | 10M 8-Layer Deep standard. |
-| **neon095** | 2.89M | 0.8703 | Progressive Kernels (k=3-17). |
-| **neon096** | 2.89M | 0.8832 | Heterogeneous Stack Hydra. |
-| **neon097** | 2.89M | 0.8817 | Triple-Scale Gate (k=3,5,9). |
-| **neon098** | 2.89M | 0.8940 | Dilated Hydra (RF=65). |
-| **neon099** | 2.89M | 0.9961 | Residual Multiplicative Gating. |
+| **⭐ neon100** | **2.89M** | **0.8437** | **Pure Hydra (Conv Gate Only) [NEW SOTA]** |
+| **neon102** | 2.89M | 0.8655 | Sandwich Hydra (H-S-S-H). |
+| **neon105** | 2.89M | 0.8671 | Early Starter (Hydra L0). |
+| neon095 | 2.89M | 0.8703 | Progressive Kernels (k=3-17). |
+| neon097 | 2.89M | 0.8817 | Triple-Scale Gate (k=3,5,9). |
+| neon096 | 2.89M | 0.8832 | Heterogeneous Stack Hydra. |
+| neon098 | 2.89M | 0.8940 | Dilated Hydra (RF=65). |
+| neon106 | 2.89M | *(TBD)* | Dual-Gated Pure Hydra. |
+| neon107 | 2.89M | *(TBD)* | Massive Reach Pure Hydra (RF=65). |
+| neon103 | 2.89M | 0.9245 | Inv Sandwich (S-H-H-S). |
+| neon101 | 2.89M | 0.9253 | Block Hetero (2-Swi / 2-Hyd). |
+| neon104 | 2.89M | 0.9342 | Late Bloomer (3-Swi / 1-Hyd). |
+| neon099 | 2.89M | 0.9961 | Residual Multiplicative Gating. |
 
 ### 🧪 Benchmark: Wiki103 / Tok1 & Tok4
 *WikiText-103 Dataset (100MB).*
 
 | Model | Tok | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- | :--- |
-| neon010 | tok1 | 2.64M | 2.5903 | Gated SDPA. |
-| neon011 | tok1 | 11.84M | 2.1547 | Narrow & Deep Wiki. |
-| neon012 | tok1 | 15.76M | 2.1280 | Wide & Medium Wiki. |
-| neon013 | tok1 | 8.21M | 2.2307 | Balanced Wiki. |
-| neon014 | tok1 | 14.19M | 2.1199 | MLP-Heavy Wiki. |
+| **⭐ neon100** | tok4 | **2.89M** | *(Train)* | **Pure Hydra Wiki Test.** |
+| **neon102** | tok4 | 2.89M | *(Next)* | Sandwich Hydra Wiki Test. |
+| **⭐ neon081** | tok4 | **2.87M** | **3.2750** | **Wiki 3M SOTA**. |
 | **neon016** | tok4 | 2.89M | 3.2885 | Wiki Tok4 Baseline. |
 | **neon077** | tok4 | 2.82M | 3.2880 | Conv-Gated Hydra Wiki. |
-| **⭐ neon081** | tok4 | **2.87M** | **3.2750** | **Wiki 3M SOTA**. |
-| **neon091** | tok4 | 9.72M | 3.0797 | 10M Hydra Wiki. |
 | **⭐ neon092** | tok4 | **9.72M** | **3.0575** | **10M Wiki SOTA**. Full Synergy. |
+| **neon091** | tok4 | 9.72M | 3.0797 | 10M Hydra Wiki. |
 | **neon061** | tok4 | 9.72M | 3.0940 | Legacy 10M Baseline. |
 | **neon093** | tok4 | 9.72M | 3.0955 | 8-Layer Deep Standard. |
 | **neon094** | tok4 | 9.72M | 3.0977 | 10M Hydra-Base (No Intent). |
@@ -258,3 +276,4 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 5.  **Scaling Breakthrough (080-081)**: Proved that context is the primary bottleneck. `neon081` (**k=9**) shattered the baseline, achieving 0.88 val loss at 3M parameters.
 6.  **Modern Hybrids (078-079)**: Replicating state-of-the-art architectures like Qwen3-Next to benchmark against our simplified blocks.
 7.  **The Gauntlet Synergy (091-094)**: Proved that **Double Gating** (Intent Attention + Hydra MLP) creates a synergistic effect. `neon092` crushed both deep standard models (`neon093`) and ablation baselines, proving architectural intelligence beats raw parameter scaling.
+8.  **Pure Hydra Discovery (100-105)**: Discovered that the SiLU-identity gate is optional. `neon100` (Pure Convolutional Gating) achieved the new project SOTA at 3M scale. The increased parameter budget from removing the identity gate allows for much wider MLPs, providing better representation at high context densitites.
