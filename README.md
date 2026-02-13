@@ -230,14 +230,12 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon113** | 2.89M | 0.7707 | Conv-Attention (Shared). |
 | **neon124** | **2.89M** | **0.7727** | **Multi-Query Intent (MQI)**. Sharing works. |
 | **neon128** | 2.89M | 0.7905 | Gateless Context baseline. |
+| **neon132** | 2.89M | **0.8000** | **Spectral Hydra**. Causal multi-scale bank. Strong. |
 | **neon125** | 2.89M | 0.8124 | Bottleneck Intent. |
 | **neon121** | 2.89M | 0.8145 | Context-Aware Intent Only. |
 | **neon123** | 2.89M | 0.8203 | Residual Gated Attention. |
 | **neon122** | 2.89M | 0.8283 | Zero-Centered Norm. |
 | **neon133** | **2.89M** | **0.8586** | **Commander Head**. Dynamic weights. Solid gain. |
-| **neon135** | 2.89M | 1.4692 | **Holographic Projection**. Failed experiment. |
-| **neon134** | 2.89M | NaN | **Mamba Hybrid**. Optimized Scan NaN fix applied. |
-| **neon132** | 2.89M | --- | **Fourier Hydra**. Dimension fix applied. |
 | **⭐ neon110** | 2.89M | 0.8365 | Pure Hydra Swish (MLP-Only SOTA). |
 | **⭐ neon108** | 2.89M | 0.8366 | Pure Hydra Single-Scale. |
 | **neon100** | 2.89M | 0.8437 | Dual-Scale Pure Hydra. |
@@ -263,6 +261,8 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon101** | 2.89M | 0.9253 | Block Hetero (2-Swi / 2-Hyd). |
 | **neon104** | 2.89M | 0.9342 | Late Bloomer (3-Swi / 1-Hyd). |
 | **neon126** | **2.89M** | **0.9627** | **No MLP Conv [ARCHITECTURAL FAIL]**. |
+| **neon134** | 2.89M | 1.0224 | **Mamba Hybrid**. Linear recurrence scan. |
+| **neon135** | 2.89M | 1.4692 | **Holographic Projection**. Failed experiment. |
 | **neon099** | 2.89M | 0.9961 | Residual Multiplicative Gating. |
 | neon111 | 2.89M | 0.9968 | Space-Aware Matrix (Failed). |
  
