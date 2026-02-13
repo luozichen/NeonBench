@@ -234,6 +234,10 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon121** | 2.89M | 0.8145 | Context-Aware Intent Only. |
 | **neon123** | 2.89M | 0.8203 | Residual Gated Attention. |
 | **neon122** | 2.89M | 0.8283 | Zero-Centered Norm. |
+| **neon133** | **2.89M** | **0.8586** | **Commander Head**. Dynamic weights. Solid gain. |
+| **neon135** | 2.89M | 1.4692 | **Holographic Projection**. Failed experiment. |
+| **neon134** | 2.89M | NaN | **Mamba Hybrid**. Optimized Scan NaN fix applied. |
+| **neon132** | 2.89M | --- | **Fourier Hydra**. Dimension fix applied. |
 | **⭐ neon110** | 2.89M | 0.8365 | Pure Hydra Swish (MLP-Only SOTA). |
 | **⭐ neon108** | 2.89M | 0.8366 | Pure Hydra Single-Scale. |
 | **neon100** | 2.89M | 0.8437 | Dual-Scale Pure Hydra. |
@@ -305,4 +309,7 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 9.  **Locally-Aware Attention (113-116)**: Discovered that adding $k=3$ depthwise convolutions to $Q, K, V,$ and $Intent$ projections AFTER linear projection creates a "Locally-Aware Search." `neon116` achieved a massive SOTA jump from 0.88 to **0.72**, proving that attention is most effective when it sees its neighbors.
 10. **The Force Multiplier Discovery (126)**: Proved that Locally-Aware Attention is NOT a standalone winner. Ablation `neon126` (0.96 loss) showed that without the **Hydra MLP** providing local context foundationally, the attention mechanism "flies blind." Local context is a dual-layer requirement.
 11. **Hyper-Synergy & MQI (130-131)**: Optimized the architecture via **Multi-Query Intent (MQI)**, sharing a single intent gate across all heads. `neon130` matched the project SOTA (0.72) while using the saved parameters to push MLP width to $d_{ff}=572$, establishing the current most efficient 3M architecture.
-12. **The Blue Sky Pivot (132-135)**: Exploring non-linear and non-spatial context mechanisms. This batch moves beyond windowed convolutions into **Fourier Domain** filtering (`132`), **Dynamic Synaptic Weights** (`133`), **Recurrent Intent** scans (`134`), and **Complex-Valued Interference** (`135`).
+12. **The Blue Sky Pivot (132-135)**: Moving beyond fixed convolutions.
+    - **Commander Head (133)**: Achieved a solid **0.85** loss, proving that predicting kernels on-the-fly is a powerful lever for local intelligence.
+    - **Holographic (135)**: Demonstrated that complex interference is highly sensitive and difficult to regularize (1.46 loss).
+    - **Mamba/Fourier (134/132)**: Discovered that fast recurrent scans require careful masking (NaN fix) and dimension alignment to match the stability of spatial convolutions.

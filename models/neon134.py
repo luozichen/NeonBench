@@ -1,6 +1,7 @@
-"""Neon134: Mamba-Hydra Hybrid (Grouped-Matrix Optimized).
-Uses a Grouped Matrix-Parallel Scan (one decay per head).
-Fixed broadcasting logic for shared intent signals.
+"""Neon134: Mamba-Hydra Hybrid (Matrix-Optimized).
+Replaces the slow loop with a Matrix-Parallel Transition Scan (MPTS).
+Uses O(T^2) transition matrix for lightning speed at T=256.
+Mathematically stable: masks upper triangle BEFORE exp to prevent NaNs.
 Calibration: d_ff = 571.
 """
 import torch
@@ -34,17 +35,22 @@ class GroupedMatrixRecurrentAttention(nn.Module):
         i_raw = self.intent_proj(x) # [B, T, head_dim]
         
         # --- 1. GROUPED MATRIX-PARALLEL SCAN ---
-        log_a = F.logsigmoid(self.ssm_a_proj(x)) # [B, T, n_head]
+        # Predict one decay per head: [B, T, n_head]
+        log_a = F.logsigmoid(self.ssm_a_proj(x)) 
         L = torch.cumsum(log_a, dim=1) # [B, T, n_head]
         
         # rel_L: [B, n_head, T, T]
         L_heads = L.transpose(1, 2).unsqueeze(-1)
         rel_L = L_heads - L_heads.transpose(-2, -1)
         
+        # CRITICAL FIX: Mask the upper triangle with -inf BEFORE exp.
+        # Otherwise, exp(large positive) = inf, and inf * 0 = nan.
         mask = torch.tril(torch.ones(T, T, device=x.device)).view(1, 1, T, T)
-        M = torch.exp(rel_L) * mask # Stable: exp(neg)
+        rel_L = rel_L.masked_fill(mask == 0, -1e9) # Effectively -infinity
         
-        # Broadcasting fixed: [B, T, n_head, 1] * [B, T, 1, head_dim]
+        M = torch.exp(rel_L) 
+        
+        # Broadcasting: [B, T, n_head, 1] * [B, T, 1, head_dim]
         gate_a = torch.sigmoid(self.ssm_a_proj(x))
         x_prime = (1 - gate_a).unsqueeze(-1) * i_raw.unsqueeze(2) # [B, T, n_head, head_dim]
         x_prime_T = x_prime.transpose(1, 2) # [B, n_head, T, head_dim]

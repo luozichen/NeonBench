@@ -1,8 +1,8 @@
-"""Neon132: Fourier Hydra.
+"""Neon132: Fourier Hydra (Fixed).
 Replaces the temporal MLP convolution with a Frequency-Domain Global Filter.
-Applies FFT -> Learned Complex Weight -> IFFT for infinite receptive field gating.
+Fixed the tensor dimension mismatch in the FFT multiplication.
 Tests if Frequency-domain filtering is superior to spatial convolutions.
-Calibration: d_ff = 510.
+Calibration: d_ff = 530.
 """
 import torch
 import torch.nn as nn
@@ -71,11 +71,14 @@ class FourierHydraMLP(nn.Module):
         B, T, D = x.shape
         
         # 1. Fourier Domain Filter (Global Receptive Field)
-        # Note: This is computationally non-causal if not careful, 
-        # but for a gate generator it acts as a global context summarizer.
+        # fft on dim 1 (Time). Output: [B, T//2 + 1, D]
         x_freq = torch.fft.rfft(x, n=T, dim=1, norm="ortho")
+        
+        # freq_weight is [D, freq]. We need [1, freq, D] for broadcasting.
+        w = self.freq_weight.transpose(0, 1).unsqueeze(0)
+        
         # Apply global filter
-        x_filtered_freq = x_freq * self.freq_weight[:, :x_freq.shape[1]].unsqueeze(0)
+        x_filtered_freq = x_freq * w
         x_global = torch.fft.irfft(x_filtered_freq, n=T, dim=1, norm="ortho")
         
         gate = torch.sigmoid(self.c_gate_proj(x_global))
