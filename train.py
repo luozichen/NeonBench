@@ -167,6 +167,8 @@ def get_config(model_name):
             elif model_name == 'neon136': config['d_ff'] = 252 # MoE Hydra (2 Experts)
             elif model_name == 'neon137': config['d_ff'] = 558 # Hierarchical Context
             elif model_name == 'neon138': config['d_ff'] = 563 # Strategic Colossus
+            elif model_name == 'neon139': config['d_ff'] = 571 # Sequential Kernel Expansion
+            elif model_name == 'neon140': config['d_ff'] = 500 # Parallel Spectral Heads
             else: config['d_ff'] = 512
         
         return config
