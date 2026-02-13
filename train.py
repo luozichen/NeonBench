@@ -80,7 +80,7 @@ def get_config(model_name):
     # neon064: Hadamard Head Merge (8 heads -> 4 merged)
     # neon065: Big Single Head (Head dim = 2 * d_model)
     
-    all_models = [f"neon{i:03d}" for i in range(1, 101)]
+    all_models = [f"neon{i:03d}" for i in range(1, 201)]
     if model_name in all_models:
         if model_name in ['neon011', 'neon012', 'neon013', 'neon014']:
             config['max_iters'] = 20000 # Scaling tests
@@ -97,7 +97,7 @@ def get_config(model_name):
             config['d_ff'] = 592
         
         # Frankenstein Configs
-        if model_name in [f"neon{i:03d}" for i in range(61, 101)]:
+        if model_name in [f"neon{i:03d}" for i in range(61, 201)]:
             config['d_model'], config['n_layers'], config['n_head'] = 256, 4, 4
             if model_name == 'neon061': config['d_ff'] = 2736 # ~10M
             elif model_name == 'neon066': config['d_ff'] = 172 # match neon016
@@ -128,6 +128,12 @@ def get_config(model_name):
             elif model_name == 'neon097': config['d_ff'] = 379 # Triple-Scale Hydra
             elif model_name == 'neon098': config['d_ff'] = 379 # Dilated Multi-Scale
             elif model_name == 'neon099': config['d_ff'] = 381 # Residual Hydra
+            elif model_name == 'neon100': config['d_ff'] = 508 # Pure Hydra (Conv-Only)
+            elif model_name == 'neon101': config['d_ff'] = 437 # 2x SwiGLU, 2x Hydra
+            elif model_name == 'neon102': config['d_ff'] = 437 # Sandwich
+            elif model_name == 'neon103': config['d_ff'] = 437 # Inv Sandwich
+            elif model_name == 'neon104': config['d_ff'] = 472 # 3x SwiGLU, 1x Hydra
+            elif model_name == 'neon105': config['d_ff'] = 472 # 1x Hydra, 3x SwiGLU
             else: config['d_ff'] = 512
         
         return config

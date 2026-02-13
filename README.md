@@ -217,6 +217,11 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon094** | 9.72M | 0.2067 | 10M Hydra-Base (No Intent). |
 | **neon061** | 9.72M | 0.2364 | Legacy Wide MLP baseline. |
 | **neon093** | 9.72M | 0.2512 | 10M 8-Layer Deep standard. |
+| **neon095** | 2.89M | 0.8703 | Progressive Kernels (k=3-17). |
+| **neon096** | 2.89M | 0.8832 | Heterogeneous Stack Hydra. |
+| **neon097** | 2.89M | 0.8817 | Triple-Scale Gate (k=3,5,9). |
+| **neon098** | 2.89M | 0.8940 | Dilated Hydra (RF=65). |
+| **neon099** | 2.89M | 0.9961 | Residual Multiplicative Gating. |
 
 ### 🧪 Benchmark: Wiki103 / Tok1 & Tok4
 *WikiText-103 Dataset (100MB).*
