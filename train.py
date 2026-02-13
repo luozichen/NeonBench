@@ -145,6 +145,10 @@ def get_config(model_name):
             elif model_name == 'neon114': config['d_ff'] = 510 # Sharp-Value Conv-Attention
             elif model_name == 'neon115': config['d_ff'] = 508 # Multi-Head Conv-Attention
             elif model_name == 'neon116': config['d_ff'] = 507 # Full Multi-Head Conv-Attention
+            elif model_name == 'neon117': config['d_ff'] = 507 # Activated Multi-Head
+            elif model_name == 'neon118': config['d_ff'] = 510 # L2Norm Multi-Head
+            elif model_name == 'neon119': config['d_ff'] = 338 # Dynamic Soft-Gate Hydra
+            elif model_name == 'neon120': config['d_ff'] = 338 # Activated Intent Dynamic
             else: config['d_ff'] = 512
         
         return config
