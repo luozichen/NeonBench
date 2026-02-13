@@ -237,8 +237,8 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | neon097 | 2.89M | 0.8817 | Triple-Scale Gate (k=3,5,9). |
 | neon096 | 2.89M | 0.8832 | Heterogeneous Stack Hydra. |
 | neon098 | 2.89M | 0.8940 | Dilated Hydra (RF=65). |
-| neon106 | 2.89M | *(TBD)* | Dual-Gated Pure Hydra. |
-| neon107 | 2.89M | *(TBD)* | Massive Reach Pure Hydra (RF=65). |
+| neon106 | 2.89M | 0.8608 | Dual-Gated Pure Hydra. |
+| neon107 | 2.89M | 0.9103 | Massive Reach Pure Hydra (RF=65). |
 | neon103 | 2.89M | 0.9245 | Inv Sandwich (S-H-H-S). |
 | neon101 | 2.89M | 0.9253 | Block Hetero (2-Swi / 2-Hyd). |
 | neon104 | 2.89M | 0.9342 | Late Bloomer (3-Swi / 1-Hyd). |
