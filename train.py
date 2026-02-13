@@ -136,6 +136,10 @@ def get_config(model_name):
             elif model_name == 'neon105': config['d_ff'] = 472 # 1x Hydra, 3x SwiGLU
             elif model_name == 'neon106': config['d_ff'] = 381 # Dual-Gate Pure
             elif model_name == 'neon107': config['d_ff'] = 505 # Massive Reach Pure (RF 65)
+            elif model_name == 'neon108': config['d_ff'] = 509 # Pure k=9 Only
+            elif model_name == 'neon109': config['d_ff'] = 503 # Pure k=20 Reach
+            elif model_name == 'neon110': config['d_ff'] = 509 # Pure k=9 Swish
+            elif model_name == 'neon111': config['d_ff'] = 210 # Space-Aware Matrix (k=5)
             else: config['d_ff'] = 512
         
         return config

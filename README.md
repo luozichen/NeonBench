@@ -122,61 +122,60 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 | Model | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- |
-| neon001 | 2.11M | 1.7509 | Baseline GPT-2. |
-| neon002 | 2.10M | 1.7434 | RMSNorm Baseline. |
-| neon003 | 1.71M | 1.8868 | MQA Baseline. |
-| neon004 | 1.71M | 1.9451 | Shared MLP. |
-| neon005 | 2.62M | 1.4673 | SwiGLU Baseline. |
-| neon006 | 2.49M | 1.5467 | MLA Baseline. |
-| neon007 | 2.63M | 3.0147 | DeltaNet (Fail). |
-| neon008 | 2.63M | 6.0381 | Unit Sphere (Fail). |
-| **⭐ neon009** | 2.89M | **1.3010** | **QKVI Attention**. |
-| **⭐ neon010** | 2.64M | 1.3698 | **Calculated Intent**. |
+| **neon023** | 5.77M | **0.5260** | Overfit deep. |
+| **neon024** | 5.77M | **1.0800** | Deep + LayerDrop. |
+| **⭐ neon055** | 2.89M | **1.2417** | Scaled Calc Intent. |
 | **⭐ neon016** | 2.89M | **1.2551** | **Result Gating σ(I).** |
-| neon017 | 2.89M | 1.3764 | Result raw I, σ(V). |
-| neon018 | 2.89M | 1.3808 | Result σ(I), σ(V). |
-| neon019 | 2.89M | 1.3150 | Source raw I, raw V. |
-| **neon020** | 2.89M | 1.2809 | Source Gating σ(I). |
-| neon021 | 2.89M | 1.2842 | Source raw I, σ(V). |
-| neon022 | 2.89M | 1.4234 | Source σ(I), σ(V). |
-| neon023 | 5.77M | 0.5260 | Overfit deep. |
-| neon024 | 5.77M | 1.0800 | Deep + LayerDrop. |
-| neon025 | 2.89M | 1.3404 | Post-Norm Study. |
-| neon026 | 2.89M | 1.3553 | No-Intent Control. |
-| neon027 | 2.89M | 1.2558 | Scaled Calc-Intent. |
-| neon028 | 2.89M | 1.3554 | MLA Control. |
-| neon029 | 2.89M | 1.4158 | LayerNorm Baseline. |
-| neon030 | 2.89M | 1.3953 | RMSNorm Baseline. |
-| neon031 | 2.62M | 1.3975 | Calc σ(Q⊙V). |
-| neon032 | 2.62M | 1.3854 | Calc σ(Q⊙K). |
-| neon033 | 2.62M | 1.3875 | Calc σ(K⊙V). |
-| neon034 | 2.62M | 1.4229 | Calc σ(Q⊙K⊙V). |
-| neon035 | 2.62M | 1.3866 | Calc LN(Q+V). |
-| neon036 | 2.62M | 1.4049 | Calc norm(Q+K+V). |
-| neon037 | 2.62M | 1.4264 | Calc σ(Q)⊙tanh(V). |
-| neon038 | 2.62M | 1.3784 | Calc Q+σ(KV). |
-| neon039 | 2.62M | 1.4417 | Calc tanh(gap). |
-| neon040 | 2.62M | 1.5139 | Calc RMS(Q⊙V). |
-| neon041 | 2.64M | 1.3754 | Gated Calc (QV). |
-| neon042 | 2.64M | 1.3774 | Gated Calc (QK). |
-| neon043 | 2.64M | 1.3780 | Gated Calc (KV). |
-| neon044 | 2.64M | 1.3905 | Gated Calc (QKV_prod). |
-| neon045 | 2.64M | 1.3618 | Gated Calc (Q+V). |
-| **⭐ neon046** | 2.64M | 1.3524 | **Gated Calc (Q+K+V)**. |
-| neon047 | 2.64M | 1.3758 | Gated Calc Bounded. |
-| neon048 | 2.64M | 1.3609 | Gated Calc Biased. |
-| neon049 | 2.64M | 1.3594 | Gated Calc Gap. |
-| neon050 | 2.64M | 1.3740 | Gated Calc + Norm. |
-| neon051 | 2.63M | 1.3938 | Linear Combination. |
-| neon052 | 2.67M | 1.3447 | Matrix Intent. |
-| neon053 | 2.89M | 1.3129 | QKVI SiLU. |
-| neon054 | 2.64M | 1.4444 | Gated Calc SiLU. |
-| neon055 | 2.89M | 1.2417 | Scaled Calc Intent. |
-| neon056 | 2.90M | 1.3369 | Double Gated. |
-| neon057 | 2.89M | 1.3418 | Differential Intent. |
-| neon058 | 2.64M | 1.4620 | Residual Additive. |
-| neon059 | 2.89M | 1.2588 | Norm Gated. |
-| neon060 | 2.89M | 1.3029 | Max Pooled. |
+| **neon027** | 2.89M | 1.2558 | Scaled Calc-Intent. |
+| **neon059** | 2.89M | 1.2588 | Norm Gated. |
+| **⭐ neon020** | 2.89M | **1.2809** | **Source Gating σ(I).** |
+| **⭐ neon046** | 2.64M | **1.3524** | **Gated Calc (Q+K+V)**. |
+| **⭐ neon009** | 2.89M | **1.3010** | **QKVI Attention**. |
+| **neon179** | 2.89M | 1.3029 | Max Pooled. |
+| **⭐ neon015** | 2.89M | 1.3042 | Dedicated Intent Head. |
+| **neon053** | 2.89M | 1.3129 | QKVI SiLU. |
+| **neon019** | 2.89M | 1.3150 | Source raw I, raw V. |
+| **neon045** | 2.64M | 1.3618 | Gated Calc (Q+V). |
+| **neon025** | 2.89M | 1.3404 | Post-Norm Study. |
+| **neon057** | 2.89M | 1.3418 | Differential Intent. |
+| **neon052** | 2.67M | 1.3447 | Matrix Intent. |
+| **neon026** | 2.89M | 1.3553 | No-Intent Control. |
+| **neon028** | 2.89M | 1.3554 | MLA Control. |
+| **neon049** | 2.64M | 1.3594 | Gated Calc Gap. |
+| **neon048** | 2.64M | 1.3609 | Gated Calc Biased. |
+| **⭐ neon010** | 2.64M | 1.3698 | **Calculated Intent**. |
+| **neon050** | 2.64M | 1.3740 | Gated Calc + Norm. |
+| **neon041** | 2.64M | 1.3754 | Gated Calc (QV). |
+| **neon047** | 2.64M | 1.3758 | Gated Calc Bounded. |
+| **neon017** | 2.89M | 1.3764 | Result raw I, σ(V). |
+| **neon042** | 2.64M | 1.3774 | Gated Calc (QK). |
+| **neon038** | 2.62M | 1.3784 | Calc Q+σ(KV). |
+| **neon043** | 2.64M | 1.3780 | Gated Calc (KV). |
+| **neon018** | 2.89M | 1.3808 | Result σ(I), σ(V). |
+| **neon032** | 2.62M | 1.3854 | Calc σ(Q⊙K). |
+| **neon035** | 2.62M | 1.3866 | Calc LN(Q+V). |
+| **neon033** | 2.62M | 1.3875 | Calc σ(K⊙V). |
+| **neon044** | 2.64M | 1.3905 | Gated Calc (QKV_prod). |
+| **neon051** | 2.63M | 1.3938 | Linear Combination. |
+| **neon030** | 2.89M | 1.3953 | RMSNorm Baseline. |
+| **neon031** | 2.62M | 1.3975 | Calc σ(Q⊙V). |
+| **neon036** | 2.62M | 1.4049 | Calc norm(Q+K+V). |
+| **neon029** | 2.89M | 1.4158 | LayerNorm Baseline. |
+| **neon034** | 2.62M | 1.4229 | Calc σ(Q⊙K⊙V). |
+| **neon022** | 2.89M | 1.4234 | Source σ(I), σ(V). |
+| **neon037** | 2.62M | 1.4264 | Calc σ(Q)⊙tanh(V). |
+| **neon039** | 2.62M | 1.4417 | Calc tanh(gap). |
+| **neon054** | 2.64M | 1.4444 | Gated Calc SiLU. |
+| **neon058** | 2.64M | 1.4620 | Residual Additive. |
+| **neon005** | 2.62M | 1.4673 | SwiGLU Baseline. |
+| **neon040** | 2.62M | 1.5139 | Calc RMS(Q⊙V). |
+| **neon006** | 2.49M | 1.5467 | MLA Baseline. |
+| **neon002** | 2.10M | 1.7434 | RMSNorm Baseline. |
+| **neon001** | 2.11M | 1.7509 | Baseline GPT-2. |
+| **neon003** | 1.71M | 1.8868 | MQA Baseline. |
+| **neon004** | 1.71M | 1.9451 | Shared MLP. |
+| **neon007** | 2.63M | 3.0147 | DeltaNet (Fail). |
+| **neon008** | 2.63M | 6.0381 | Unit Sphere (Fail). |
 
 ### 🧪 Benchmark: HP0 / Tok3 (2k Vocab)
 *Vocabulary Size: ~2,048. Embeddings: ~0.52M.*
