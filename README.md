@@ -192,78 +192,57 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 | Model | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- |
-| **⭐ neon016** | 2.89M | 0.9174 | Standard Baseline. |
-| neon027 | 2.89M | 0.9297 | Gated SDPA Baseline. |
-| neon055 | 2.89M | 0.9434 | Gated Calc Intent. |
-| **⭐ neon061** | 9.72M | **0.2364** | Wide MLP Winner. |
-| neon062 | 2.62M | 1.2116 | MLP-Free Stack. |
-| neon063 | 3.94M | 1.1605 | Attention-in-MLP. |
-| neon064 | 2.76M | 1.2970 | Hadamard Merge. |
-| neon065 | 4.20M | 0.7833 | Big Single Head. |
-| neon066 | 2.89M | 1.0632 | Fair Fight Big Head. |
-| neon067 | 2.89M | 1.0060 | 2 Heads. |
-| **neon068** | 2.89M | **0.9214** | **8 Heads Baseline**. |
-| neon069 | 2.89M | 0.9259 | 16 Heads. |
-| neon070 | 2.84M | 1.1269 | Pure Hydra MLP. |
-| neon071 | 2.98M | 1.0495 | Wide Hydra. |
-| neon072 | 3.21M | 0.8577 | ResHydra Hybrid. |
-| neon073 | 2.84M | 1.1571 | Multi-Head Hydra. |
-| neon074 | 2.84M | 1.0653 | Swish Hydra. |
-| neon075 | 2.84M | 1.0084 | Negative Hydra. |
-| neon076 | 2.83M | 1.0399 | Light Hydra. |
-| **⭐ neon077** | 2.82M | **0.9172** | **Conv-Gated Hydra**. |
-| neon078 | 2.86M | 1.4483 | Hybrid DeltaNet. |
-| neon079 | 2.87M | 1.1056 | Qwen3-Next Hybrid. |
-| **neon080** | 2.89M | 0.8875 | Scaling Study (Width). |
-| **⭐ neon081** | **2.87M** | **0.8812** | **Context-scaled Hydra**. **[MILESTONE]** |
-| **neon082** | 2.89M | 0.9886 | Scaling Study (Fair Hydra). |
-| **neon083** | 2.87M | 0.9462 | Modulation Hydra. |
-| **neon084** | 2.88M | 0.8989 | Dilated Hydra (RF=17). |
-| **⭐ neon085** | **2.89M** | **0.8670** | **Dual-Scale Hydra**. **[PROJECT SOTA]** |
-| **neon086** | 2.88M | 0.9168 | Res-Hydra (Residual Context). |
-| **neon087** | 2.86M | 0.9018 | Pyramidal Hydra (k=3, 9, 27). |
-| **neon088** | 2.89M | 0.8944 | Competitive Hydra (Max-Pool). |
+| **⭐ neon100** | **2.89M** | **0.8437** | **Pure Hydra [3M HP0 SOTA]**. |
+| **neon106** | 2.89M | 0.8608 | Dual-Gated Pure Hydra runner-up. |
+| **neon102** | 2.89M | 0.8655 | Sandwich Hydra (H-S-S-H). |
+| **⭐ neon085** | **2.89M** | **0.8670** | **Dual-Scale Hydra**. (Previous 3M SOTA). |
+| **neon105** | 2.89M | 0.8671 | Early Starter (Hydra L0). |
+| **neon095** | 2.89M | 0.8703 | Progressive Kernels (k=3-17). |
 | **neon089** | 2.89M | 0.8768 | Dense Pyramidal (k=3,5,7,9). |
 | **neon090** | 2.89M | 0.8786 | Asymmetric Gated Hydra. |
+| **⭐ neon081** | **2.87M** | **0.8812** | **Context-scaled Hydra**. (Wiki Champion). |
+| **neon097** | 2.89M | 0.8817 | Triple-Scale Gate (k=3,5,9). |
+| **neon096** | 2.89M | 0.8832 | Heterogeneous Stack Hydra. |
+| **neon080** | 2.89M | 0.8875 | Scaling Study (Width). |
+| **neon098** | 2.89M | 0.8940 | Dilated Hydra (RF=65). |
+| **neon088** | 2.89M | 0.8944 | Competitive Hydra (Max-Pool). |
+| **neon087** | 2.86M | 0.9018 | Pyramidal Hydra (k=3,9,27). |
+| **neon107** | 2.89M | 0.9103 | Massive Reach Pure Hydra (RF=65). |
+| **⭐ neon077** | **2.82M** | **0.9172** | **Conv-Gated Hydra**. Matches Baseline. |
+| **⭐ neon016** | **2.89M** | **0.9174** | **Learned Intent [Tok4 Baseline]**. |
+| **neon086** | 2.88M | 0.9168 | Res-Hydra (Residual Context). |
+| **neon103** | 2.89M | 0.9245 | Inv Sandwich (S-H-H-S). |
+| **neon101** | 2.89M | 0.9253 | Block Hetero (2-Swi / 2-Hyd). |
+| **neon104** | 2.89M | 0.9342 | Late Bloomer (3-Swi / 1-Hyd). |
+| **neon099** | 2.89M | 0.9961 | Residual Multiplicative Gating. |
+ 
+| **⭐ neon092** | **9.72M** | **0.1961** | **10M Dual-Scale Hydra [SOTA]**. |
 | **neon091** | 9.72M | 0.1962 | 10M Hydra Scaling (k=9). |
-| **⭐ neon092** | **9.72M** | **0.1961** | **Full 10M Hydra [SOTA]**. |
 | **neon094** | 9.72M | 0.2067 | 10M Hydra-Base (No Intent). |
 | **neon061** | 9.72M | 0.2364 | Legacy Wide MLP baseline. |
 | **neon093** | 9.72M | 0.2512 | 10M 8-Layer Deep standard. |
-| **⭐ neon100** | **2.89M** | **0.8437** | **Pure Hydra (Conv Gate Only) [NEW SOTA]** |
-| **neon102** | 2.89M | 0.8655 | Sandwich Hydra (H-S-S-H). |
-| **neon105** | 2.89M | 0.8671 | Early Starter (Hydra L0). |
-| neon095 | 2.89M | 0.8703 | Progressive Kernels (k=3-17). |
-| neon097 | 2.89M | 0.8817 | Triple-Scale Gate (k=3,5,9). |
-| neon096 | 2.89M | 0.8832 | Heterogeneous Stack Hydra. |
-| neon098 | 2.89M | 0.8940 | Dilated Hydra (RF=65). |
-| neon106 | 2.89M | 0.8608 | Dual-Gated Pure Hydra. |
-| neon107 | 2.89M | 0.9103 | Massive Reach Pure Hydra (RF=65). |
-| neon103 | 2.89M | 0.9245 | Inv Sandwich (S-H-H-S). |
-| neon101 | 2.89M | 0.9253 | Block Hetero (2-Swi / 2-Hyd). |
-| neon104 | 2.89M | 0.9342 | Late Bloomer (3-Swi / 1-Hyd). |
-| neon099 | 2.89M | 0.9961 | Residual Multiplicative Gating. |
 
 ### 🧪 Benchmark: Wiki103 / Tok1 & Tok4
 *WikiText-103 Dataset (100MB).*
 
 | Model | Tok | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- | :--- |
-| **⭐ neon100** | tok4 | **2.89M** | **3.2812** | **Pure Hydra [3M SOTA]**. |
-| **neon102** | tok4 | 2.89M | *(Next)* | Sandwich Hydra Wiki Test. |
-| **⭐ neon081** | tok4 | **2.87M** | **3.2750** | Previous Wiki 3M SOTA. |
-| **neon016** | tok4 | 2.89M | 3.2885 | Wiki Tok4 Baseline. |
-| **neon077** | tok4 | 2.82M | 3.2880 | Conv-Gated Hydra Wiki. |
 | **⭐ neon092** | tok4 | **9.72M** | **3.0575** | **10M Wiki SOTA**. Full Synergy. |
 | **neon091** | tok4 | 9.72M | 3.0797 | 10M Hydra Wiki. |
 | **neon061** | tok4 | 9.72M | 3.0940 | Legacy 10M Baseline. |
 | **neon093** | tok4 | 9.72M | 3.0955 | 8-Layer Deep Standard. |
 | **neon094** | tok4 | 9.72M | 3.0977 | 10M Hydra-Base (No Intent). |
-| neon065 | tok4 | 4.20M | 3.3171 | Big Single Head Wiki. |
-| neon066 | tok4 | 2.89M | 3.3377 | Fair Fight Big Head Wiki. |
-| neon063 | tok4 | 3.94M | 3.3141 | Attention-in-MLP Wiki. |
-| neon062 | tok4 | 2.62M | 3.3475 | MLP-Free Wiki. |
-| neon064 | tok4 | 2.76M | 3.4275 | Hadamard Merge Wiki. |
+| **⭐ neon081** | tok4 | **2.87M** | **3.2750** | **Wiki103 3M SOTA**. |
+| **neon100** | tok4 | 2.89M | 3.2812 | Pure Hydra Evolution. |
+| **⭐ neon077** | tok4 | **2.82M** | **3.2880** | Conv-Gated Hydra Wiki. |
+| **neon016** | tok4 | 2.89M | 3.2885 | Wiki Tok4 Baseline. |
+| **neon085** | tok4 | 2.89M | 3.2905 | Dual-Scale Hydra Wiki. |
+| **neon102** | tok4 | 2.89M | *(Wait)* | Sandwich Hydra Wiki Test. |
+| **neon063** | tok4 | 3.94M | 3.3141 | Attention-in-MLP Wiki. |
+| **neon065** | tok4 | 4.20M | 3.3171 | Big Single Head Wiki. |
+| **neon066** | tok4 | 2.89M | 3.3377 | Fair Fight Big Head Wiki. |
+| **neon062** | tok4 | 2.62M | 3.3475 | MLP-Free Wiki. |
+| **neon064** | tok4 | 2.76M | 3.4275 | Hadamard Merge Wiki. |
 
 ---
 
