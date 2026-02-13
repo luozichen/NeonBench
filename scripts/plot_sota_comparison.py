@@ -19,54 +19,49 @@ def parse_log(log_path):
     return steps, val_losses
 
 def main():
-    log_dir = "logs"
-    models = ["neon016", "neon081", "neon085"]
-    tok = "tok4"
-    data = "hp0"
-    out_file = "sota_comparison.png"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--models", type=str, default="neon081,neon085,neon100")
+    parser.add_argument("--data", type=str, default="hp0")
+    parser.add_argument("--tok", type=str, default="tok4")
+    parser.add_argument("--out", type=str, default=None)
+    args = parser.parse_args()
 
-    plt.figure(figsize=(12, 7))
+    models = [m.strip() for m in args.models.split(",")]
+    out_file = args.out if args.out else f"sota_{args.data}_{args.tok}.png"
+
+    plt.figure(figsize=(10, 6))
+    plt.style.use('dark_background')
     
     colors = {
-        "neon016": "#7f8c8d", # Grey (Baseline)
-        "neon081": "#e67e22", # Orange (Milestone)
-        "neon085": "#27ae60"  # Green (SOTA)
-    }
-    
-    styles = {
-        "neon016": "--",
-        "neon081": "-",
-        "neon085": "-"
+        "neon081": "#e67e22", # Orange
+        "neon085": "#27ae60", # Green
+        "neon100": "#00e5ff"  # Cyan (The New King)
     }
 
     for model in models:
-        log_path = os.path.join(log_dir, f"{model}_{tok}_{data}_log.txt")
+        # Check for wiki103 specific naming if data is wiki103
+        if "wiki" in args.data:
+            log_path = os.path.join("logs", f"{model}_{args.tok}_{args.data}_log.txt")
+            if not os.path.exists(log_path):
+                # Fallback for the slightly longer name variant
+                log_path = os.path.join("logs", f"{model}_{args.tok}_{args.data}_{args.tok}_log.txt")
+        else:
+            log_path = os.path.join("logs", f"{model}_{args.tok}_{args.data}_log.txt")
+            
         steps, losses = parse_log(log_path)
         
         if not steps:
             continue
             
-        label = f"{model} (Val Loss: {min(losses):.4f})"
-        if model == "neon016":
-            label = f"{model} (Baseline: {min(losses):.4f})"
-            
-        plt.plot(steps, losses, label=label, color=colors.get(model, None), 
-                 linestyle=styles.get(model, "-"), linewidth=2, marker='o', markersize=4, alpha=0.8)
+        plt.plot(steps, losses, label=f"{model} (min: {min(losses):.4f})", 
+                 color=colors.get(model, None), linewidth=2, alpha=0.9)
 
-    plt.xlabel("Training Steps", fontsize=12)
-    plt.ylabel("Validation Loss", fontsize=12)
-    plt.title("SOTA Comparison: neon085 (Dual-Scale Hydra) vs neon016 (Baseline)", fontsize=14, fontweight='bold')
-    plt.legend(fontsize=10)
-    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.xlabel("Training Steps")
+    plt.ylabel("Validation Loss")
+    plt.title(f"SOTA Comparison: {args.data.upper()} ({args.tok})", fontsize=14, fontweight='bold')
+    plt.legend()
+    plt.grid(True, linestyle="--", alpha=0.3)
     
-    # Annotate the gap
-    baseline_min = 0.9174 # From README/Log
-    sota_min = 0.8670
-    gap = baseline_min - sota_min
-    plt.annotate(f"Improvement: {gap:.4f} ({gap/baseline_min*100:.1f}%)", 
-                 xy=(9500, 0.87), xytext=(6000, 0.83),
-                 arrowprops=dict(facecolor='black', shrink=0.05, width=1, headwidth=5))
-
     plt.tight_layout()
     plt.savefig(out_file, dpi=200)
     print(f"Plot saved to {out_file}")

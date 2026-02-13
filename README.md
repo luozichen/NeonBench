@@ -249,9 +249,9 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 | Model | Tok | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- | :--- |
-| **⭐ neon100** | tok4 | **2.89M** | *(Train)* | **Pure Hydra Wiki Test.** |
+| **⭐ neon100** | tok4 | **2.89M** | **3.2812** | **Pure Hydra [3M SOTA]**. |
 | **neon102** | tok4 | 2.89M | *(Next)* | Sandwich Hydra Wiki Test. |
-| **⭐ neon081** | tok4 | **2.87M** | **3.2750** | **Wiki 3M SOTA**. |
+| **⭐ neon081** | tok4 | **2.87M** | **3.2750** | Previous Wiki 3M SOTA. |
 | **neon016** | tok4 | 2.89M | 3.2885 | Wiki Tok4 Baseline. |
 | **neon077** | tok4 | 2.82M | 3.2880 | Conv-Gated Hydra Wiki. |
 | **⭐ neon092** | tok4 | **9.72M** | **3.0575** | **10M Wiki SOTA**. Full Synergy. |
