@@ -1,6 +1,7 @@
-# NeonBench: Architectural Exploration Log
-
 NeonBench is a repository dedicated to exploring novel transformer and recurrent architectures at the ~3M parameter scale. This log tracks every experiment, focusing on parameter efficiency and architectural breakthroughs.
+
+**Total Architectures Tested**: 128  
+**Total Models Trained**: 150
 
 ## 📋 Master Model Inventory
 *Parameter counts exclude embeddings to ensure absolute consistency across benchmarks.*

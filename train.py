@@ -154,6 +154,9 @@ def get_config(model_name):
             elif model_name == 'neon123': config['d_ff'] = 508 # Residual Gated
             elif model_name == 'neon124': config['d_ff'] = 600 # MQI (Multi-Query)
             elif model_name == 'neon125': config['d_ff'] = 560 # Bottleneck Intent
+            elif model_name == 'neon126': config['d_ff'] = 510 # No MLP Conv
+            elif model_name == 'neon127': config['d_ff'] = 505 # Biased Attn Conv
+            elif model_name == 'neon128': config['d_ff'] = 682 # No Intent Ablation
             else: config['d_ff'] = 512
         
         return config
