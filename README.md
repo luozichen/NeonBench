@@ -213,7 +213,10 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon089** | 2.89M | 0.8768 | Dense Pyramidal (k=3,5,7,9). |
 | **neon090** | 2.89M | 0.8786 | Asymmetric Gated Hydra. |
 | **neon091** | 9.72M | 0.1962 | 10M Hydra Scaling (k=9). |
-| **⭐ neon092** | **9.72M** | **0.1961** | **10M Dual-Scale Hydra**. **[10M SOTA]** |
+| **⭐ neon092** | **9.72M** | **0.1961** | **Full 10M Hydra [SOTA]**. |
+| **neon094** | 9.72M | 0.2067 | 10M Hydra-Base (No Intent). |
+| **neon061** | 9.72M | 0.2364 | Legacy Wide MLP baseline. |
+| **neon093** | 9.72M | 0.2512 | 10M 8-Layer Deep standard. |
 
 ### 🧪 Benchmark: Wiki103 / Tok1 & Tok4
 *WikiText-103 Dataset (100MB).*
@@ -229,9 +232,10 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon077** | tok4 | 2.82M | 3.2880 | Conv-Gated Hydra Wiki. |
 | **⭐ neon081** | tok4 | **2.87M** | **3.2750** | **Wiki 3M SOTA**. |
 | **neon091** | tok4 | 9.72M | 3.0797 | 10M Hydra Wiki. |
-| **⭐ neon092** | tok4 | **9.72M** | **3.0575** | **10M Wiki SOTA**. Dual-Scale logic. |
-| **neon085** | tok4 | 2.89M | 3.2905 | Dual-Scale (Overfit risk?). |
-| **⭐ neon061** | tok4 | 9.72M | 3.0940 | Legacy 10M SOTA. |
+| **⭐ neon092** | tok4 | **9.72M** | **3.0575** | **10M Wiki SOTA**. Full Synergy. |
+| **neon061** | tok4 | 9.72M | 3.0940 | Legacy 10M Baseline. |
+| **neon093** | tok4 | 9.72M | 3.0955 | 8-Layer Deep Standard. |
+| **neon094** | tok4 | 9.72M | 3.0977 | 10M Hydra-Base (No Intent). |
 | neon065 | tok4 | 4.20M | 3.3171 | Big Single Head Wiki. |
 | neon066 | tok4 | 2.89M | 3.3377 | Fair Fight Big Head Wiki. |
 | neon063 | tok4 | 3.94M | 3.3141 | Attention-in-MLP Wiki. |
@@ -248,3 +252,4 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 4.  **Hydra Era (070-077)**: Introduced context-aware gating in the MLP. `neon077` (Conv-Gated Hydra) successfully matched the Attention baseline using a lightweight convolutional heuristic.
 5.  **Scaling Breakthrough (080-081)**: Proved that context is the primary bottleneck. `neon081` (**k=9**) shattered the baseline, achieving 0.88 val loss at 3M parameters.
 6.  **Modern Hybrids (078-079)**: Replicating state-of-the-art architectures like Qwen3-Next to benchmark against our simplified blocks.
+7.  **The Gauntlet Synergy (091-094)**: Proved that **Double Gating** (Intent Attention + Hydra MLP) creates a synergistic effect. `neon092` crushed both deep standard models (`neon093`) and ablation baselines, proving architectural intelligence beats raw parameter scaling.

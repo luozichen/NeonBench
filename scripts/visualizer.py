@@ -41,43 +41,63 @@ def scan_checkpoints():
     return ckpts
 
 def find_tokenizer(tok_name, data_name):
-    """Best-effort tokenizer path resolution."""
-    for prefix in [data_name, "hp"]:
-        p = os.path.join(TOK_DIR, f"{prefix}_{tok_name}.json")
-        if os.path.exists(p):
-            return p
+    """Find a tokenizer file that strictly matches both tok_name and data_name."""
+    # 1. Try exact dataset + tok match (e.g., wiki103_tok4.json)
+    p = os.path.join(TOK_DIR, f"{data_name}_{tok_name}.json")
+    if os.path.exists(p):
+        return p
+    
+    # 2. Handle 'hp0' -> 'hp' alias for directory consistency
+    data_alias = data_name.replace("hp0", "hp")
+    p = os.path.join(TOK_DIR, f"{data_alias}_{tok_name}.json")
+    if os.path.exists(p):
+        return p
+
+    # 3. Try just the data name if the tok_name is embedded (e.g., wiki103.json)
+    p = os.path.join(TOK_DIR, f"{data_name}.json")
+    if os.path.exists(p):
+        return p
+
+    # 4. Fallback to listdir but insist on data_name (or alias) being in the string
     for f in os.listdir(TOK_DIR):
-        if f.endswith(f"_{tok_name}.json"):
+        if f.endswith(f"_{tok_name}.json") and (data_name in f or data_alias in f):
             return os.path.join(TOK_DIR, f)
+            
     return None
 
 @st.cache_resource
 def load_model(model_name, ckpt_path, tok_name, data_name):
-    tok_path = find_tokenizer(tok_name, data_name)
-    if tok_path is None:
+    try:
+        tok_path = find_tokenizer(tok_name, data_name)
+        if tok_path is None:
+            return None, None, None
+        
+        with open(tok_path, 'r', encoding='utf-8') as f:
+            tok_data = json.load(f)
+        
+        if tok_data.get('type') == 'word_level_pos':
+            from scripts.build_warm_tokenizer import WarmTokenizer
+            tokenizer = WarmTokenizer(tok_path)
+            vocab_size = len(tokenizer)
+        else:
+            tokenizer = Tokenizer.from_file(tok_path)
+            vocab_size = tokenizer.get_vocab_size()
+
+        config = get_config(model_name)
+        config['vocab_size'] = vocab_size
+
+        cls_name = model_name.capitalize()
+        mod = importlib.import_module(f"models.{model_name}")
+        ModelClass = getattr(mod, cls_name)
+        model = ModelClass(config)
+        
+        state = torch.load(ckpt_path, map_location="cpu")
+        model.load_state_dict(state)
+        model.eval()
+        return model, tokenizer, config
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
         return None, None, None
-    with open(tok_path, 'r', encoding='utf-8') as f:
-        tok_data = json.load(f)
-    
-    if tok_data.get('type') == 'word_level_pos':
-        from scripts.build_warm_tokenizer import WarmTokenizer
-        tokenizer = WarmTokenizer(tok_path)
-        vocab_size = len(tokenizer)
-    else:
-        tokenizer = Tokenizer.from_file(tok_path)
-        vocab_size = tokenizer.get_vocab_size()
-
-    config = get_config(model_name)
-    config['vocab_size'] = vocab_size
-
-    cls_name = model_name.capitalize()
-    mod = importlib.import_module(f"models.{model_name}")
-    ModelClass = getattr(mod, cls_name)
-    model = ModelClass(config)
-    state = torch.load(ckpt_path, map_location="cpu")
-    model.load_state_dict(state)
-    model.eval()
-    return model, tokenizer, config
 
 
 def clean_token(t):
@@ -518,7 +538,8 @@ model, tokenizer, config = load_model(
     info['model_name'], info['path'], info['tok_name'], info['data_name'])
 
 if model is None:
-    st.error("Could not load model or tokenizer.")
+    st.error(f"❌ **Load Failed** for `{selected}`")
+    st.info(f"Looking for tokenizer matching `{info['data_name']}` + `{info['tok_name']}`")
     st.stop()
 
 n_layers = config['n_layers']
@@ -535,6 +556,7 @@ st.sidebar.markdown(f"""
 | **d_ff** | {config['d_ff']} |
 | **Parameters** | {n_params:,} |
 | **Trained on** | `{info['data_name']}` |
+| **Tokenizer** | `{os.path.basename(tk_path) if (tk_path := find_tokenizer(info['tok_name'], info['data_name'])) else 'Not Found'}` |
 """)
 
 # ── Prompt input ──

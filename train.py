@@ -123,6 +123,11 @@ def get_config(model_name):
             elif model_name == 'neon092': config['d_ff'] = 2049 # Match neon061 (9.72M)
             elif model_name == 'neon093': config['n_layers'], config['d_ff'] = 8, 1240 # Match neon061 (9.72M)
             elif model_name == 'neon094': config['d_ff'] = 2113 # Hydra MLP but Standard Attention
+            elif model_name == 'neon095': config['d_ff'] = 381 # Progressive Hydra
+            elif model_name == 'neon096': config['d_ff'] = 437 # Heterogeneous Hydra/SwiGLU
+            elif model_name == 'neon097': config['d_ff'] = 379 # Triple-Scale Hydra
+            elif model_name == 'neon098': config['d_ff'] = 379 # Dilated Multi-Scale
+            elif model_name == 'neon099': config['d_ff'] = 381 # Residual Hydra
             else: config['d_ff'] = 512
         
         return config

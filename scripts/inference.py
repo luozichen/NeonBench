@@ -14,6 +14,7 @@ import sys
 import torch
 
 sys.path.append(os.getcwd())
+from train import get_config
 
 
 def load_tokenizer(tokenizer_path):
@@ -115,16 +116,15 @@ def main():
         vocab_size = len(tokenizer)
     
     # Config (must match training)
-    config = {
-        'vocab_size': vocab_size,
-        'd_model': 256,
-        'n_layers': 4,
-        'n_head': 4,
-        'd_ff': 512,
-        'block_size': 256,
-    }
-    if args.model == "neon004":
-        config['d_ff_wide'] = 1024
+    print(f"Fetching configuration for {args.model}...")
+    try:
+        config = get_config(args.model)
+    except Exception as e:
+        print(f"Error getting config: {e}")
+        return
+
+    # Critical: Override vocab_size based on the actual tokenizer provided
+    config['vocab_size'] = vocab_size
     
     # Load model
     print(f"Loading model {args.model}...")
