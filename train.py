@@ -184,6 +184,11 @@ def get_config(model_name):
             elif model_name == 'neon153': config['d_ff'] = 507 # MHI Dilated
             elif model_name == 'neon154': config['d_ff'] = 510 # MHI Persistence
             elif model_name == 'neon155': config['d_ff'] = 423 # MHI Inception
+            elif model_name == 'neon156': config['d_ff'] = 675 # Spectral Silent
+            elif model_name == 'neon157': config['d_ff'] = 680 # Wide-Merge Silent
+            elif model_name == 'neon158': config['d_ff'] = 683 # Dilated Silent
+            elif model_name == 'neon159': config['d_ff'] = 679 # Clean-Room Silent
+            elif model_name == 'neon160': config['d_ff'] = 654 # Hybrid Ghost
             else: config['d_ff'] = 512
         
         return config
