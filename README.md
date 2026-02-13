@@ -191,8 +191,12 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 | Model | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- |
-| **⭐ neon110** | **2.89M** | **0.8365** | **Pure Hydra Swish [3M HP0 SOTA]**. |
-| **⭐ neon108** | **2.89M** | **0.8366** | **Pure Hydra Single-Scale**. |
+| **⭐ neon116** | **2.89M** | **0.7269** | **Full Multi-Head Conv-Attention [PROJECT SOTA]**. |
+| **⭐ neon115** | **2.89M** | **0.7663** | **Multi-Head Conv-Attention**. |
+| **⭐ neon114** | **2.89M** | **0.7652** | **Sharp-Value Conv-Attention**. |
+| **neon113** | 2.89M | 0.7707 | Conv-Attention (Shared). |
+| **⭐ neon110** | 2.89M | 0.8365 | Pure Hydra Swish (MLP-Only SOTA). |
+| **⭐ neon108** | 2.89M | 0.8366 | Pure Hydra Single-Scale. |
 | **neon100** | 2.89M | 0.8437 | Dual-Scale Pure Hydra. |
 | neon109 | 2.89M | 0.8807 | High-Reach (k=20). |
 | neon106 | 2.89M | 0.8608 | Dual-Gated Pure Hydra runner-up. |

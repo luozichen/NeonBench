@@ -149,6 +149,11 @@ def get_config(model_name):
             elif model_name == 'neon118': config['d_ff'] = 510 # L2Norm Multi-Head
             elif model_name == 'neon119': config['d_ff'] = 338 # Dynamic Soft-Gate Hydra
             elif model_name == 'neon120': config['d_ff'] = 338 # Activated Intent Dynamic
+            elif model_name == 'neon121': config['d_ff'] = 510 # Context-Aware Intent
+            elif model_name == 'neon122': config['d_ff'] = 510 # Zero-Centered Norm
+            elif model_name == 'neon123': config['d_ff'] = 508 # Residual Gated
+            elif model_name == 'neon124': config['d_ff'] = 600 # MQI (Multi-Query)
+            elif model_name == 'neon125': config['d_ff'] = 560 # Bottleneck Intent
             else: config['d_ff'] = 512
         
         return config
