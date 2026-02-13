@@ -1,8 +1,8 @@
-"""Neon132: Fourier Hydra (Fixed).
-Replaces the temporal MLP convolution with a Frequency-Domain Global Filter.
-Fixed the tensor dimension mismatch in the FFT multiplication.
-Tests if Frequency-domain filtering is superior to spatial convolutions.
-Calibration: d_ff = 530.
+"""Neon132: Causal Spectral Hydra.
+Replaces the non-causal global FFT with a Causal Spectral Pyramid.
+Uses a bank of log-spaced causal convolutions (k=3, 9, 27) to analyze frequencies.
+Tests if multi-scale spectral gating is superior to fixed-window Hydra.
+Calibration: d_ff = 500.
 """
 import torch
 import torch.nn as nn
@@ -53,35 +53,35 @@ class SharpVHyperSynergyAttention(nn.Module):
         y = y.transpose(1, 2).contiguous().view(B, T, C)
         return self.c_proj(y)
 
-class FourierHydraMLP(nn.Module):
+class CausalSpectralPyramidMLP(nn.Module):
     def __init__(self, config):
         super().__init__()
         d_model = config['d_model']
         d_ff = config['d_ff']
-        block_size = config['block_size']
         
-        # Frequency domain weights: [D, T//2 + 1]
-        self.freq_weight = nn.Parameter(torch.view_as_complex(torch.randn(d_model, block_size // 2 + 1, 2) * 0.02))
+        # Spectral Bank: Low, Mid, and High frequencies via kernel sizes
+        self.conv3  = nn.Conv1d(d_model, d_model, kernel_size=3,  groups=d_model, bias=False)
+        self.conv9  = nn.Conv1d(d_model, d_model, kernel_size=9,  groups=d_model, bias=False)
+        self.conv27 = nn.Conv1d(d_model, d_model, kernel_size=27, groups=d_model, bias=False)
         
+        # Gate merges the spectral signals
         self.c_gate_proj = nn.Linear(d_model, d_ff, bias=False)
         self.w1 = nn.Linear(d_model, d_ff, bias=False)
         self.w2 = nn.Linear(d_ff, d_model, bias=False)
 
     def forward(self, x, freqs_cos, freqs_sin):
         B, T, D = x.shape
+        x_t = x.transpose(1, 2)
         
-        # 1. Fourier Domain Filter (Global Receptive Field)
-        # fft on dim 1 (Time). Output: [B, T//2 + 1, D]
-        x_freq = torch.fft.rfft(x, n=T, dim=1, norm="ortho")
+        # Strictly causal spectral extraction
+        c3  = self.conv3(F.pad(x_t, (2, 0))).transpose(1, 2)
+        c9  = self.conv9(F.pad(x_t, (8, 0))).transpose(1, 2)
+        c27 = self.conv27(F.pad(x_t, (26, 0))).transpose(1, 2)
         
-        # freq_weight is [D, freq]. We need [1, freq, D] for broadcasting.
-        w = self.freq_weight.transpose(0, 1).unsqueeze(0)
+        # Merge frequencies (Addition acts as a fourier-like superposition)
+        spectral_mix = c3 + c9 + c27
         
-        # Apply global filter
-        x_filtered_freq = x_freq * w
-        x_global = torch.fft.irfft(x_filtered_freq, n=T, dim=1, norm="ortho")
-        
-        gate = torch.sigmoid(self.c_gate_proj(x_global))
+        gate = torch.sigmoid(self.c_gate_proj(spectral_mix))
         return self.w2(gate * self.w1(x))
 
 class Block(nn.Module):
@@ -90,7 +90,7 @@ class Block(nn.Module):
         self.ln1 = RMSNorm(config['d_model'])
         self.attn = SharpVHyperSynergyAttention(config)
         self.ln2 = RMSNorm(config['d_model'])
-        self.mlp = FourierHydraMLP(config)
+        self.mlp = CausalSpectralPyramidMLP(config)
     def forward(self, x, f_cos, f_sin):
         x = x + self.attn(self.ln1(x), f_cos, f_sin)
         x = x + self.mlp(self.ln2(x), f_cos, f_sin)
