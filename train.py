@@ -169,6 +169,21 @@ def get_config(model_name):
             elif model_name == 'neon138': config['d_ff'] = 563 # Strategic Colossus
             elif model_name == 'neon139': config['d_ff'] = 571 # Sequential Kernel Expansion
             elif model_name == 'neon140': config['d_ff'] = 500 # Parallel Spectral Heads
+            elif model_name == 'neon141': config['d_ff'] = 572 # Denoising Bottleneck
+            elif model_name == 'neon142': config['d_ff'] = 466 # Global Hum Hydra
+            elif model_name == 'neon143': config['d_ff'] = 678 # Silent Hydra (Attention-Free)
+            elif model_name == 'neon144': config['d_ff'] = 572 # Sigmoid Bottleneck
+            elif model_name == 'neon145': config['d_ff'] = 507 # Multi-Head Denoising
+            elif model_name == 'neon146': config['d_ff'] = 336 # Multi-Head Global Hum
+            elif model_name == 'neon147': config['d_ff'] = 507 # Multi-Head Sigmoid
+            elif model_name == 'neon148': config['d_ff'] = 571 # Sharp-Q Search
+            elif model_name == 'neon149': config['d_ff'] = 574 # Dilated Context
+            elif model_name == 'neon150': config['d_ff'] = 575 # Intent Recurrence
+            elif model_name == 'neon151': config['d_ff'] = 488 # Inception Value
+            elif model_name == 'neon152': config['d_ff'] = 507 # MHI Sharp-Q
+            elif model_name == 'neon153': config['d_ff'] = 507 # MHI Dilated
+            elif model_name == 'neon154': config['d_ff'] = 510 # MHI Persistence
+            elif model_name == 'neon155': config['d_ff'] = 423 # MHI Inception
             else: config['d_ff'] = 512
         
         return config
