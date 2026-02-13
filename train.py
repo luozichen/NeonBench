@@ -157,6 +157,9 @@ def get_config(model_name):
             elif model_name == 'neon126': config['d_ff'] = 510 # No MLP Conv
             elif model_name == 'neon127': config['d_ff'] = 505 # Biased Attn Conv
             elif model_name == 'neon128': config['d_ff'] = 682 # No Intent Ablation
+            elif model_name == 'neon129': config['d_ff'] = 570 # Hyper-Synergy (Full+MQI+Bias)
+            elif model_name == 'neon130': config['d_ff'] = 572 # Sharp-V Synergy
+            elif model_name == 'neon131': config['d_ff'] = 570 # Qwen-NexT Synergy (Centered)
             else: config['d_ff'] = 512
         
         return config

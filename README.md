@@ -193,16 +193,21 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | Model | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- |
 | **⭐ neon116** | **2.89M** | **0.7269** | **Full Multi-Head Conv-Attention [PROJECT SOTA]**. |
-| **⭐ neon115** | **2.89M** | **0.7663** | **Multi-Head Conv-Attention**. |
+| **neon127** | **2.89M** | **0.7555** | **Biased Attention Conv**. Significant stability gain. |
 | **⭐ neon114** | **2.89M** | **0.7652** | **Sharp-Value Conv-Attention**. |
+| **⭐ neon115** | **2.89M** | **0.7663** | **Multi-Head Conv-Attention**. |
 | **neon113** | 2.89M | 0.7707 | Conv-Attention (Shared). |
+| **neon124** | **2.89M** | **0.7727** | **Multi-Query Intent (MQI)**. Sharing works. |
+| **neon128** | 2.89M | 0.7905 | Gateless Context baseline. |
+| **neon125** | 2.89M | 0.8124 | Bottleneck Intent. |
+| **neon121** | 2.89M | 0.8145 | Context-Aware Intent Only. |
+| **neon123** | 2.89M | 0.8203 | Residual Gated Attention. |
+| **neon122** | 2.89M | 0.8283 | Zero-Centered Norm. |
 | **⭐ neon110** | 2.89M | 0.8365 | Pure Hydra Swish (MLP-Only SOTA). |
 | **⭐ neon108** | 2.89M | 0.8366 | Pure Hydra Single-Scale. |
 | **neon100** | 2.89M | 0.8437 | Dual-Scale Pure Hydra. |
-| neon109 | 2.89M | 0.8807 | High-Reach (k=20). |
 | neon106 | 2.89M | 0.8608 | Dual-Gated Pure Hydra runner-up. |
 | neon102 | 2.89M | 0.8655 | Sandwich Hydra Test. |
-| neon111 | 2.89M | 0.9968 | Space-Aware Matrix (Failed). |
 | **⭐ neon085** | **2.89M** | **0.8670** | **Dual-Scale Hydra**. (Previous 3M SOTA). |
 | **neon105** | 2.89M | 0.8671 | Early Starter (Hydra L0). |
 | **neon095** | 2.89M | 0.8703 | Progressive Kernels (k=3-17). |
@@ -222,7 +227,9 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon103** | 2.89M | 0.9245 | Inv Sandwich (S-H-H-S). |
 | **neon101** | 2.89M | 0.9253 | Block Hetero (2-Swi / 2-Hyd). |
 | **neon104** | 2.89M | 0.9342 | Late Bloomer (3-Swi / 1-Hyd). |
+| **neon126** | **2.89M** | **0.9627** | **No MLP Conv [ARCHITECTURAL FAIL]**. |
 | **neon099** | 2.89M | 0.9961 | Residual Multiplicative Gating. |
+| neon111 | 2.89M | 0.9968 | Space-Aware Matrix (Failed). |
  
 | **⭐ neon092** | **9.72M** | **0.1961** | **10M Dual-Scale Hydra [SOTA]**. |
 | **neon091** | 9.72M | 0.1962 | 10M Hydra Scaling (k=9). |

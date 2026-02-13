@@ -8,24 +8,28 @@ sys.path.append(os.getcwd())
 from train import get_config
 from models.neon081 import Neon081
 from models.neon116 import Neon116
+from models.neon129 import Neon129
+from models.neon130 import Neon130
+from models.neon131 import Neon131
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 def audit():
-    cfg81 = get_config("neon081")
-    cfg116 = get_config("neon116")
-    
-    m81 = Neon081(cfg81)
-    m116 = Neon116(cfg116)
-    
-    p81 = count_parameters(m81)
-    p116 = count_parameters(m116)
+    models = ["neon081", "neon116", "neon129", "neon130", "neon131"]
     
     print(f"--- PARAMS AUDIT ---")
-    print(f"Neon081 (d_ff={cfg81['d_ff']}): {p81:,}")
-    print(f"Neon116 (d_ff={cfg116['d_ff']}): {p116:,}")
-    print(f"Diff: {abs(p116 - p81):,} ({(p116 - p81) / p81 * 100:+.2f}%)")
+    print(f"{'Model':<10} | {'d_ff':<5} | {'Parameters':>12}")
+    print("-" * 35)
+    
+    for m_name in models:
+        cfg = get_config(m_name)
+        # Import dynamically
+        module = __import__(f"models.{m_name}", fromlist=[m_name.capitalize()])
+        ModelClass = getattr(module, m_name.capitalize())
+        m = ModelClass(cfg)
+        p = count_parameters(m)
+        print(f"{m_name:<10} | {cfg['d_ff']:<5} | {p:>12,}")
     print(f"--------------------")
 
 if __name__ == "__main__":
