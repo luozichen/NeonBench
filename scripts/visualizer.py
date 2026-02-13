@@ -150,14 +150,14 @@ def capture_forward(model, input_ids):
         # Note: If model does subsequent gating (neon016), it happens AFTER this returns.
         return w @ v
 
-    # 2. Intent Hook (Captures 4D Sigmoid/SiLU inputs)
+    # 2. Intent Hook (Captures Sigmoid/SiLU inputs)
     def spy_sigmoid(input):
-        if input.dim() == 4:
+        if input.dim() in [3, 4]: # Support both MQI (3D) and MHI/Multi-Head (4D)
             intent_bucket.append(input.detach().cpu())
         return real_sigmoid(input)
 
     def spy_silu(input, inplace=False):
-        if input.dim() == 4:
+        if input.dim() in [3, 4]:
             intent_bucket.append(input.detach().cpu())
         return real_silu(input, inplace=inplace)
 
@@ -235,9 +235,10 @@ def generate_text(model, tokenizer, prompt, max_new_tokens=100, temperature=1.0,
     # Encode
     if hasattr(tokenizer, 'encode'):
         res = tokenizer.encode(prompt)
-        # Handle BPE vs Warm
+        # Handle BPE vs Warm vs List
         if hasattr(res, 'ids'): ids = res.ids
-        else: ids = res
+        elif isinstance(res, list): ids = res
+        else: ids = res.ids # Fallback for other tokenizer wrappers
     else:
         ids = tokenizer.encode(prompt)
         
@@ -569,8 +570,14 @@ if st.button("🔍 Visualize", type="primary") or "data" in st.session_state:
     current_key = f"{selected}|{prompt}"
     if st.session_state.get("_vis_key") != current_key or "data" not in st.session_state:
         encoded = tokenizer.encode(prompt)
-        ids = encoded.ids
-        toks = encoded.tokens
+        if hasattr(encoded, 'ids'):
+            ids = encoded.ids
+            toks = encoded.tokens
+        else:
+            # WarmTokenizer or list-style
+            ids = encoded
+            toks = [tokenizer.decode([i]) for i in ids]
+
         if not ids:
             st.error("Tokenizer produced no tokens. Try a different prompt.")
             st.stop()
@@ -616,45 +623,65 @@ if st.button("🔍 Visualize", type="primary") or "data" in st.session_state:
         
         # Hydra specific components
         if data["conv"]:
-            components.append("Conv Gate k=3 (Feature Map)")
-            if len(data["conv"]) > n_layers: # Likely Dual Scale
-                components.append("Conv Gate k=9 (Feature Map)")
+            components.append("Conv Gate (Feature Map)")
+            if len(data["conv"]) > n_layers: 
+                components.append("MLP Conv Gate (Feature Map)")
             
         with c3:
             comp = st.selectbox("Component", components, key="sh_comp")
             
         if "Attention" in comp:
-            attn_np = attns[layer][0, head].numpy()
-            st.plotly_chart(plot_single_head(attn_np, toks, layer, head),
-                            use_container_width=True)
-            st.plotly_chart(plot_attention_received(attn_np, toks, layer, head),
-                            use_container_width=True)
+            if attns and layer < len(attns):
+                attn_np = attns[layer][0, head].numpy()
+                st.plotly_chart(plot_single_head(attn_np, toks, layer, head),
+                                use_container_width=True)
+                st.plotly_chart(plot_attention_received(attn_np, toks, layer, head),
+                                use_container_width=True)
+            else:
+                st.warning("⚠️ This model does not use Attention to compute this layer. Select 'Conv Gate' or 'MLP' instead.")
         elif "Conv" in comp:
-            # Filter conv_bucket for this layer
-            # Hydra has L layers, each with 1 or 2 convs
-            # Approximate mapping: layer * n_convs_per_layer
-            n_convs = 2 if "Dual" in info['model_name'] or "085" in info['model_name'] or "092" in info['model_name'] else 1
-            idx = layer * n_convs + (1 if "k=9" in comp or "k=5" in comp else 0)
+            # Silent Hydra / Attention-Free models have different conv counts
+            # We'll try to find the match based on layer index.
+            # LocalGatedBlock often has 2 convs (v, g), MLP has 1 (conv9).
+            # We look for a conv that matches the requested block type.
             
-            if idx < len(data["conv"]):
-                conv_vals = data["conv"][idx]['data'][0].numpy()
-                # conv_vals is (D, T). Transpose to (T, D) for token-per-row view.
+            is_mlp_view = "MLP" in comp
+            
+            # Simple heuristic mapping for the "Conv Gate" tab
+            # In neon143: 2 convs in Gate block, 1 in MLP.
+            # layer 0: Gate-ConvV (idx0), Gate-ConvG (idx1), MLP-Conv9 (idx2)
+            # layer 1: Gate-ConvV (idx3), Gate-ConvG (idx4), MLP-Conv9 (idx5)
+            
+            convs_per_layer = len(data["conv"]) // n_layers
+            if is_mlp_view:
+                # MLP conv is usually the last in each block's sequence
+                idx = (layer + 1) * convs_per_layer - 1 
+            else:
+                # Gate conv is usually early in the sequence
+                idx = layer * convs_per_layer
+            
+            if 0 <= idx < len(data["conv"]):
+                conv_info = data["conv"][idx]
+                conv_vals = conv_info['data'][0].numpy()
+                k = conv_info.get('kernel', '?')
+                
                 fig = go.Figure(go.Heatmap(
                     z=conv_vals.T, 
                     x=[f"d{i}" for i in range(conv_vals.shape[0])],
                     y=token_labels(toks),
-                    colorscale="Viridis"
+                    colorscale="Viridis",
+                    xgap=0, ygap=0,
                 ))
                 fig.update_layout(
-                    title=f"Layer {layer} — {comp} Feature Map", 
+                    title=f"Layer {layer} — {comp} (k={k}) Feature Map", 
                     height=max(420, len(toks) * 22 + 120),
                     yaxis=dict(autorange="reversed"),
-                    xaxis_title="Dimension",
+                    xaxis_title="Dimension (Gates)",
                     yaxis_title="Token"
                 )
                 st.plotly_chart(fig, use_container_width=True)
             else:
-                st.warning("Convolution data index out of range for this model.")
+                st.info("No Convolution data mapped for this layer block.")
         else:
             # Map selection to bucket
             if "Query" in comp: vec_data = data["q"]
@@ -670,37 +697,46 @@ if st.button("🔍 Visualize", type="primary") or "data" in st.session_state:
 
     # --- All Heads (one layer) ---
     with tabs[1]:
-        layer_all = st.selectbox("Layer", range(n_layers),
-                                 format_func=lambda x: f"Layer {x}", key="ah_layer")
-        st.plotly_chart(plot_all_heads(attns[layer_all], toks, layer_all, n_heads),
-                        use_container_width=True)
+        if attns:
+            layer_all = st.selectbox("Layer", range(n_layers),
+                                     format_func=lambda x: f"Layer {x}", key="ah_layer")
+            st.plotly_chart(plot_all_heads(attns[layer_all], toks, layer_all, n_heads),
+                            use_container_width=True)
+        else:
+            st.info("💡 **Attention-Free Model**: This architecture does not use multiple attention heads.")
 
     # --- Full Grid (all layers × all heads) ---
     with tabs[2]:
-        st.markdown(f"**{n_layers} layers × {n_heads} heads** — rows = layers, columns = heads")
-        st.plotly_chart(plot_full_grid(attns, toks, n_layers, n_heads),
-                        use_container_width=True)
+        if attns:
+            st.markdown(f"**{n_layers} layers × {n_heads} heads** — rows = layers, columns = heads")
+            st.plotly_chart(plot_full_grid(attns, toks, n_layers, n_heads),
+                            use_container_width=True)
+        else:
+            st.info("💡 **Attention-Free Model**: No global attention grid to display.")
 
     # --- Attention Flow ---
     with tabs[3]:
-        st.markdown("**Average attention per layer** (mean across all heads)")
-        layer_flow = st.selectbox("Layer", range(n_layers),
-                                  format_func=lambda x: f"Layer {x}", key="af_layer")
-        avg = attns[layer_flow][0].mean(dim=0).numpy()
-        labels = token_labels(toks)
-        fig = go.Figure(go.Heatmap(
-            z=avg, x=labels, y=labels,
-            colorscale="Viridis", xgap=1, ygap=1,
-            zmin=0, zmax=float(avg.max()),
-        ))
-        fig.update_layout(
-            title=f"Average Attention — Layer {layer_flow}",
-            yaxis=dict(autorange="reversed"),
-            height=max(420, len(toks) * 22 + 120),
-            xaxis_title="Key", yaxis_title="Query",
-        )
-        fig.update_xaxes(tickangle=45)
-        st.plotly_chart(fig, use_container_width=True)
+        if attns:
+            st.markdown("**Average attention per layer** (mean across all heads)")
+            layer_flow = st.selectbox("Layer", range(n_layers),
+                                      format_func=lambda x: f"Layer {x}", key="af_layer")
+            avg = attns[layer_flow][0].mean(dim=0).numpy()
+            labels = token_labels(toks)
+            fig = go.Figure(go.Heatmap(
+                z=avg, x=labels, y=labels,
+                colorscale="Viridis", xgap=1, ygap=1,
+                zmin=0, zmax=float(avg.max()),
+            ))
+            fig.update_layout(
+                title=f"Average Attention — Layer {layer_flow}",
+                yaxis=dict(autorange="reversed"),
+                height=max(420, len(toks) * 22 + 120),
+                xaxis_title="Key", yaxis_title="Query",
+            )
+            fig.update_xaxes(tickangle=45)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("💡 **Gated Convolutional Flow**: In 'Silent' models, signal flow is determined by gating mechanisms rather than attention dot-products.")
 
     # --- MLP Activations ---
     with tabs[4]:

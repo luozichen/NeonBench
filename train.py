@@ -80,8 +80,7 @@ def get_config(model_name):
     # neon064: Hadamard Head Merge (8 heads -> 4 merged)
     # neon065: Big Single Head (Head dim = 2 * d_model)
     
-    all_models = [f"neon{i:03d}" for i in range(1, 201)]
-    if model_name in all_models:
+    if model_name.startswith('neon'):
         if model_name in ['neon011', 'neon012', 'neon013', 'neon014']:
             config['max_iters'] = 20000 # Scaling tests
         if model_name == 'neon011': # Narrow & Deep
@@ -189,13 +188,17 @@ def get_config(model_name):
             elif model_name == 'neon158': config['d_ff'] = 683 # Dilated Silent
             elif model_name == 'neon159': config['d_ff'] = 679 # Clean-Room Silent
             elif model_name == 'neon160': config['d_ff'] = 654 # Hybrid Ghost
+            elif model_name == 'neon161': config['n_layers'], config['d_ff'] = 8, 207 # Deep Silent
+            elif model_name == 'neon162': config['n_layers'], config['d_ff'] = 8, 194 # Deep Hybrid
+            elif model_name == 'neon163': config['n_layers'], config['d_ff'] = 8, 155 # Alternating Ghost
+            elif model_name == 'neon164': config['n_layers'], config['d_ff'] = 8, 204 # Pyramidal Silent
+            elif model_name == 'neon165': config['n_layers'], config['d_ff'] = 8, 207 # Res-Gated Silent
+            elif model_name == 'neon166': config['n_layers'], config['d_ff'] = 8, 205 # Deep Spectral
             else: config['d_ff'] = 512
         
         return config
             
-        return config
-    else:
-        raise ValueError(f"Unknown model: {model_name}")
+    return config
 
 class TextDataset(Dataset):
     def __init__(self, data_path, tokenizer, block_size, tokenizer_type="bpe"):
