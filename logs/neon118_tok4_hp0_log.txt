@@ -1,0 +1,23 @@
+Run: neon118_tok4_hp0
+Training neon118 on data/hp/hp0.txt with tokenizer tok4
+Config: {'vocab_size': 4096, 'd_model': 256, 'n_layers': 4, 'n_head': 4, 'd_ff': 510, 'block_size': 256, 'learning_rate': 0.001, 'max_iters': 10000, 'eval_interval': 500, 'batch_size': 64, 'device': 'cuda'}
+Step 0: Train Loss 8.4938, Val Loss 7.9433
+Step 500: Train Loss 3.5167, Val Loss 3.5183
+Step 1000: Train Loss 3.0023, Val Loss 3.0079
+Step 1500: Train Loss 2.6641, Val Loss 2.6512
+Step 2000: Train Loss 2.5156, Val Loss 2.3748
+Step 2500: Train Loss 2.2280, Val Loss 2.1821
+Step 3000: Train Loss 2.0273, Val Loss 2.0060
+Step 3500: Train Loss 1.8777, Val Loss 1.8735
+Step 4000: Train Loss 1.7736, Val Loss 1.7701
+Step 4500: Train Loss 1.7055, Val Loss 1.6788
+Step 5000: Train Loss 1.6726, Val Loss 1.6015
+Step 5500: Train Loss 1.5285, Val Loss 1.5231
+Step 6000: Train Loss 1.4711, Val Loss 1.4695
+Step 6500: Train Loss 1.4339, Val Loss 1.4006
+Step 7000: Train Loss 1.3270, Val Loss 1.3638
+Step 7500: Train Loss 1.3561, Val Loss 1.3095
+Step 8000: Train Loss 1.2397, Val Loss 1.2816
+Step 8500: Train Loss 1.2688, Val Loss 1.2398
+Step 9000: Train Loss 1.2498, Val Loss 1.2101
+Step 9500: Train Loss 1.1453, Val Loss 1.1725
