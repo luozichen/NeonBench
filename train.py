@@ -142,6 +142,7 @@ def get_config(model_name):
             elif model_name == 'neon111': config['d_ff'] = 210 # Space-Aware Matrix (k=5)
             elif model_name == 'neon112': config['d_ff'] = 648 # Wide MLP with Bottleneck Gate
             elif model_name == 'neon113': config['d_ff'] = 507 # Conv-Attention Pure Hydra
+            elif model_name == 'neon114': config['d_ff'] = 510 # Sharp-Value Conv-Attention
             else: config['d_ff'] = 512
         
         return config
