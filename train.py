@@ -143,6 +143,8 @@ def get_config(model_name):
             elif model_name == 'neon112': config['d_ff'] = 648 # Wide MLP with Bottleneck Gate
             elif model_name == 'neon113': config['d_ff'] = 507 # Conv-Attention Pure Hydra
             elif model_name == 'neon114': config['d_ff'] = 510 # Sharp-Value Conv-Attention
+            elif model_name == 'neon115': config['d_ff'] = 508 # Multi-Head Conv-Attention
+            elif model_name == 'neon116': config['d_ff'] = 507 # Full Multi-Head Conv-Attention
             else: config['d_ff'] = 512
         
         return config
