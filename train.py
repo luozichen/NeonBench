@@ -166,7 +166,7 @@ def get_config(model_name):
             elif model_name == 'neon135': config['d_ff'] = 405 # Holographic
             elif model_name == 'neon136': config['d_ff'] = 252 # MoE Hydra (2 Experts)
             elif model_name == 'neon137': config['d_ff'] = 558 # Hierarchical Context
-            elif model_name == 'neon138': config['d_ff'] = 540 # Colossus Hydra
+            elif model_name == 'neon138': config['d_ff'] = 563 # Strategic Colossus
             else: config['d_ff'] = 512
         
         return config
