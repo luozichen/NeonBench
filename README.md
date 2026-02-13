@@ -113,6 +113,30 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon105** | 2.89M | **Early Starter Hydra**: 1x Hydra (L0) -> 3x SwiGLU. |
 | **neon106** | 2.89M | **Dual-Decision Pure Hydra**: Independent sigmoid gates for k=3 and k=9. |
 | **neon107** | 2.89M | **Massive Reach Pure Hydra**: Pure architecture with k=17 dilated (RF=65). |
+| **neon108** | 2.89M | **Pure Hydra Single-Scale** (k=9). |
+| neon109 | 2.89M | **Pure Hydra High-Reach** (k=20). |
+| **neon110** | 2.89M | **Pure Hydra Swish** (MLP-Only SOTA). |
+| neon111 | 2.89M | **Space-Aware Matrix Attention** (Failed). |
+| neon112 | 2.89M | **Wide MLP** / Bottleneck Gate experiment. |
+| **⭐ neon113** | **2.89M** | **Conv-Attention**: Locally-aware convolution (k=3) on Q/K/V/I. |
+| **⭐ neon114** | **2.89M** | **Sharp-Value Conv-Attention**: Convolves Q/K/I, keeps V sharp. |
+| neon115 | 2.89M | **Multi-Head Conv-Attention** (Independent head-dim convs). |
+| **⭐ neon116** | **2.89M** | **Full Multi-Head Conv-Attention**: Dual-Level Context (Attn+MLP Conv). **[PROJECT SOTA]** |
+| neon117 | 2.89M | **Activated Multi-Head Conv-Attention** (SiLU post-conv). |
+| neon118 | 2.89M | **L2-Norm Multi-Head Conv-Attention**. |
+| neon119 | 2.89M | **Dynamic Soft-Gating**: Predicted SiLU beta for selection. |
+| neon120 | 2.89M | **Activated Intent**: SiLU activation on Intent gate. |
+| neon121 | 2.89M | **Context-Aware Intent Only**: Sharp Q/K/V, Convolved Intent. |
+| neon122 | 2.89M | **Zero-Centered Norm**: LayerNorm-style centering on Q/K. |
+| neon123 | 2.89M | **Residual Gated Attention**: Intent-controlled bypass. |
+| **neon124** | **2.89M** | **Multi-Query Intent (MQI)**: Shared Intent gate across all heads. |
+| neon125 | 2.89M | **Bottleneck Intent**: Low-rank linear projections. |
+| neon126 | 2.89M | **Attention-Context Only**: No MLP Conv ablation. |
+| neon127 | 2.89M | **Biased Attention Context**: Learnable biases in Attn Convs. |
+| neon128 | 2.89M | **Gateless Context baseline**: Convolved Q/K/V, no Intent gate. |
+| **neon129** | 2.89M | **Hyper-Synergy**: Full + MQI + Bias. |
+| **⭐ neon130** | **2.89M** | **Sharp-V Hyper-Synergy**: MQI + Sharp V context. **[Co-SOTA]** |
+| neon131 | 2.89M | **Qwen-NexT Synergy**: Adds Zero-Centered Q/K stability. |
 
 ---
 
@@ -192,7 +216,10 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 | Model | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- |
+| **⭐ neon130** | **2.89M** | **0.7265** | **Sharp-V Hyper-Synergy**. MQI Efficiency. [Co-SOTA] |
 | **⭐ neon116** | **2.89M** | **0.7269** | **Full Multi-Head Conv-Attention [PROJECT SOTA]**. |
+| **neon131** | **2.89M** | **0.7297** | **Qwen-NexT Synergy**. Zero-Centered stability. |
+| **neon129** | 2.89M | 0.7513 | Hyper-Synergy (Full+MQI+Bias). |
 | **neon127** | **2.89M** | **0.7555** | **Biased Attention Conv**. Significant stability gain. |
 | **⭐ neon114** | **2.89M** | **0.7652** | **Sharp-Value Conv-Attention**. |
 | **⭐ neon115** | **2.89M** | **0.7663** | **Multi-Head Conv-Attention**. |
