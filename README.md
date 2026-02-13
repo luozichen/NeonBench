@@ -191,9 +191,13 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 | Model | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- |
-| **⭐ neon100** | **2.89M** | **0.8437** | **Pure Hydra [3M HP0 SOTA]**. |
-| **neon106** | 2.89M | 0.8608 | Dual-Gated Pure Hydra runner-up. |
-| **neon102** | 2.89M | 0.8655 | Sandwich Hydra (H-S-S-H). |
+| **⭐ neon110** | **2.89M** | **0.8365** | **Pure Hydra Swish [3M HP0 SOTA]**. |
+| **⭐ neon108** | **2.89M** | **0.8366** | **Pure Hydra Single-Scale**. |
+| **neon100** | 2.89M | 0.8437 | Dual-Scale Pure Hydra. |
+| neon109 | 2.89M | 0.8807 | High-Reach (k=20). |
+| neon106 | 2.89M | 0.8608 | Dual-Gated Pure Hydra runner-up. |
+| neon102 | 2.89M | 0.8655 | Sandwich Hydra Test. |
+| neon111 | 2.89M | 0.9968 | Space-Aware Matrix (Failed). |
 | **⭐ neon085** | **2.89M** | **0.8670** | **Dual-Scale Hydra**. (Previous 3M SOTA). |
 | **neon105** | 2.89M | 0.8671 | Early Starter (Hydra L0). |
 | **neon095** | 2.89M | 0.8703 | Progressive Kernels (k=3-17). |

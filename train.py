@@ -140,6 +140,7 @@ def get_config(model_name):
             elif model_name == 'neon109': config['d_ff'] = 503 # Pure k=20 Reach
             elif model_name == 'neon110': config['d_ff'] = 509 # Pure k=9 Swish
             elif model_name == 'neon111': config['d_ff'] = 210 # Space-Aware Matrix (k=5)
+            elif model_name == 'neon112': config['d_ff'] = 648 # Wide MLP with Bottleneck Gate
             else: config['d_ff'] = 512
         
         return config
