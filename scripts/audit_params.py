@@ -16,7 +16,7 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 def audit():
-    models = ["neon081", "neon116", "neon129", "neon130", "neon131"]
+    models = ["neon081", "neon116", "neon130", "neon132", "neon133", "neon134", "neon135"]
     
     print(f"--- PARAMS AUDIT ---")
     print(f"{'Model':<10} | {'d_ff':<5} | {'Parameters':>12}")

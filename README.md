@@ -137,6 +137,10 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon129** | 2.89M | **Hyper-Synergy**: Full + MQI + Bias. |
 | **⭐ neon130** | **2.89M** | **Sharp-V Hyper-Synergy**: MQI + Sharp V context. **[Co-SOTA]** |
 | neon131 | 2.89M | **Qwen-NexT Synergy**: Adds Zero-Centered Q/K stability. |
+| **neon132** | 2.89M | **Fourier Hydra**: MLP frequency-domain filtering via FFT. |
+| **neon133** | 2.89M | **Commander Head**: Dynamic synaptic weights predicted on-the-fly. |
+| **neon134** | 2.89M | **Mamba-Hydra Hybrid**: Recurrent Intent scan for long-range context. |
+| **neon135** | 2.89M | **Holographic Projection**: Complex-valued interference attention. |
 
 ---
 
@@ -301,3 +305,4 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 9.  **Locally-Aware Attention (113-116)**: Discovered that adding $k=3$ depthwise convolutions to $Q, K, V,$ and $Intent$ projections AFTER linear projection creates a "Locally-Aware Search." `neon116` achieved a massive SOTA jump from 0.88 to **0.72**, proving that attention is most effective when it sees its neighbors.
 10. **The Force Multiplier Discovery (126)**: Proved that Locally-Aware Attention is NOT a standalone winner. Ablation `neon126` (0.96 loss) showed that without the **Hydra MLP** providing local context foundationally, the attention mechanism "flies blind." Local context is a dual-layer requirement.
 11. **Hyper-Synergy & MQI (130-131)**: Optimized the architecture via **Multi-Query Intent (MQI)**, sharing a single intent gate across all heads. `neon130` matched the project SOTA (0.72) while using the saved parameters to push MLP width to $d_{ff}=572$, establishing the current most efficient 3M architecture.
+12. **The Blue Sky Pivot (132-135)**: Exploring non-linear and non-spatial context mechanisms. This batch moves beyond windowed convolutions into **Fourier Domain** filtering (`132`), **Dynamic Synaptic Weights** (`133`), **Recurrent Intent** scans (`134`), and **Complex-Valued Interference** (`135`).
