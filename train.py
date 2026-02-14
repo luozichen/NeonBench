@@ -195,7 +195,7 @@ def get_config(model_name):
             elif model_name == 'neon165': config['n_layers'], config['d_ff'] = 8, 207 # Res-Gated Silent
             elif model_name == 'neon166': config['n_layers'], config['d_ff'] = 8, 205 # Deep Spectral
             elif model_name == 'neon167': config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Non-Embed Class
-            elif model_name in ['neon168', 'neon169', 'neon170', 'neon171', 'neon172', 'neon173']: 
+            elif model_name in ['neon168', 'neon169', 'neon170', 'neon171', 'neon172', 'neon173', 'neon179', 'neon180', 'neon181', 'neon182']: 
                 config['d_model'], config['d_ff'] = 272, 1072 # 5.0M MHI Class
             elif model_name in ['neon174', 'neon175', 'neon176']:
                 config['d_model'], config['d_ff'] = 272, 1140 # 5.0M MQI Class
