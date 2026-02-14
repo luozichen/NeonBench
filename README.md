@@ -292,10 +292,13 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 | Model | Tok | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- | :--- |
+| **⭐ neon167** | tok4 | **5.00M** | **3.1484** | **Wiki103 5M SOTA**. Synergy Baseline (Rerun). |
 | **⭐ neon169** | tok4 | **5.02M** | **3.1485** | **Wiki103 5M SOTA**. Ascending Attention. |
-| **neon171** | tok4 | 5.00M | 3.1492 | Ascending MLP (5M). |
-| **neon167** | tok4 | 5.00M | 3.1521 | Giant Synergy Baseline (5M). |
-| **neon173** | tok4 | 5.00M | 3.1550 | Dual Ascending (5M). |
+| **neon171** | tok4 | 5.00M | 3.1492 | Ascending MLP. |
+| **neon173** | tok4 | 5.00M | 3.1502 | Dual Ascending (MHI). |
+| **neon176** | tok4 | 5.00M | 3.1538 | Dual Ascending (MQI + Wide MLP). |
+| **neon175** | tok4 | 5.00M | 3.1565 | MLP-Hierarchy (MQI). |
+| **neon174** | tok4 | 5.00M | 3.1601 | Attn-Hierarchy (MQI). |
 | **⭐ neon092** | tok4 | **9.72M** | **3.0575** | **10M Wiki SOTA**. Full Synergy. |
 | **neon091** | tok4 | 9.72M | 3.0797 | 10M Hydra Wiki. |
 | **neon061** | tok4 | 9.72M | 3.0940 | Legacy 10M Baseline. |
@@ -335,5 +338,5 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 13. **The 5M Upscale & Hierarchical Abstraction (167-176)**:
     - **Quantity Meets Quality**: Scaling from 3M to 5M parameters and standardizing on **4x MLP width** resulted in an immediate SOTA jump on Wikipedia.
     - **Hierarchical Sensing**: Discovered that **Ascending Kernels** (starting sharp at k=3 and expanding to k=9 with depth) outperform uniform and descending kernels.
-    - **The MQI Surplus**: Proved that **Multi-Query Intent** (shared gate) is even more potent at larger scales, as the saved parameters can be funneled into a massive **1140-dim MLP** while staying within budget.
-    - **Current Champion**: `neon169` (Ascending Attention) currently holds the 5M Wiki103 record at **3.1485**.
+    - **The MHI Rebound**: Crucially, discovered that **Multi-Head Intent (MHI)** is superior to Multi-Query Intent (MQI) at the 5M scale, despite MQI allowing for wider MLPs. Head-specific gating diversity is key for high-level reasoning.
+    - **Current Champions**: `neon167` (Baseline) and `neon169` (Ascending) are effectively tied for the record at **3.148**.

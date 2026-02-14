@@ -199,6 +199,10 @@ def get_config(model_name):
                 config['d_model'], config['d_ff'] = 272, 1072 # 5.0M MHI Class
             elif model_name in ['neon174', 'neon175', 'neon176']:
                 config['d_model'], config['d_ff'] = 272, 1140 # 5.0M MQI Class
+            elif model_name == 'neon177':
+                config['d_model'], config['n_layers'], config['d_ff'] = 272, 5, 972 # 5.0M MQA Class
+            elif model_name == 'neon178':
+                config['d_model'], config['d_ff'] = 272, 1014 # 5.0M Spectral Class
             else: config['d_ff'] = 512
         
         return config
