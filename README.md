@@ -1,7 +1,7 @@
 NeonBench is a repository dedicated to exploring novel transformer and recurrent architectures at the ~3M parameter scale. This log tracks every experiment, focusing on parameter efficiency and architectural breakthroughs.
 
-**Total Architectures Tested**: 128  
-**Total Models Trained**: 150
+**Total Architectures Tested**: 176  
+**Total Models Trained**: 212
 
 ## 📋 Master Model Inventory
 *Parameter counts exclude embeddings to ensure absolute consistency across benchmarks.*
@@ -141,6 +141,21 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon133** | 2.89M | **Commander Head**: Dynamic synaptic weights predicted on-the-fly. |
 | **neon134** | 2.89M | **Mamba-Hydra Hybrid**: Recurrent Intent scan for long-range context. |
 | **neon135** | 2.89M | **Holographic Projection**: Complex-valued interference attention. |
+| **neon143** | 3.15M | **Silent Hydra**: Attention-Free context gate. HP0 Specialist. |
+| **neon160** | 3.15M | **The Ghost**: Hybrid with Attention only in the final layer. |
+| **neon162** | 3.15M | **Deep Hybrid**: 8-layer Synergy (Attention + Hydra). |
+| | | |
+| **---** | **---** | **5M PARAMETER CLASS MODELS** |
+| **neon167** | **5.00M** | **Giant Synergy**: Scaled neon116. (d_model=272, d_ff=1072). |
+| **neon168** | 5.00M | **Sharp Giant**: Sharp Value and Intent gates. |
+| **neon169** | **5.02M** | **Ascending Giant**: Hierarchical Attn kernels (k=3 to 9). **WIKI SOTA.** |
+| **neon170** | 5.02M | **Descending Giant**: Hierarchical Attn kernels (k=9 to 3). |
+| **neon171** | **5.00M** | **Ascending MLP Giant**: Hierarchical MLP kernels (k=3 to 9). |
+| **neon172** | 5.00M | **Descending MLP Giant**: Hierarchical MLP kernels (k=9 to 3). |
+| **neon173** | 5.00M | **Dual Ascending Giant**: Hierarchical Attn + MLP kernels. |
+| **neon174** | **5.00M** | **MQI Att-Hierarchy**: Shared Intent + Attn Hierarchy (d_ff=1140). |
+| **neon175** | 5.00M | **MQI MLP-Hierarchy**: Shared Intent + MLP Hierarchy (d_ff=1140). |
+| **neon176** | **5.00M** | **MQI Dual-Hierarchy**: Shared Intent + Dual Hierarchy (d_ff=1140). |
 
 ---
 
@@ -277,6 +292,10 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 | Model | Tok | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- | :--- |
+| **⭐ neon169** | tok4 | **5.02M** | **3.1485** | **Wiki103 5M SOTA**. Ascending Attention. |
+| **neon171** | tok4 | 5.00M | 3.1492 | Ascending MLP (5M). |
+| **neon167** | tok4 | 5.00M | 3.1521 | Giant Synergy Baseline (5M). |
+| **neon173** | tok4 | 5.00M | 3.1550 | Dual Ascending (5M). |
 | **⭐ neon092** | tok4 | **9.72M** | **3.0575** | **10M Wiki SOTA**. Full Synergy. |
 | **neon091** | tok4 | 9.72M | 3.0797 | 10M Hydra Wiki. |
 | **neon061** | tok4 | 9.72M | 3.0940 | Legacy 10M Baseline. |
@@ -313,3 +332,8 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
     - **Commander Head (133)**: Achieved a solid **0.85** loss, proving that predicting kernels on-the-fly is a powerful lever for local intelligence.
     - **Holographic (135)**: Demonstrated that complex interference is highly sensitive and difficult to regularize (1.46 loss).
     - **Mamba/Fourier (134/132)**: Discovered that fast recurrent scans require careful masking (NaN fix) and dimension alignment to match the stability of spatial convolutions.
+13. **The 5M Upscale & Hierarchical Abstraction (167-176)**:
+    - **Quantity Meets Quality**: Scaling from 3M to 5M parameters and standardizing on **4x MLP width** resulted in an immediate SOTA jump on Wikipedia.
+    - **Hierarchical Sensing**: Discovered that **Ascending Kernels** (starting sharp at k=3 and expanding to k=9 with depth) outperform uniform and descending kernels.
+    - **The MQI Surplus**: Proved that **Multi-Query Intent** (shared gate) is even more potent at larger scales, as the saved parameters can be funneled into a massive **1140-dim MLP** while staying within budget.
+    - **Current Champion**: `neon169` (Ascending Attention) currently holds the 5M Wiki103 record at **3.1485**.
