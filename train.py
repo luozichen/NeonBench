@@ -194,6 +194,7 @@ def get_config(model_name):
             elif model_name == 'neon164': config['n_layers'], config['d_ff'] = 8, 204 # Pyramidal Silent
             elif model_name == 'neon165': config['n_layers'], config['d_ff'] = 8, 207 # Res-Gated Silent
             elif model_name == 'neon166': config['n_layers'], config['d_ff'] = 8, 205 # Deep Spectral
+            elif model_name == 'neon167': config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Non-Embed Class
             else: config['d_ff'] = 512
         
         return config
