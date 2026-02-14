@@ -1,3 +1,23 @@
 Run: neon167_tok4_wiki103_tok4
 Training neon167 on data/wiki103/wiki103_tok4.bin with tokenizer tok4
 Config: {'vocab_size': 4096, 'd_model': 272, 'n_layers': 4, 'n_head': 4, 'd_ff': 1072, 'block_size': 256, 'learning_rate': 0.001, 'max_iters': 10000, 'eval_interval': 500, 'batch_size': 64, 'device': 'cuda'}
+Step 0: Train Loss 8.5018, Val Loss 8.0641
+Step 500: Train Loss 4.0725, Val Loss 4.1285
+Step 1000: Train Loss 3.7236, Val Loss 3.7650
+Step 1500: Train Loss 3.6269, Val Loss 3.6108
+Step 2000: Train Loss 3.5134, Val Loss 3.5242
+Step 2500: Train Loss 3.4424, Val Loss 3.4579
+Step 3000: Train Loss 3.4152, Val Loss 3.4078
+Step 3500: Train Loss 3.3309, Val Loss 3.3664
+Step 4000: Train Loss 3.3345, Val Loss 3.3363
+Step 4500: Train Loss 3.2141, Val Loss 3.3070
+Step 5000: Train Loss 3.2771, Val Loss 3.2825
+Step 5500: Train Loss 3.2110, Val Loss 3.2579
+Step 6000: Train Loss 3.2570, Val Loss 3.2401
+Step 6500: Train Loss 3.1550, Val Loss 3.2216
+Step 7000: Train Loss 3.1939, Val Loss 3.2092
+Step 7500: Train Loss 3.1680, Val Loss 3.1944
+Step 8000: Train Loss 3.1430, Val Loss 3.1804
+Step 8500: Train Loss 3.1406, Val Loss 3.1681
+Step 9000: Train Loss 3.0941, Val Loss 3.1594
+Step 9500: Train Loss 3.1247, Val Loss 3.1484
