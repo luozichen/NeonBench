@@ -111,37 +111,64 @@ graph TD
     B --> C["Residual Stream [B, 256, 272]"]
     
     subgraph "Block (x4)"
-    C --> D["RMSNorm"]
-    D --> E["C_Attn Linear [272, 1088]"]
-    E --> F["QKVI Split [4x 272]"]
-    F --> G["K3 DepthConv [272, 1, 3]"]
-    G --> H["4-Head Split [68-dim]"]
-    H --> I["SDPA + Intent Gate"]
-    I --> J["C_Proj Linear [272, 272]"]
-    
-    %% CORRECTED: Added the skip connection from C to K
-    C --> K["( + ) Residual Connection"]
-    J --> K
-    
-    K --> L["RMSNorm"]
-    L --> M["K9 DepthConv [272, 1, 9]"]
-    M --> N["Hydra Gate [272, 1072]"]
-    L --> O["Content W1 [272, 1072]"]
-    O --> P["Hadamard Product (*)"]
-    N --> P
-    P --> Q["W2 Linear [1072, 272]"]
-    
-    %% CORRECTED: Added the skip connection from K to R
-    K --> R["( + ) Residual Connection"]
-    Q --> R
+        C --> D["RMSNorm"]
+        D --> E["C_Attn Linear [272, 1088]"]
+        
+        %% Splitting the projected tensor into 4 distinct paths
+        E --> F["Split into Q, K, V, I"]
+        
+        %% Parallel Depthwise Convolutions
+        F --> GQ["Q: K3 DepthConv [272, 1, 3]"]
+        F --> GK["K: K3 DepthConv [272, 1, 3]"]
+        F --> GV["V: K3 DepthConv [272, 1, 3]"]
+        F --> GI["I: K3 DepthConv [272, 1, 3]"]
+        
+        %% Splitting into 4 Attention Heads (68-dim each)
+        GQ --> HQ["Q Heads [4, 256, 68]"]
+        GK --> HK["K Heads [4, 256, 68]"]
+        GV --> HV["V Heads [4, 256, 68]"]
+        GI --> HI["I Heads [4, 256, 68]"]
+        
+        %% Explicit SDPA Logic
+        HQ --> Score["Q × K^T (Score Card)"]
+        HK --> Score
+        Score --> Retrieval["Scores × V (Retrieval)"]
+        HV --> Retrieval
+        
+        %% Explicit Intent Gating
+        HI --> SigI["Sigmoid(I)"]
+        Retrieval --> Gate["Hadamard Product (*)"]
+        SigI --> Gate
+        
+        %% Merging back to residual dimension
+        Gate --> J["Merge Heads & C_Proj Linear [272, 272]"]
+        
+        %% Attention Residual Connection
+        C --> K["( + ) Residual Connection"]
+        J --> K
+        
+        %% Hydra MLP
+        K --> L["RMSNorm"]
+        L --> M["K9 DepthConv [272, 1, 9]"]
+        M --> N["Hydra Gate [272, 1072]"]
+        L --> O["Content W1 [272, 1072]"]
+        O --> P["Hadamard Product (*)"]
+        N --> P
+        P --> Q["W2 Linear [1072, 272]"]
+        
+        %% MLP Residual Connection
+        K --> R["( + ) Residual Connection"]
+        Q --> R
     end
     
     R --> S["Final RMSNorm"]
     S --> T["LM Head Linear [272, 1024]"]
     T --> U["Next Token Probabilities"]
+
 ```
 
 
 ---
 *Developed as the baseline for the NeonBench 5M Generalization Study.*
+
 
