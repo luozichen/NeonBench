@@ -39,38 +39,101 @@ Neon167 proves that the **Synergy Architecture** is not just a small-scale heuri
 
 ## 🎓 Pedagogical Walkthrough: The Data Pipeline
 
-To understand Neon167, let us trace the life of a token through its 5.28M parameters.
+To understand Neon167, we follow the life of a sequence through its **5.28M** parameters.
 
 ### Phase 1: Ingestion & Embedding
-1.  **Tokenization**: Raw text is broken into chunks of **256 tokens** (the context window).
-2.  **Embedding**: Each token ID is converted into a **272-dimensional** vector via a learned lookup table ($1024 \times 272$).
-3.  **Result**: We now have a matrix of shape `[Batch, 256, 272]`.
+1.  **Tokenization**: The input text is represented as a list of integers. Neon167 processes blocks of **256 tokens** at a time.
+2.  **Embedding**:
+    *   **Layer**: `nn.Embedding(1024, 272)`
+    *   **Matrix**: A weight matrix of shape **[1024, 272]**.
+    *   **Result**: Each token ID is looked up to produce a **272-dimensional** vector.
+    *   **Data Shape**: `[Batch, 256, 272]`.
 
-### Phase 2: The Transformer Block (Iterated 4 Times)
-The data enters one of the four blocks. Each block is a two-step process: **Attention** followed by **MLP**.
+### Phase 2: The Transformer Blocks (Stack of 4)
+The data flows through 4 identical blocks. Each block has two internal "sub-brains": **Attention** and **MLP**.
 
 #### Step A: Locally-Aware Conv-Attention
-1.  **Normalization**: The input is passed through **RMSNorm** to stabilize gradients.
-2.  **Projection**: A linear layer transforms the 272-dim input into **1,088 dimensions** ($4 \times 272$), which are split into **Query (Q)**, **Key (K)**, **Value (V)**, and **Intent (I)**.
-3.  **The QKVI Blur**: Each of these four signals is passed through a **$k=3$ Depthwise Convolution**. 
-    *   *Dimension Impact*: Every channel looks at its 2 neighbors. Shape remains `[Batch, 256, 272]`.
-4.  **Head Splitting**: The 272 channels are divided into **4 Attention Heads** (each **68-dim** wide).
-5.  **RoPE**: **Rotary Positional Embeddings** are applied to Q and K so the model knows the relative distance between tokens.
-6.  **Search**: We perform **Scaled Dot-Product Attention** ($Q \times K^T$). This creates a $256 \times 256$ attention matrix per head, which is then multiplied by V.
-7.  **The Intent Gate**: The output of the attention search is multiplied by `Sigmoid(Intent)`. This is the project's signature **Result Gating**.
-8.  **Output Projection**: The matched results from all 4 heads are concatenated and projected back into the 272-dim residual stream.
+This layer allows tokens to "search" for relevant neighbors.
+1.  **Normalization**: Input is stabilized via `RMSNorm(272)`.
+2.  **Projection (The Split)**: 
+    *   **Layer**: `nn.Linear(272, 1088, bias=False)`
+    *   **Matrix**: **[272, 1088]** (Input Dim $\times$ 4).
+    *   **Operation**: Projects the hidden state into 4 segments: **Query (Q)**, **Key (K)**, **Value (V)**, and **Intent (I)**.
+    *   **Result**: 4 matrices of shape `[Batch, 256, 272]`.
+3.  **The QKVI Blur (Context Filter)**:
+    *   **Layer**: 4 parallel `nn.Conv1d(272, 272, kernel_size=3, groups=272, bias=False)`.
+    *   **Filters**: 4 weight matrices of shape **[272, 1, 3]**.
+    *   **Operation**: Each channel performs a local 3-token neighborhood average. This makes the search robust to local noise.
+4.  **Multi-Head Splitting**:
+    *   The 272 channels are split into **4 Heads**.
+    *   **Head Dimension**: $272 / 4 = \mathbf{68}$.
+    *   **Shapes**: Q, K, V, I now exist as `[Batch, 4, 256, 68]`.
+5.  **Attention Logic**:
+    *   **Matching**: $Q \times K^T \to$ **[Batch, 4, 256, 256]** (The score card).
+    *   **Retrieval**: Score Card $\times V \to$ **[Batch, 4, 256, 68]**.
+    *   **Intent Gating**: Retrieval $\times \text{Sigmoid}(I) \to$ Each head's output is weighted by its locally-aware "intention."
+6.  **Final Merge**:
+    *   **Layer**: `nn.Linear(272, 272, bias=False)`
+    *   **Matrix**: **[272, 272]**.
+    *   **Result**: Merges the 4 heads back into a single 272-dim vector.
 
 #### Step B: The Hydra MLP
-1.  **Normalization**: Another **RMSNorm** layer.
-2.  **The Topic Sensor**: The input is passed through a **$k=9$ Depthwise Convolution**. This allows the MLP to "sense" the topic of the entire phrase.
-3.  **The Bifurcation**:
-    *   **Lane 1 (The Content)**: Linear layer $W_1$ expands 272 dimensions to **1,072 dimensions**.
-    *   **Lane 2 (The Gate)**: The convolved signal is projected to 1,072 dimensions via `c_gate_proj` and passed through a **Sigmoid**.
-4.  **Hydra Gating**: The content ($W_1$) is multiplied by the gate. This is a sparse-like activation where the context determines which "facts" are relevant.
-5.  **Down-Projection**: $W_2$ transforms the 1072-dim activation back down to **272 dimensions**.
+This is the model's "Knowledge Base."
+1.  **Topic Sensing**:
+    *   **Layer**: `nn.Conv1d(272, 272, kernel_size=9, groups=272, bias=False)`.
+    *   **Filter**: **[272, 1, 9]**.
+    *   **Logic**: The model "reads" a 9-token window to decide which internal facts are relevant.
+2.  **The Fact Expansion**:
+    *   **Layer**: `nn.Linear(272, 1072, bias=False)`.
+    *   **Matrix**: **[272, 1072]** (Expansion to 4$\times$ capacity).
+    *   **Operation**: Projects content into a high-dimensional feature space.
+3.  **Gating (Synergy)**:
+    *   The 1072 content neurons are multiplied by a **Sigmoid Gate** derived from the $k=9$ convolved signal.
+4.  **The Factorization**:
+    *   **Layer**: `nn.Linear(1072, 272, bias=False)`.
+    *   **Matrix**: **[1072, 272]**.
+    *   **Result**: Compresses the high-dim facts back down to the 272 residual stream.
 
-### Phase 3: Prediction
-After 4 layers of this dual-context processing, the final 272-dim vector is normalized and passed through a language model head ($272 \times 1024$) to predict the probability of the next token in the sequence.
+### Phase 3: Language Modeling Head
+1.  **Final Polish**: Output from the 4th block is normalized via `RMSNorm(272)`.
+2.  **Prediction**:
+    *   **Layer**: `nn.Linear(272, 1024, bias=False)`.
+    *   **Matrix**: **[272, 1024]**.
+    *   **Result**: Produces 1024 probabilities (logits) for the next token.
+
+---
+
+## 🎨 Architecture Diagram
+
+```mermaid
+graph TD
+    A["Input Tokens [B, 256]"] --> B["Embedding Matrix [1024, 272]"]
+    B --> C["Residual Stream [B, 256, 272]"]
+    
+    subgraph "Block (x4)"
+    C --> D["RMSNorm"]
+    D --> E["C_Attn Linear [272, 1088]"]
+    E --> F["QKVI Split [4x 272]"]
+    F --> G["K3 DepthConv [272, 1, 3]"]
+    G --> H["4-Head Split [68-dim]"]
+    H --> I["SDPA + Intent Gate"]
+    I --> J["C_Proj Linear [272, 272]"]
+    J --> K["( + ) Residual Connection"]
+    
+    K --> L["RMSNorm"]
+    L --> M["K9 DepthConv [272, 1, 9]"]
+    M --> N["Hydra Gate [272, 1072]"]
+    L --> O["Content W1 [272, 1072]"]
+    O --> P["Hadamard Product (*)"]
+    N --> P
+    P --> Q["W2 Linear [1072, 272]"]
+    Q --> R["( + ) Residual Connection"]
+    end
+    
+    R --> S["Final RMSNorm"]
+    S --> T["LM Head Linear [272, 1024]"]
+    T --> U["Next Token Probabilities"]
+```
 
 ---
 *Developed as the baseline for the NeonBench 5M Generalization Study.*
