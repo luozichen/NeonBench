@@ -118,7 +118,10 @@ graph TD
     G --> H["4-Head Split [68-dim]"]
     H --> I["SDPA + Intent Gate"]
     I --> J["C_Proj Linear [272, 272]"]
-    J --> K["( + ) Residual Connection"]
+    
+    %% CORRECTED: Added the skip connection from C to K
+    C --> K["( + ) Residual Connection"]
+    J --> K
     
     K --> L["RMSNorm"]
     L --> M["K9 DepthConv [272, 1, 9]"]
@@ -127,7 +130,10 @@ graph TD
     O --> P["Hadamard Product (*)"]
     N --> P
     P --> Q["W2 Linear [1072, 272]"]
-    Q --> R["( + ) Residual Connection"]
+    
+    %% CORRECTED: Added the skip connection from K to R
+    K --> R["( + ) Residual Connection"]
+    Q --> R
     end
     
     R --> S["Final RMSNorm"]
@@ -135,5 +141,7 @@ graph TD
     T --> U["Next Token Probabilities"]
 ```
 
+
 ---
 *Developed as the baseline for the NeonBench 5M Generalization Study.*
+
