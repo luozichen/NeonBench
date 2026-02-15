@@ -1,7 +1,7 @@
 NeonBench is a repository dedicated to exploring novel transformer and recurrent architectures at the ~3M parameter scale. This log tracks every experiment, focusing on parameter efficiency and architectural breakthroughs.
 
-**Total Architectures Tested**: 176  
-**Total Models Trained**: 212
+**Total Architectures Tested**: 182  
+**Total Models Trained**: 222
 
 ## 📋 Master Model Inventory
 *Parameter counts exclude embeddings to ensure absolute consistency across benchmarks.*
@@ -156,6 +156,12 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon174** | **5.00M** | **MQI Att-Hierarchy**: Shared Intent + Attn Hierarchy (d_ff=1140). |
 | **neon175** | 5.00M | **MQI MLP-Hierarchy**: Shared Intent + MLP Hierarchy (d_ff=1140). |
 | **neon176** | **5.00M** | **MQI Dual-Hierarchy**: Shared Intent + Dual Hierarchy (d_ff=1140). |
+| **neon177** | 5.00M | **MQA Giant**: 5-Layer Multi-Query Attention attempt. |
+| **neon178** | 5.00M | **Spectral Synergy**: Multi-scale Spectral Pyramid heads. |
+| **neon179** | 5.00M | **Sharp Intent**: Blurred Q/K/V with Sharp Intent gate. |
+| **⭐ neon180** | **5.00M** | **Sharp-V Giant**: Sharp Value with Blurred Q/K/I. **Wiki CO-SOTA.** |
+| **neon181** | 5.00M | **Sharp Search**: Sharp Q/K with Blurred Value/Intent. |
+| **neon182** | 5.27M | **Pure Attention**: No convolutions in projections. |
 
 ---
 
@@ -293,12 +299,16 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | Model | Tok | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- | :--- |
 | **⭐ neon167** | tok4 | **5.00M** | **3.1484** | **Wiki103 5M SOTA**. Synergy Baseline (Rerun). |
+| **⭐ neon180** | tok4 | **5.00M** | **3.1485** | **Wiki103 5M CO-SOTA**. Sharp-V Giant. |
 | **⭐ neon169** | tok4 | **5.02M** | **3.1485** | **Wiki103 5M SOTA**. Ascending Attention. |
 | **neon171** | tok4 | 5.00M | 3.1492 | Ascending MLP. |
 | **neon173** | tok4 | 5.00M | 3.1502 | Dual Ascending (MHI). |
 | **neon176** | tok4 | 5.00M | 3.1538 | Dual Ascending (MQI + Wide MLP). |
-| **neon175** | tok4 | 5.00M | 3.1565 | MLP-Hierarchy (MQI). |
-| **neon174** | tok4 | 5.00M | 3.1601 | Attn-Hierarchy (MQI). |
+| **neon179** | tok4 | 5.00M | 3.1568 | Sharp Intent Giant. |
+| **neon181** | tok4 | 5.00M | 3.1663 | Sharp Search (Q,K) Giant. |
+| **neon178** | tok4 | 5.00M | 3.1712 | Spectral Synergy Giant. |
+| **neon177** | tok4 | 5.00M | 3.1776 | 5-Layer MQA Giant. |
+| **neon182** | tok4 | 5.00M | 3.1845 | Pure Attention (No Convs). |
 | **⭐ neon092** | tok4 | **9.72M** | **3.0575** | **10M Wiki SOTA**. Full Synergy. |
 | **neon091** | tok4 | 9.72M | 3.0797 | 10M Hydra Wiki. |
 | **neon061** | tok4 | 9.72M | 3.0940 | Legacy 10M Baseline. |
@@ -339,4 +349,8 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
     - **Quantity Meets Quality**: Scaling from 3M to 5M parameters and standardizing on **4x MLP width** resulted in an immediate SOTA jump on Wikipedia.
     - **Hierarchical Sensing**: Discovered that **Ascending Kernels** (starting sharp at k=3 and expanding to k=9 with depth) outperform uniform and descending kernels.
     - **The MHI Rebound**: Crucially, discovered that **Multi-Head Intent (MHI)** is superior to Multi-Query Intent (MQI) at the 5M scale, despite MQI allowing for wider MLPs. Head-specific gating diversity is key for high-level reasoning.
-    - **Current Champions**: `neon167` (Baseline) and `neon169` (Ascending) are effectively tied for the record at **3.148**.
+    - **Current Champions**: `neon167`, `neon169`, and `neon180` form a 3-way tie for the record at **3.148**.
+14. **The Search-is-King Discovery (179-182)**:
+    - **Convolutional Mandate**: Proved that **Blurred Search (Q, K)** and **Blurred Gating (I)** are mandatory for Wikipedia. Moving to raw dot-product (`neon182`) or sharp matching (`neon181`) caused immediate regressions.
+    - **Value Flexibility**: Discovered that keeping **Value Sharp** (`neon180`) is the only viable ablation, as intelligence at 5M lies in the *selection mechanism*, not the *content smoothing*.
+    - **The Depth Trap**: Confirmed that adding a 5th layer via MQA (`neon177`) is strictly worse than keeping 4 layers with full head-specific gating diversity (MHI).

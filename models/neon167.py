@@ -1,7 +1,7 @@
 """Neon167: Scaled Full Conv-Attention (The Giant).
 Scaled version of neon116 to 5M Non-Embedding Parameters.
 Architecture: Full Multi-Head Conv-Attention (Q, K, V, I blurred) + Pure Hydra MLP.
-Calibration: d_model=240, n_layers=4, d_ff=960 (4x Scale).
+Calibration: d_model=272, n_layers=4, d_ff=1072 (5.0M Class).
 """
 import torch
 import torch.nn as nn
