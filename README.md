@@ -162,6 +162,9 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **⭐ neon180** | **5.00M** | **Sharp-V Giant**: Sharp Value with Blurred Q/K/I. **Wiki CO-SOTA.** |
 | **neon181** | 5.00M | **Sharp Search**: Sharp Q/K with Blurred Value/Intent. |
 | **neon182** | 5.27M | **Pure Attention**: No convolutions in projections. |
+| **⭐ neon185** | **5.00M** | **SwiGLU-Conv**: SiLU Gated MLP + Sigmoid Gated Attn. **[PROJECT SOTA]** |
+| **neon186** | 5.00M | **SiLU Gated Attn**: SiLU Gated Attn + Sigmoid Gated MLP. |
+| **neon187** | 5.00M | **Full SiLU Architecture**: SiLU Gated Attn + SiLU Gated MLP. |
 
 ---
 
@@ -298,11 +301,15 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 | Model | Tok | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- | :--- |
-| **⭐ neon167** | tok4 | **5.00M** | **3.1484** | **Wiki103 5M SOTA**. Synergy Baseline (Rerun). |
-| **⭐ neon180** | tok4 | **5.00M** | **3.1485** | **Wiki103 5M CO-SOTA**. Sharp-V Giant. |
-| **⭐ neon169** | tok4 | **5.02M** | **3.1485** | **Wiki103 5M SOTA**. Ascending Attention. |
+| **neon182** | tok4 | 5.00M | 3.1845 | Pure Attention (No Convs). |
+| **⭐ neon185** | tok4 | **5.00M** | **3.1364** | **Wiki103 5M SOTA**. SwiGLU + Sigmoid Attn. |
+| **neon187** | tok4 | 5.00M | 3.1381 | Full SiLU (Swish). |
+| **neon167** | tok4 | **5.00M** | **3.1484** | **Wiki103 5M Baseline**. Synergy Baseline. |
+| **neon180** | tok4 | **5.00M** | **3.1485** | Sharp-V Giant. |
+| **neon169** | tok4 | **5.02M** | **3.1485** | Ascending Attention. |
 | **neon171** | tok4 | 5.00M | 3.1492 | Ascending MLP. |
 | **neon173** | tok4 | 5.00M | 3.1502 | Dual Ascending (MHI). |
+| **neon186** | tok4 | 5.00M | 3.1528 | SiLU Attn + Sigmoid MLP. |
 | **neon176** | tok4 | 5.00M | 3.1538 | Dual Ascending (MQI + Wide MLP). |
 | **neon179** | tok4 | 5.00M | 3.1568 | Sharp Intent Giant. |
 | **neon181** | tok4 | 5.00M | 3.1663 | Sharp Search (Q,K) Giant. |
@@ -354,3 +361,6 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
     - **Convolutional Mandate**: Proved that **Blurred Search (Q, K)** and **Blurred Gating (I)** are mandatory for Wikipedia. Moving to raw dot-product (`neon182`) or sharp matching (`neon181`) caused immediate regressions.
     - **Value Flexibility**: Discovered that keeping **Value Sharp** (`neon180`) is the only viable ablation, as intelligence at 5M lies in the *selection mechanism*, not the *content smoothing*.
     - **The Depth Trap**: Confirmed that adding a 5th layer via MQA (`neon177`) is strictly worse than keeping 4 layers with full head-specific gating diversity (MHI).
+15. **The SwiGLU Mandate (185-187)**:
+    - **SiLU MLP Winner**: `neon185` (Swish MLP) achieved a new SOTA **3.136** by replacing Sigmoid gating with SiLU (SwiGLU-style) in the MLP.
+    - **Sigmoid Attention Winner**: However, using SiLU in the Attention gate (`neon186`, `neon187`) degraded performance relative to the base. Interpretation: **Attention Probability** is naturally bounded $[0,1]$ and benefits from Sigmoid, whereas **MLP features** are unbounded and benefit from SiLU's non-saturation.
