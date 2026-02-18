@@ -210,6 +210,10 @@ def get_config(model_name):
                 config['d_model'], config['d_ff'] = 248, 1019 # 5.28M Semantic Axis Reversal variants
             elif model_name == 'neon191':
                 config['d_model'], config['d_ff'] = 272, 1111 # 5.28M Lightweight Bottleneck Gate
+            elif model_name in ['neon193', 'neon194']:
+                config['d_model'], config['d_ff'] = 272, 1066 # 5.28M Residual Flip / Polarity Gate
+            elif model_name in ['neon195', 'neon196']:
+                config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Bipolar Intent variants
             else: config['d_ff'] = 512
         
         return config
