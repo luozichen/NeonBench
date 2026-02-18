@@ -1,23 +1,23 @@
 Run: neon206_tok5_wiki103_tok5
 Training neon206 on data/wiki103/wiki103_tok5.bin with tokenizer tok5
-Config: {'vocab_size': 8192, 'd_model': 256, 'n_layers': 4, 'n_head': 4, 'd_ff': 512, 'block_size': 256, 'learning_rate': 0.001, 'max_iters': 10000, 'eval_interval': 500, 'batch_size': 64, 'device': 'cuda'}
-Step 0: Train Loss 9.1669, Val Loss 8.8710
-Step 500: Train Loss 4.7343, Val Loss 4.7514
-Step 1000: Train Loss 4.3583, Val Loss 4.3360
-Step 1500: Train Loss 4.1260, Val Loss 4.1147
-Step 2000: Train Loss 4.0386, Val Loss 4.0064
-Step 2500: Train Loss 3.9116, Val Loss 3.9369
-Step 3000: Train Loss 3.8991, Val Loss 3.8824
-Step 3500: Train Loss 3.8976, Val Loss 3.8392
-Step 4000: Train Loss 3.7335, Val Loss 3.8051
-Step 4500: Train Loss 3.7359, Val Loss 3.7750
-Step 5000: Train Loss 3.7654, Val Loss 3.7476
-Step 5500: Train Loss 3.7411, Val Loss 3.7281
-Step 6000: Train Loss 3.6836, Val Loss 3.7074
-Step 6500: Train Loss 3.6785, Val Loss 3.6892
-Step 7000: Train Loss 3.6661, Val Loss 3.6726
-Step 7500: Train Loss 3.6547, Val Loss 3.6619
-Step 8000: Train Loss 3.6232, Val Loss 3.6483
-Step 8500: Train Loss 3.6588, Val Loss 3.6346
-Step 9000: Train Loss 3.6271, Val Loss 3.6254
-Step 9500: Train Loss 3.6431, Val Loss 3.6150
+Config: {'vocab_size': 8192, 'd_model': 272, 'n_layers': 4, 'n_head': 4, 'd_ff': 1075, 'block_size': 256, 'learning_rate': 0.001, 'max_iters': 10000, 'eval_interval': 500, 'batch_size': 64, 'device': 'cuda'}
+Step 0: Train Loss 9.1691, Val Loss 8.7890
+Step 500: Train Loss 4.7135, Val Loss 4.6639
+Step 1000: Train Loss 4.2362, Val Loss 4.2160
+Step 1500: Train Loss 4.0294, Val Loss 4.0337
+Step 2000: Train Loss 3.9241, Val Loss 3.9325
+Step 2500: Train Loss 3.8682, Val Loss 3.8609
+Step 3000: Train Loss 3.8347, Val Loss 3.8033
+Step 3500: Train Loss 3.7774, Val Loss 3.7630
+Step 4000: Train Loss 3.7892, Val Loss 3.7234
+Step 4500: Train Loss 3.7132, Val Loss 3.6927
+Step 5000: Train Loss 3.5035, Val Loss 3.6652
+Step 5500: Train Loss 3.6647, Val Loss 3.6434
+Step 6000: Train Loss 3.5604, Val Loss 3.6204
+Step 6500: Train Loss 3.5462, Val Loss 3.6018
+Step 7000: Train Loss 3.6093, Val Loss 3.5835
+Step 7500: Train Loss 3.5194, Val Loss 3.5677
+Step 8000: Train Loss 3.5291, Val Loss 3.5527
+Step 8500: Train Loss 3.5657, Val Loss 3.5402
+Step 9000: Train Loss 3.5832, Val Loss 3.5271
+Step 9500: Train Loss 3.5147, Val Loss 3.5146
