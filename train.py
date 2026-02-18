@@ -96,7 +96,7 @@ def get_config(model_name):
             config['d_ff'] = 592
         
         # Frankenstein Configs
-        if model_name in [f"neon{i:03d}" for i in range(61, 201)]:
+        if model_name in [f"neon{i:03d}" for i in range(61, 207)]:
             config['d_model'], config['n_layers'], config['n_head'] = 256, 4, 4
             if model_name == 'neon061': config['d_ff'] = 2736 # ~10M
             elif model_name == 'neon066': config['d_ff'] = 172 # match neon016

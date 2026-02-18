@@ -1,7 +1,7 @@
 NeonBench is a repository dedicated to exploring novel transformer and recurrent architectures at the ~3M parameter scale. This log tracks every experiment, focusing on parameter efficiency and architectural breakthroughs.
 
-**Total Architectures Tested**: 187  
-**Total Models Trained**: 227
+**Total Architectures Tested**: 206  
+**Total Models Trained**: 256
 
 ## 📋 Master Model Inventory
 *Parameter counts exclude embeddings to ensure absolute consistency across benchmarks.*
@@ -197,6 +197,27 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **⭐ neon185** | **5.28M** | **SwiGLU-Conv**: SiLU Gated MLP + Sigmoid Gated Attn. **[PROJECT SOTA]** |
 | **neon186** | 5.28M | **SiLU Gated Attn**: SiLU Gated Attn + Sigmoid Gated MLP. |
 | **neon187** | 5.28M | **Full SiLU Architecture**: SiLU Gated Attn + SiLU Gated MLP. |
+| | | |
+| **---** | **---** | **SEMANTIC GATE EXPLORATION (188-206)** |
+| **neon188** | 5.28M | **Dual-Attention Bipolar Gate**: QKV tanh(5x)+x/10 mult gate + QKVI add residual. |
+| **neon189** | 5.28M | **Pure Tanh Gate**: `x * tanh(QKV_attn(x))`. Semantic axis reversal. |
+| **neon190** | 5.28M | **Signed Residual**: `x + tanh(QKV_attn(x)) * QKVI_attn(x)`. Polarity modulation. |
+| **neon191** | 5.28M | **Bottleneck MLP Gate**: `x * tanh(W2·SiLU(W1·x))`. Lightweight d→d/4→d gate. |
+| **neon192** | 5.28M | **Soft Flip + Skip**: `α·x + (1-α)·(x·tanh(QKV_attn(x)))`. Learned α. |
+| **neon193** | 5.28M | **Residual Flip**: Single QKVI attn branches into gate + residual. |
+| **neon194** | 5.28M | **Gated Polarity Residual**: `res * (α·tanh(proj(res)) + (1-α))`. |
+| **neon195** | 5.00M | **Bipolar Intent**: `tanh(I)` replaces `sigmoid(I)`. Range [-1, +1]. |
+| **neon196** | 5.00M | **Sparse Bipolar**: `tanh³(I)` — sparse polarity gating. |
+| **neon197** | 5.00M | **Gated Polarity Residual (5M)**: Fair-comparison version of neon194. |
+| **⭐ neon198** | **5.00M** | **Shifted Tanh Intent**: `tanh(I) + 1`. Range [0, 2], init=1. |
+| **neon199** | 5.00M | **Biased Bipolar Intent**: `tanh(I + 0.55)`. Init ≈ 0.5, range [-1, +1]. |
+| **neon200** | 5.00M | **Split Intent**: Half sigmoid + half tanh per head. |
+| **neon201** | 5.00M | **Learnable Blend**: `α·sigmoid(I) + (1-α)·tanh(I)`, per-head α. |
+| **neon202** | 5.00M | **Silent Hydra 5M**: Attention-free conv gating at 5M scale. |
+| **neon203** | 5.00M | **Shifted Tanh²**: `(tanh(I)+1)²`. Range [0, 4], init=1. |
+| **neon204** | 5.00M | **SiLU Intent**: `SiLU(I)` as attention gate. Unbounded amplification. |
+| **neon205** | 5.00M | **Double Gate**: `sigmoid(I) · SiLU(I)`. Fine-grained control. |
+| **neon206** | 5.00M | **Standard SwiGLU MLP**: No conv in MLP — tests Hydra conv value. |
 
 ---
 
@@ -393,6 +414,7 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon177** | 5.28M | 3.1776 | 5-Layer MQA Giant. |
 | **neon184** | 5.28M | 3.1793 | No RoPE. |
 | **neon182** | 5.27M | 3.1893 | Pure Attention (No Convs). |
+| **neon188** | 5.28M | 3.1838 | Dual-Attention Bipolar Gate. |
 | | | | |
 | **⭐ neon092** | **9.98M** | **3.0575** | **10M Wiki SOTA**. Full Synergy. |
 | **neon091** | 9.98M | 3.0797 | 10M Hydra Wiki. |
@@ -423,6 +445,34 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon143** | 3.16M | 3.5287 | Silent Hydra. |
 | **neon156** | 3.15M | 3.5405 | Spectral Silent Hydra. |
 | **neon161** | 3.15M | 3.5429 | Deep Silent Hydra (8L). |
+
+### 🧪 Benchmark: Wiki103 / Tok5
+*WikiText-103 Dataset (100MB). Tok5 = 8,192 Vocab (Character-Level).*
+
+| Model | Params (Ex-Emb) | Val Loss | Summary |
+| :--- | :--- | :--- | :--- |
+| **⭐ neon185** | **5.00M** | **3.4278** | **Wiki103 Tok5 SOTA**. SwiGLU-Conv Baseline. |
+| **⭐ neon198** | **5.00M** | **3.4333** | Shifted Tanh Intent `tanh(I)+1`. **Near SOTA, amplification works.** |
+| **neon197** | 5.00M | 3.4400 | Gated Polarity Residual (5M). |
+| **neon199** | 5.00M | 3.4404 | Biased Bipolar Intent `tanh(I+0.55)`. |
+| **neon195** | 5.00M | 3.4468 | Bipolar Intent `tanh(I)`. |
+| **neon167** | 5.28M | 3.4540 | Giant Synergy (5M Baseline). |
+| **neon196** | 5.00M | 3.4568 | Sparse Bipolar `tanh³(I)`. |
+| **neon200** | 5.00M | 3.4585 | Split Intent (half sig / half tanh). |
+| **neon192** | 5.28M | 3.4591 | Soft Flip + Learned Skip α. |
+| **neon190** | 5.28M | 3.4636 | Signed Residual. |
+| **neon194** | 5.28M | 3.4364 | Gated Polarity Residual (5.28M). |
+| **neon193** | 5.28M | 3.4727 | Residual Flip (branch attn). |
+| **neon189** | 5.28M | 3.5296 | Pure Tanh Gate (init problem). |
+| **neon191** | 5.28M | 3.5674 | Bottleneck MLP Gate. |
+| | | | |
+| *Models below ran with WRONG config (d_ff=512 fallback). Results are invalid for comparison.* |
+| **neon201** | ~~5.00M~~ | 3.5451 | Learned Blend (INVALID — wrong d_ff). |
+| **neon204** | ~~5.00M~~ | 3.5640 | SiLU Intent (INVALID — wrong d_ff). |
+| **neon205** | ~~5.00M~~ | 3.5675 | Double Gate (INVALID — wrong d_ff). |
+| **neon203** | ~~5.00M~~ | 3.5998 | Shifted Tanh² (INVALID — wrong d_ff). |
+| **neon206** | ~~5.00M~~ | 3.6150 | Standard SwiGLU (INVALID — wrong d_ff). |
+| **neon202** | ~~5.00M~~ | 3.8592 | Silent Hydra 5M (INVALID — wrong d_ff). |
 
 ---
 
@@ -463,3 +513,9 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 17. **The SwiGLU Mandate (185-187)**:
     - **SiLU MLP Winner**: `neon185` (Swish MLP) achieved a new SOTA **3.136** by replacing Sigmoid gating with SiLU (SwiGLU-style) in the MLP.
     - **Sigmoid Attention Winner**: However, using SiLU in the Attention gate (`neon186`, `neon187`) degraded performance relative to the base. Interpretation: **Attention Probability** is naturally bounded $[0,1]$ and benefits from Sigmoid, whereas **MLP features** are unbounded and benefit from SiLU's non-saturation.
+18. **The Semantic Gate Exploration (188-206)**:
+    - **Core Question**: Can replacing `sigmoid(Intent)` with alternative activation functions improve the attention gate? Explored multiplicative gates, bipolar intent, and amplification.
+    - **Amplification Discovery**: `neon198` (`tanh(I) + 1`, range [0,2]) achieved **3.4333** — within noise margin of the SOTA baseline (3.4278). Key insight: the model benefits from being able to **amplify** attention output beyond 1.0x, not just suppress.
+    - **Init Matters**: Models initializing the gate at 1.0 (identity pass-through) consistently outperformed those starting at 0.5 or 0.0. `neon189` (pure tanh, init=0) suffered a severe 2000-step convergence delay.
+    - **Negation Not Needed**: `tanh(I)+1` (range [0,2], no negation) beat `tanh(I+0.55)` (range [-1,+1], with negation). The model prefers amplification over polarity flipping.
+    - **Broken Runs**: neon201-206 ran with wrong config (d_ff=512 fallback due to server train.py not being synced). Must be re-run for valid comparison.
