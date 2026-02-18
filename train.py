@@ -206,6 +206,10 @@ def get_config(model_name):
                 config['d_model'], config['d_ff'] = 272, 1014 # 5.0M Spectral Class
             elif model_name == 'neon188':
                 config['d_model'], config['d_ff'] = 248, 1019 # 5.28M Multiplicative Attention Gate
+            elif model_name in ['neon189', 'neon190', 'neon192']:
+                config['d_model'], config['d_ff'] = 248, 1019 # 5.28M Semantic Axis Reversal variants
+            elif model_name == 'neon191':
+                config['d_model'], config['d_ff'] = 272, 1111 # 5.28M Lightweight Bottleneck Gate
             else: config['d_ff'] = 512
         
         return config
