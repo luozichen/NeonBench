@@ -212,7 +212,7 @@ def get_config(model_name):
                 config['d_model'], config['d_ff'] = 272, 1111 # 5.28M Lightweight Bottleneck Gate
             elif model_name in ['neon193', 'neon194']:
                 config['d_model'], config['d_ff'] = 272, 1066 # 5.28M Residual Flip / Polarity Gate
-            elif model_name in ['neon195', 'neon196']:
+            elif model_name in ['neon195', 'neon196', 'neon198', 'neon199', 'neon200', 'neon201']:
                 config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Bipolar Intent variants
             elif model_name == 'neon197':
                 config['d_model'], config['d_ff'] = 272, 981 # 5.0M Gated Polarity Residual (fair comparison)
