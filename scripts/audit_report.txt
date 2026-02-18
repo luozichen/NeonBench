@@ -1,0 +1,1581 @@
+========================================================================================================================
+NEONBENCH FULL AUDIT REPORT
+Total model files: 187
+Total log entries: 227
+========================================================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+  neon001
+────────────────────────────────────────────────────────────────────────────────
+  DOC: # Initialize with warm embeddings if provided
+  SCORE [hp0/tok1]: best=1.7509, final=1.7509 (neon001_tok1_hp0_log.txt)
+  SCORE [hp0/tok2]: best=1.1521, final=1.1521 (neon001_tok2_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon002
+────────────────────────────────────────────────────────────────────────────────
+  DOC: # Initialize with warm embeddings if provided
+  SCORE [hp0/tok1]: best=1.7434, final=1.7434 (neon002_tok1_hp0_log.txt)
+  SCORE [hp0/tok2]: best=1.1070, final=1.1070 (neon002_tok2_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon003
+────────────────────────────────────────────────────────────────────────────────
+  DOC: # x: [B, T, H, D]
+  SCORE [hp0/tok1]: best=1.8868, final=1.8868 (neon003_tok1_hp0_log.txt)
+  SCORE [hp0/tok2]: best=1.3522, final=1.3522 (neon003_tok2_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon004
+────────────────────────────────────────────────────────────────────────────────
+  DOC: # Layer-specific "Selection" matrices
+  SCORE [hp0/tok1]: best=1.9451, final=1.9451 (neon004_tok1_hp0_log.txt)
+  SCORE [hp0/tok2]: best=1.5009, final=1.5009 (neon004_tok2_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon005
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon005: neon002 + SwiGLU activation (replaces GELU MLP).
+  SCORE [hp0/tok1]: best=1.4673, final=1.4673 (neon005_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon006
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon006: neon005 + MLA (Multi-head Latent Attention) from DeepSeek-V2.
+  DOC: KV is compressed into a low-rank latent before up-projecting to K and V.
+  SCORE [hp0/tok1]: best=1.5467, final=1.5467 (neon006_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon007
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon007: neon005 + DeltaNet (Linear Attention with Delta Rule).
+  DOC: Replaces softmax attention with a sequential recurrence using the delta rule.
+  SCORE [hp0/tok1]: best=3.0147, final=3.0147 (neon007_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon008
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon008: neon005 + L2 Normalization + LayerNorm.
+  DOC: Experimental: all hidden states normalized to unit sphere (||h||_2 = 1).
+  DOC: Uses LayerNorm (with bias) instead of RMSNorm. Inspired by quantum mechanics.
+  SCORE [hp0/tok1]: best=6.0381, final=6.0381 (neon008_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon009
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon009: neon005 + QKVI Intent Attention.
+  DOC: Adds a 4th projection I (Intent) that modulates attention output element-wise.
+  DOC: Output = I ⊙ Softmax(QK^T / sqrt(d_k)) V
+  SCORE [hp0/tok1]: best=1.3010, final=1.3010 (neon009_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon010
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon010: neon005 + Gated SDPA.
+  DOC: Gate is computed from Q: Gate(Q) = sigma(W_g Q + b_g).
+  DOC: Output = Gate(Q) ⊙ Softmax(QK^T / sqrt(d_k)) V
+  SCORE [hp0/tok1]: best=1.3698, final=1.3698 (neon010_tok1_hp0_log.txt)
+  SCORE [wiki103/tok1]: best=2.5903, final=2.5903 (neon010_tok1_wiki103_tok1_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon011
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon011: 10M scale — Narrow & Deep (8 layers × 384 dim, 2× MLP).
+  DOC: Same architecture as neon010 (Gated SDPA + SwiGLU), larger config.
+  SCORE [wiki103/tok1]: best=2.1547, final=2.1547 (neon011_tok1_wiki103_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon012
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon012: 10M scale — Wide & Medium (6 layers × 512 dim, 2× MLP).
+  DOC: Same architecture as neon010 (Gated SDPA + SwiGLU), larger config.
+  SCORE [wiki103/tok1]: best=2.1280, final=2.1280 (neon012_tok1_wiki103_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon013
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon013: 10M scale — Balanced (8 layers × 320 dim, 2× MLP).
+  DOC: Same architecture as neon010 (Gated SDPA + SwiGLU), larger config.
+  SCORE [wiki103/tok1]: best=2.2307, final=2.2307 (neon013_tok1_wiki103_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon014
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon014: 10M scale — MLP-Heavy (6 layers × 384 dim, 4× MLP expansion).
+  DOC: Same architecture as neon010 (Gated SDPA + SwiGLU), with d_ff = 4 * d_model.
+  SCORE [wiki103/tok1]: best=2.1199, final=2.1199 (neon014_tok1_wiki103_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon015
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon015: QKVI per-head Intent Attention — Result gating, raw I, raw V.
+  DOC: Formula: Output_i = I_i ⊙ Σ_j(A_ij V_j)
+  DOC: Intent is projected per-head (same as Q, K, V).
+  SCORE [hp0/tok1]: best=1.3042, final=1.3042 (neon015_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon016
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon016: QKVI per-head Intent Attention — Result gating, σ(I), raw V.
+  DOC: Formula: Output_i = σ(I_i) ⊙ Σ_j(A_ij V_j)
+  SCORE [hp0/tok1]: best=1.2551, final=1.2551 (neon016_tok1_hp0_log.txt)
+  SCORE [hp0/tok3]: best=1.1610, final=1.1610 (neon016_tok3_hp0_log.txt)
+  SCORE [hp0/tok4]: best=0.9174, final=0.9174 (neon016_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.2885, final=3.2885 (neon016_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon017
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon017: QKVI per-head Intent Attention — Result gating, raw I, σ(V).
+  DOC: Formula: Output_i = I_i ⊙ Σ_j(A_ij σ(V_j))
+  SCORE [hp0/tok1]: best=1.3764, final=1.3764 (neon017_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon018
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon018: QKVI per-head Intent Attention — Result gating, σ(I), σ(V).
+  DOC: Formula: Output_i = σ(I_i) ⊙ Σ_j(A_ij σ(V_j))
+  SCORE [hp0/tok1]: best=1.3808, final=1.3808 (neon018_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon019
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon019: QKVI per-head Intent Attention — Source gating, raw I, raw V.
+  DOC: Formula: Output_i = Σ_j A_ij (I_j ⊙ V_j)
+  SCORE [hp0/tok1]: best=1.3150, final=1.3150 (neon019_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon020
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon020: QKVI per-head Intent Attention — Source gating, σ(I), raw V.
+  DOC: Formula: Output_i = Σ_j A_ij (σ(I_j) ⊙ V_j)
+  SCORE [hp0/tok1]: best=1.2809, final=1.2809 (neon020_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon021
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon021: QKVI per-head Intent Attention — Source gating, raw I, σ(V).
+  DOC: Formula: Output_i = Σ_j A_ij (I_j ⊙ σ(V_j))
+  SCORE [hp0/tok1]: best=1.2842, final=1.2842 (neon021_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon022
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon022: QKVI per-head Intent Attention — Source gating, σ(I), σ(V).
+  DOC: Formula: Output_i = Σ_j A_ij (σ(I_j) ⊙ σ(V_j))
+  SCORE [hp0/tok1]: best=1.4234, final=1.4234 (neon022_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon023
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon023: 8-layer neon016 (Result gating, σ(I), raw V) — MLP-starved deep variant.
+  DOC: Supports LayerDrop via config['layerdrop'] (default 0.0).
+  DOC: During training, each block is skipped with probability layerdrop.
+  DOC: During eval, all blocks run (full depth).
+  SCORE [hp0/tok1]: best=0.5260, final=0.5260 (neon023_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon024
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon024: Same architecture as Neon023 (8-layer neon016), trained with LayerDrop=0.1.
+  DOC: This is not a separate architecture — it reuses Neon023 with a different training config.
+  SCORE [hp0/tok1]: best=1.0800, final=1.0800 (neon024_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon025
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon025: Post-Norm variant of neon016 (Result gating, σ(I), raw V).
+  DOC: Pre-Norm (neon016):  x = x + attn(LN(x))   ← norm BEFORE sublayer
+  DOC: Post-Norm (neon025): x = LN(x + attn(x))   ← norm AFTER sublayer
+  SCORE [hp0/tok1]: best=1.3404, final=1.3404 (neon025_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon026
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon026: neon005 (modern baseline) scaled to ~3M params via d_ff increase.
+  DOC: Tests: is intent attention better than just a bigger MLP?
+  SCORE [hp0/tok1]: best=1.3553, final=1.3553 (neon026_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon027
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon027: neon010 (Gated SDPA) scaled to ~3M params via d_ff increase.
+  DOC: Alternative gating mechanism vs intent attention, at equal param count.
+  SCORE [hp0/tok1]: best=1.2558, final=1.2558 (neon027_tok1_hp0_log.txt)
+  SCORE [hp0/tok3]: best=1.1683, final=1.1683 (neon027_tok3_hp0_log.txt)
+  SCORE [hp0/tok4]: best=0.9297, final=0.9297 (neon027_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon028
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon028: neon006 (MLA) scaled to ~3M params via d_ff increase.
+  DOC: Multi-head Latent Attention with bigger MLP at equal param count.
+  SCORE [hp0/tok1]: best=1.3554, final=1.3554 (neon028_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon029
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon029: neon001 (GPT-2 baseline) scaled to ~3M params via d_ff increase.
+  DOC: Old-school architecture at equal param count — how much do modern tricks matter?
+  SCORE [hp0/tok1]: best=1.4158, final=1.4158 (neon029_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon030
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon030: neon002 (RMSNorm + GELU) scaled to ~3M params via d_ff increase.
+  DOC: Isolates the RMSNorm effect: neon029 (LayerNorm) vs neon030 (RMSNorm) at equal params.
+  SCORE [hp0/tok1]: best=1.3953, final=1.3953 (neon030_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon031
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon031: Calculated Intent — σ(Q ⊙ V).
+  DOC: Alignment between want (Q) and have (V). Zero extra params vs baseline.
+  SCORE [hp0/tok1]: best=1.3975, final=1.3975 (neon031_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon032
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon032: Calculated Intent — σ(Q ⊙ K).
+  DOC: Query-key match strength: how relevant is this search result? Zero extra params.
+  SCORE [hp0/tok1]: best=1.3854, final=1.3854 (neon032_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon033
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon033: Calculated Intent — σ(K ⊙ V).
+  DOC: Title-content consistency: does the key match its value? Zero extra params.
+  SCORE [hp0/tok1]: best=1.3875, final=1.3875 (neon033_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon034
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon034: Calculated Intent — σ(Q ⊙ K ⊙ V).
+  DOC: Triple interaction: all three projections aligned. Zero extra params.
+  SCORE [hp0/tok1]: best=1.4229, final=1.4229 (neon034_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon035
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon035: Calculated Intent — LayerNorm(Q + V).
+  DOC: Combined direction with learnable scale/shift. Only 2*head_dim extra params.
+  SCORE [hp0/tok1]: best=1.3866, final=1.3866 (neon035_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon036
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon036: Calculated Intent — normalize(Q + K + V).
+  DOC: L2-normalized sum of all three: unified intent direction. Zero extra params.
+  SCORE [hp0/tok1]: best=1.4049, final=1.4049 (neon036_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon037
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon037: Calculated Intent — σ(Q) ⊙ tanh(V).
+  DOC: Gated-bounded: Query gates Value. Both bounded independently. Zero extra params.
+  SCORE [hp0/tok1]: best=1.4264, final=1.4264 (neon037_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon038
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon038: Calculated Intent — Q + σ(K ⊙ V).
+  DOC: Query biased by key-value alignment. Zero extra params.
+  SCORE [hp0/tok1]: best=1.3784, final=1.3784 (neon038_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon039
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon039: Calculated Intent — tanh(Q + K - V).
+  DOC: Gap-based: what's missing to bridge query to key given what you have. Zero extra params.
+  SCORE [hp0/tok1]: best=1.4417, final=1.4417 (neon039_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon040
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon040: Calculated Intent — RMSNorm(Q ⊙ V).
+  DOC: Product with RMS normalization for stable magnitude. Only head_dim extra params.
+  SCORE [hp0/tok1]: best=1.5139, final=1.5139 (neon040_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon041
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon041: Gated Calculated Intent — σ(W_g(Q ⊙ V) + b_g).
+  DOC: Same as neon031 but with tiny learned gate mixing dimensions.
+  SCORE [hp0/tok1]: best=1.3754, final=1.3754 (neon041_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon042
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon042: Gated Calculated Intent — σ(W_g(Q ⊙ K) + b_g).
+  DOC: Same as neon032 but with tiny learned gate.
+  SCORE [hp0/tok1]: best=1.3774, final=1.3774 (neon042_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon043
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon043: Gated Calculated Intent — σ(W_g(K ⊙ V) + b_g).
+  DOC: Same as neon033 but with tiny learned gate.
+  SCORE [hp0/tok1]: best=1.3780, final=1.3780 (neon043_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon044
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon044: Gated Calculated Intent — σ(W_g(Q ⊙ K ⊙ V) + b_g).
+  DOC: Same as neon034 but with tiny learned gate.
+  SCORE [hp0/tok1]: best=1.3905, final=1.3905 (neon044_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon045
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon045: Gated Calculated Intent — σ(W_g(Q + V) + b_g).
+  DOC: Same as neon035 but with tiny learned gate instead of LayerNorm.
+  SCORE [hp0/tok1]: best=1.3618, final=1.3618 (neon045_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon046
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon046: Gated Calculated Intent — σ(W_g(Q + K + V) + b_g).
+  DOC: Same as neon036 but with tiny learned gate instead of L2-norm.
+  SCORE [hp0/tok1]: best=1.3524, final=1.3524 (neon046_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon047
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon047: Gated Calculated Intent — σ(W_g(σ(Q) ⊙ tanh(V)) + b_g).
+  DOC: Same as neon037 but with tiny learned gate on top.
+  SCORE [hp0/tok1]: best=1.3758, final=1.3758 (neon047_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon048
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon048: Gated Calculated Intent — σ(W_g(Q + σ(K ⊙ V)) + b_g).
+  DOC: Same as neon038 but with tiny learned gate on top.
+  SCORE [hp0/tok1]: best=1.3609, final=1.3609 (neon048_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon049
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon049: Gated Calculated Intent — σ(W_g(Q + K - V) + b_g).
+  DOC: Same as neon039 but with tiny learned gate instead of tanh.
+  SCORE [hp0/tok1]: best=1.3594, final=1.3594 (neon049_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon050
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon050: Gated Calculated Intent — σ(W_g(Q ⊙ V) + b_g) with RMSNorm pre-gate.
+  DOC: Same as neon040 but with tiny learned gate after RMSNorm.
+  SCORE [hp0/tok1]: best=1.3740, final=1.3740 (neon050_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon051
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon051: Linear Combination Intent — σ(w_q Q + w_k K + w_v V + b).
+  DOC: Learns to linearly mix Q, K, V per dimension before gating.
+  DOC: Adds 3*head_dim params (element-wise mixing weights).
+  SCORE [hp0/tok1]: best=1.3938, final=1.3938 (neon051_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon052
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon052: Matrix Intent — σ(Q W_q + K W_k + V W_v + b).
+  DOC: Learns full linear mixing of Q, K, V per head before gating.
+  DOC: Adds 3 * head_dim^2 + head_dim params per layer.
+  SCORE [hp0/tok1]: best=1.3447, final=1.3447 (neon052_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon053
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon053: QKVI Intent Attention with SiLU gating.
+  DOC: Identical to neon016, but uses SiLU(I) instead of Sigmoid(I).
+  DOC: Tests if the gate needs to be bounded [0,1] or if unbounded modulation is better.
+  SCORE [hp0/tok1]: best=1.3129, final=1.3129 (neon053_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon054
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon054: Gated Calculated Intent with SiLU — σ(W_g(Q + K + V) + b_g).
+  DOC: Same as neon046 but uses SiLU(gate) for unbounded modulation.
+  SCORE [hp0/tok1]: best=1.4444, final=1.4444 (neon054_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon055
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon055: Gated Calculated Intent (Comparison) — neon046 with larger d_ff.
+  DOC: Identical to neon046 structure.
+  DOC: Config 'd_ff' should be set to 592 in training script.
+  SCORE [hp0/tok1]: best=1.2417, final=1.2417 (neon055_tok1_hp0_log.txt)
+  SCORE [hp0/tok3]: best=1.1601, final=1.1601 (neon055_tok3_hp0_log.txt)
+  SCORE [hp0/tok4]: best=0.9434, final=0.9434 (neon055_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon056
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon056: Double-Gated Calculated Intent Attention.
+  DOC: Formula: Output_t = Sum_s [ A_ts * V_s ]
+  DOC: Intent_mag = Sigmoid(W_mag(Q_t + K_t + V_t) + b_mag)
+  DOC: Intent_dir = Tanh(W_dir(Q_t + K_t + V_t) + b_dir)
+  SCORE [hp0/tok1]: best=1.3369, final=1.3369 (neon056_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon057
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon057: Differential Calculated Intent Attention.
+  DOC: Formula: Output_t = Sum_s [ A_ts * V_s ]
+  DOC: Diff = |Q - V| + |K - V|  (Element-wise absolute difference)
+  DOC: Intent = Sigmoid(W_diff(Diff) + b)
+  SCORE [hp0/tok1]: best=1.3418, final=1.3418 (neon057_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon058
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon058: Residual Intent Attention (Additive).
+  DOC: Formula: Output_t = Sum_s [ A_ts * V_s ]
+  DOC: Intent = W_i(SiLU(Q))  # Additive Query Bias, independent of Attention
+  DOC: Final = Output + Intent
+  SCORE [hp0/tok1]: best=1.4620, final=1.4620 (neon058_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon059
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon059: Norm-Gated Calculated Intent Attention.
+  DOC: Formula: Output_t = Sum_s [ A_ts * V_s ]
+  DOC: Context = [Q+K+V, ||Q||, ||K||, ||V||] (Concatenate vectors with their norms)
+  DOC: Intent = Sigmoid(W_g(Context) + b)
+  SCORE [hp0/tok1]: best=1.2588, final=1.2588 (neon059_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon060
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon060: Max-Pooled Calculated Intent Attention.
+  DOC: Formula: Output_t = Sum_s [ A_ts * V_s ]
+  DOC: Context = Max(Q, K, V)  (Element-wise Max Pooling)
+  DOC: Intent = Sigmoid(W_g(Context) + b)
+  SCORE [hp0/tok1]: best=1.3029, final=1.3029 (neon060_tok1_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon061
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon061: Wide MLP ("Stable Winner").
+  DOC: Base: neon016 (Learned Intent).
+  DOC: Change: Massive MLP expansion. d_ff is set to a very large value (approx 16x expansion ratio).
+  DOC: Standard SwiGLU uses 8/3 * d_model. Here we use roughly 4x that width.
+  SCORE [hp0/tok4]: best=0.2364, final=0.2364 (neon061_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.0940, final=3.0940 (neon061_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon062
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon062: MLP-Free Attention Stack.
+  DOC: Base: neon016 (Learned Intent).
+  DOC: Change: Remove MLP entirely. Block is just Attention + Residual.
+  DOC: We will double the number of layers in train.py config to compensate for lost params.
+  SCORE [hp0/tok4]: best=1.2116, final=1.2116 (neon062_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.3475, final=3.3475 (neon062_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon063
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon063: Attention-in-MLP.
+  DOC: Base: neon016 (Learned Intent).
+  DOC: Change: MLP is replaced by a Multi-Head Attention mechanism.
+  DOC: The 'Feed-Forward' step becomes a second Attention step.
+  SCORE [hp0/tok4]: best=1.1605, final=1.1605 (neon063_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.3141, final=3.3141 (neon063_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon064
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon064: Hadamard Head Merge.
+  DOC: Base: neon016 (Learned Intent).
+  DOC: Change: 8 Heads. Merged pairwise via Hadamard product.
+  DOC: H1 * H2 -> Merged1
+  SCORE [hp0/tok4]: best=1.2970, final=1.2970 (neon064_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.4275, final=3.4275 (neon064_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon065
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon065: Big Single Head.
+  DOC: Base: neon016 (Learned Intent).
+  DOC: Change: n_head = 1.
+  DOC: Head dimension = 2 * d_model (scales UP for attention).
+  SCORE [hp0/tok4]: best=0.7833, final=0.7833 (neon065_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.3171, final=3.3171 (neon065_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon066
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon066: The Fair Fight Big Head.
+  DOC: Base: neon065 (Big Single Head, 2x d_model).
+  DOC: Change: MLP width (d_ff) is drastically reduced to match neon016 parameter count.
+  DOC: - neon065 adds ~1.3M parameters via Attention.
+  SCORE [hp0/tok4]: best=1.0632, final=1.0632 (neon066_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.3377, final=3.3377 (neon066_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon067
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon067: 2 Heads.
+  DOC: Variant of neon016 (Learned Intent).
+  DOC: Config: n_head=2 (Head Dim 128).
+  SCORE [hp0/tok4]: best=1.0060, final=1.0060 (neon067_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon068
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon068: 8 Heads.
+  DOC: Variant of neon016 (Learned Intent).
+  DOC: Config: n_head=8 (Head Dim 32).
+  SCORE [hp0/tok4]: best=0.9214, final=0.9214 (neon068_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon069
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon069: 16 Heads.
+  DOC: Variant of neon016 (Learned Intent).
+  DOC: Config: n_head=16 (Head Dim 16).
+  SCORE [hp0/tok4]: best=0.9259, final=0.9259 (neon069_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon070
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon070: The Hydra MLP (Context-Aware Gating).
+  DOC: Base: neon016 (Learned Intent).
+  DOC: Change: MLP Gate is replaced by a lightweight Attention Mechanism.
+  DOC: - Standard SwiGLU: y = SiLU(x W_g) * (x W_1) * W_2
+  SCORE [hp0/tok4]: best=1.1269, final=1.1269 (neon070_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon071
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon071: Wide Hydra.
+  DOC: Same as neon070 (Hydra MLP) but scaled up.
+  DOC: d_ff = 640 (vs 576).
+  SCORE [hp0/tok4]: best=1.0495, final=1.0495 (neon071_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon072
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon072: Gated-Residual Hydra.
+  DOC: Combines standard Linear Gate (SiLU) with Hydra Attention Gate (Sigmoid).
+  DOC: Gate = SiLU(x W_g) + Sigmoid(Attn(x))
+  SCORE [hp0/tok4]: best=0.8577, final=0.8577 (neon072_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon073
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon073: Multi-Head Hydra.
+  DOC: Hydra MLP uses 4 Attention Heads (Dim 16) instead of 1 (Dim 64).
+  SCORE [hp0/tok4]: best=1.1571, final=1.1571 (neon073_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon074
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon074: Swish-Gated Hydra.
+  DOC: Gate = x * Sigmoid(Attn(x)).
+  DOC: Context-Aware Swish activation.
+  SCORE [hp0/tok4]: best=1.0653, final=1.0653 (neon074_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon075
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon075: Negative Hydra.
+  DOC: Gate = Tanh(Attn(x)).
+  DOC: Allows inhibition (negative activation).
+  SCORE [hp0/tok4]: best=1.0084, final=1.0084 (neon075_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon076
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon076: Light Residual Hydra.
+  DOC: Same architecture as neon072 (Dual Gated).
+  DOC: Running with d_model=240 to match parameter count of baseline.
+  SCORE [hp0/tok4]: best=1.0399, final=1.0399 (neon076_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon077
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon077: Conv-Gated Hydra.
+  DOC: Replaces Attention Gate with a lightweight Causal Depthwise Convolution.
+  DOC: Gate = SiLU(x W_g) + Sigmoid(Conv1D(x))
+  DOC: Provides local context awareness with O(T) complexity.
+  SCORE [hp0/tok4]: best=0.9172, final=0.9172 (neon077_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.2880, final=3.2880 (neon077_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon078
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon078: Qwen3-Next Style Hybrid.
+  DOC: Layers 0-2: Gated DeltaNet (Approximated via Decaying Linear Attention).
+  DOC: Layer 3: Gated Attention (Standard Intent Attention).
+  SCORE [hp0/tok4]: best=1.4483, final=1.4483 (neon078_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon079
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon079: Qwen3-Next Hybrid Replica.
+  DOC: Layers 0-2: Qwen3NextGatedDeltaNet (Conv -> SiLU -> L2 -> Delta Rule -> NormGated).
+  DOC: Layer 3: Qwen3NextAttention (MHA with Output Gating).
+  SCORE [hp0/tok4]: best=1.1056, final=1.1056 (neon079_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon080
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon080: Width-scaled Conv-Gated Hydra.
+  DOC: Same architecture as neon077 (Conv-Gated Hydra).
+  DOC: Scaled via d_ff in train.py to match neon016 parameter count.
+  SCORE [hp0/tok4]: best=0.8875, final=0.8875 (neon080_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon081
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon081: Context-scaled Conv-Gated Hydra.
+  DOC: Variant of neon077 with expanded kernel_size=9.
+  DOC: Tests if a wider temporal window in the gate helps more than MLP width.
+  SCORE [hp0/tok4]: best=0.8812, final=0.8812 (neon081_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.2844, final=3.2844 (neon081_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon082
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon082: Fair-Fight ResHydra.
+  DOC: Exact architecture as neon072 (Residual Hydra Hybrid).
+  DOC: Scaled via d_ff in train.py to match neon016 parameter count.
+  SCORE [hp0/tok4]: best=0.9886, final=0.9886 (neon082_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon083
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon083: Modulation Hydra (Multiplicative Gate).
+  DOC: Formula: Gate = SiLU(W_g x) * Sigmoid(Conv1D(x))
+  DOC: Instead of adding the gates, the local context (Convolution) modulates
+  DOC: the linear gate. Allows for strict filtering/silencing.
+  SCORE [hp0/tok4]: best=0.9462, final=0.9462 (neon083_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon084
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon084: Dilated Hydra (Receptive Field 17).
+  DOC: Uses a Dilated Depthwise Convolution to increase the context window
+  DOC: without adding parameter weight.
+  DOC: Effective Receptive Field = 1 + (kernel_size - 1) * dilation = 1 + (5-1)*4 = 17.
+  SCORE [hp0/tok4]: best=0.8989, final=0.8989 (neon084_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon085
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon085: Dual-Scale Hydra.
+  DOC: Parallel convolution paths in the gate to capture both
+  DOC: Immediate (k=3) and Structural (k=9) context.
+  SCORE [hp0/tok4]: best=0.8670, final=0.8670 (neon085_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.2905, final=3.2905 (neon085_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon086
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon086: Res-Hydra (Residual Gate Path).
+  DOC: Formula: Gate = SiLU(W_g x) + Sigmoid(Proj(Conv1D_k9(x) + x))
+  DOC: Tests if giving the gate a residual identity path for the token itself
+  DOC: helps the convolution localize its focus.
+  SCORE [hp0/tok4]: best=0.9168, final=0.9168 (neon086_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon087
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon087: Pyramidal Hydra (k=3, 9, 27).
+  DOC: Uses three parallel convolutional scales in the gate to capture
+  DOC: Immediate (3), Intermediate (9), and structural (27) context.
+  DOC: Receptive field is roughly 10% of the sequence block_size.
+  SCORE [hp0/tok4]: best=0.9018, final=0.9018 (neon087_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon088
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon088: Competitive Hydra (Max-Pooling).
+  DOC: Uses parallel k=3 and k=9 paths but merges them via Element-wise MAX.
+  DOC: Forces the gate to rely on the "Strongest" feature at each dimension
+  DOC: instead of blurring them via summation.
+  SCORE [hp0/tok4]: best=0.8944, final=0.8944 (neon088_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon089
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon089: Dense Pyramidal Hydra (k=3, 5, 7, 9).
+  DOC: Expands on the success of neon085 by adding intermediate scales.
+  DOC: Aims to capture the transition between local syntax and global structure.
+  SCORE [hp0/tok4]: best=0.8768, final=0.8768 (neon089_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon090
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon090: Asymmetric/Recursive Hydra Gating.
+  DOC: Local context (k=3) gates the structural context (k=9).
+  DOC: Prevents long-range 'hallucinations' if local syntax is invalid.
+  DOC: Formula: Gate = SiLU(Linear) + Sigmoid(c3 + c9 * Sigmoid(c3))
+  SCORE [hp0/tok4]: best=0.8786, final=0.8786 (neon090_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon091
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon081: Context-scaled Conv-Gated Hydra.
+  DOC: Variant of neon077 with expanded kernel_size=9.
+  DOC: Tests if a wider temporal window in the gate helps more than MLP width.
+  SCORE [hp0/tok4]: best=0.1962, final=0.1962 (neon091_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.0797, final=3.0797 (neon091_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon092
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon085: Dual-Scale Hydra.
+  DOC: Parallel convolution paths in the gate to capture both
+  DOC: Immediate (k=3) and Structural (k=9) context.
+  SCORE [hp0/tok4]: best=0.1961, final=0.1961 (neon092_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.0575, final=3.0575 (neon092_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon093
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon093: 8-Layer Deep Standard Transformer.
+  DOC: A scaling audit baseline: No Hydra, No Intent Attention.
+  DOC: Pure standard Transformer (SwiGLU + RoPE + RMSNorm).
+  DOC: Calibrated to match the 9.72M parameters of neon061/neon092.
+  SCORE [hp0/tok4]: best=0.2512, final=0.2512 (neon093_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.0955, final=3.0955 (neon093_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon094
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon094: Dual-Scale Hydra (No Intent).
+  DOC: Scaling Audit baseline: Combines Hydra MLP (k=3+9) with Standard Attention.
+  DOC: Separates the "Double Gating" of neon092 into its components.
+  SCORE [hp0/tok4]: best=0.2067, final=0.2067 (neon094_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.0977, final=3.0977 (neon094_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon095
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon095: Progressive Receptive Fields.
+  DOC: The kernel size of the second convolution in the Hydra MLP increases with depth.
+  DOC: L0: k=3+3, L1: k=3+5, L2: k=3+9, L3: k=3+17.
+  SCORE [hp0/tok4]: best=0.8703, final=0.8703 (neon095_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon096
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon096: Heterogeneous MLP Stack.
+  DOC: Alternates Dual-Scale Hydra (L0, L2) and standard SwiGLU (L1, L3).
+  DOC: This provides a 'best of both worlds' approach.
+  SCORE [hp0/tok4]: best=0.8832, final=0.8832 (neon096_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon097
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon097: Triple-Scale Gate.
+  DOC: Parallel convolutional paths with k=3, 5, and 9.
+  DOC: Adds more 'resolution' to the context-aware gating.
+  SCORE [hp0/tok4]: best=0.8817, final=0.8817 (neon097_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon098
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon098: Dilated Hydra (Receptive Field 65).
+  DOC: Parallel convolutional paths:
+  DOC: 1. k=3 (Dense) for immediate context.
+  DOC: 2. k=17 (Dilated, d=4) for massive structural context (RF=65).
+  SCORE [hp0/tok4]: best=0.8940, final=0.8940 (neon098_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon099
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon099: Residual Gating.
+  DOC: Explores a multiplicative residual between the linear and convolutional gates.
+  DOC: Formula: gate = linear_gate * (1 + conv_gate)
+  DOC: This allows the context to fully modulate the identity signal.
+  SCORE [hp0/tok4]: best=0.9961, final=0.9961 (neon099_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon100
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon100: Pure Hydra Gate (Conv-Only).
+  DOC: Tests if the linear SiLU gate is necessary.
+  DOC: Formula: gate = Sigmoid(Conv(x))
+  SCORE [hp0/tok4]: best=0.8437, final=0.8437 (neon100_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.2812, final=3.2812 (neon100_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon101
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon101: Progressive Specialization (2x SwiGLU -> 2x Hydra).
+  DOC: Layers 0, 1: SwiGLU.
+  DOC: Layers 2, 3: Hydra (k=3+9).
+  SCORE [hp0/tok4]: best=0.9253, final=0.9253 (neon101_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon102
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon102: Sandwich Hydra (H-S-S-H).
+  DOC: L0: Hydra, L1: SwiGLU, L2: SwiGLU, L3: Hydra.
+  SCORE [hp0/tok4]: best=0.8655, final=0.8655 (neon102_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon103
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon103: Inverted Sandwich Hydra (S-H-H-S).
+  DOC: L0: SwiGLU, L1: Hydra, L2: Hydra, L3: SwiGLU.
+  SCORE [hp0/tok4]: best=0.9245, final=0.9245 (neon103_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon104
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon104: Late Bloomer Hydra (3x SwiGLU -> 1x Hydra).
+  DOC: Layers 0, 1, 2: SwiGLU.
+  DOC: Layer 3: Hydra (k=3+9).
+  SCORE [hp0/tok4]: best=0.9342, final=0.9342 (neon104_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon105
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon105: Early Starter Hydra (1x Hydra -> 3x SwiGLU).
+  DOC: Layer 0: Hydra (k=3+9).
+  DOC: Layers 1, 2, 3: SwiGLU.
+  SCORE [hp0/tok4]: best=0.8671, final=0.8671 (neon105_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon106
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon106: Dual-Decision Pure Hydra (Independent c3/c9 projections).
+  DOC: Removes the summed convolution projection for independent decision paths.
+  DOC: Formula: gate = Sigmoid(Proj3(c3)) + Sigmoid(Proj9(c9))
+  SCORE [hp0/tok4]: best=0.8608, final=0.8608 (neon106_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon107
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon107: Massive Reach Pure Hydra (k=3 + k=17 Dilated).
+  DOC: Pure Hydra architecture with extended context window.
+  DOC: Receptive Field: 65 tokens.
+  SCORE [hp0/tok4]: best=0.9103, final=0.9103 (neon107_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon108
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon108: Single-Scale Pure Hydra (k=9 only).
+  DOC: Tests if the dual-scale k=3 + k=9 is redundant.
+  DOC: Formula: gate = Sigmoid(Conv_k9(x))
+  SCORE [hp0/tok4]: best=0.8366, final=0.8366 (neon108_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.2803, final=3.2803 (neon108_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon109
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon109: High-Reach Pure Hydra (k=20).
+  DOC: Tests if a large dense window is more effective than dilated sparse ones.
+  DOC: Formula: gate = Sigmoid(Conv_k20(x))
+  SCORE [hp0/tok4]: best=0.8807, final=0.8807 (neon109_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon110
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon110: Swish-Gated Pure Hydra (k=9).
+  DOC: Re-tests Swish vs Sigmoid in the context-only gating regime.
+  DOC: Formula: gate = swish(Linear(Conv_k9(x)))
+  SCORE [hp0/tok4]: best=0.8365, final=0.8365 (neon110_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.2927, final=3.2927 (neon110_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon111
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon111: Space-Aware Pure Hydra (k=5 Matrix Projector).
+  DOC: Instead of summing context, we flatten the window to preserve spatial position.
+  DOC: Formula: gate = Sigmoid(Linear_wide(Flatten(x_{t-4:t})))
+  SCORE [hp0/tok4]: best=0.9968, final=0.9968 (neon111_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon112
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon112: Bottleneck-Gated Wide Hydra.
+  DOC: Shrinks the context projection into a 64-dim bottleneck to save parameters.
+  DOC: Savings are used to expand the MLP width from d_ff=509 to d_ff=648.
+  DOC: Formula: gate = σ(Linear_64_to_ff(Linear_context_to_64(Conv_k9(x))))
+  SCORE [hp0/tok4]: best=0.9231, final=0.9231 (neon112_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon113
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon113: Conv-Attention Pure Hydra.
+  DOC: Introduces Local Awareness to the Attention block via a k=3 convolution.
+  DOC: Combined with the successful Pure Hydra (k=9) MLP logic.
+  DOC: Results in "Double Gating":
+  SCORE [hp0/tok4]: best=0.7707, final=0.7707 (neon113_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon114
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon114: Sharp-Value Conv-Attention.
+  DOC: Refines Conv-Attention by keeping the Value matrix sharp.
+  DOC: Formula:
+  DOC: Q, K, Intent = Linear(Conv_k3(x))
+  SCORE [hp0/tok4]: best=0.7652, final=0.7652 (neon114_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon115
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon115: Multi-Head Conv-Attention.
+  DOC: Applies independent k=3 convolutions to Q, K, and Intent AFTER projection.
+  DOC: This allows the model to learn head-specific local context filters.
+  DOC: Formula:
+  SCORE [hp0/tok4]: best=0.7663, final=0.7663 (neon115_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon116
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon116: Full Multi-Head Conv-Attention.
+  DOC: Applies independent k=3 convolutions to Q, K, V, and Intent AFTER projection.
+  DOC: This is the "Full Context" Attention where content (V) is also locally contextualized.
+  DOC: Formula:
+  SCORE [hp0/tok4]: best=0.7269, final=0.7269 (neon116_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.2499, final=3.2499 (neon116_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon117
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon117: Activated Multi-Head Conv-Attention.
+  DOC: Applies independent k=3 convolutions to Q, K, V, and Intent projection.
+  DOC: Crucially, applies SiLU (Swish) activation after the convolutions to add non-linearity.
+  SCORE [hp0/tok4]: best=0.8050, final=0.8050 (neon117_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon118
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon118: L2-Norm Multi-Head Conv-Attention.
+  DOC: Replaces RMSNorm with L2-Normalization for Q and K signals.
+  DOC: Used to test if unit-sphere projected attention is more stable than magnitude-aware norm.
+  SCORE [hp0/tok4]: best=1.1725, final=1.1725 (neon118_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon119
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon119: Dynamic Swish-Beta Hydra.
+  DOC: Predicts the Sigmoid Linear Unit (SiLU/Swish) beta parameters for Q and K.
+  DOC: Allows the model to dynamically sharpen or soften its own attention filters.
+  DOC: Formula:
+  SCORE [hp0/tok4]: best=0.9331, final=0.9331 (neon119_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon120
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon120: Activated Intent Dynamic Hydra.
+  DOC: Extends Neon119 by changing the Intent gate from Sigmoid to SiLU.
+  DOC: Tests if the non-linear "soft-zero" of SiLU is better for gating the contextual attention map.
+  SCORE [hp0/tok4]: best=0.9710, final=0.9710 (neon120_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon121
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon121: Context-Aware Intent Only Hydra.
+  DOC: Keeps Q, K, and V projections sharp (Linear-only).
+  DOC: Applies k=3 depthwise convolution ONLY to the Intent gate.
+  DOC: Tests if sharp search + contextual gating is the optimal hybrid.
+  SCORE [hp0/tok4]: best=0.8145, final=0.8145 (neon121_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon122
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon122: Zero-Centered Intent Hydra.
+  DOC: Replaces RMSNorm with a Zero-Centered Normalization (LayerNorm-style centering) for Q and K.
+  DOC: Tests if ensuring selection signals are unbiased improves stability and performance.
+  SCORE [hp0/tok4]: best=0.8283, final=0.8283 (neon122_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon123
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon123: Residual Gated Attention Hydra.
+  DOC: Formula: y = Sigmoid(I) * Attn(Q, K, V) + (1 - Sigmoid(I)) * x
+  DOC: Turns the Attention block into a dynamic bypass.
+  DOC: Allows tokens to preserve their local identity perfectly if no global context is needed.
+  SCORE [hp0/tok4]: best=0.8203, final=0.8203 (neon123_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon124
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon124: Multi-Query Intent (MQI) Hydra.
+  DOC: All attention heads share ONE single Intent gate.
+  DOC: Significant parameter savings allow for a wider MLP.
+  DOC: Formula: y_head = Sigmoid(Shared_Intent) * Attn_head
+  SCORE [hp0/tok4]: best=0.7727, final=0.7727 (neon124_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon125
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon125: Bottleneck Intent Hydra.
+  DOC: Uses a low-rank bottleneck for the Intent gate projection (256 -> 64 -> 256).
+  DOC: Allows for more selective gating with fewer parameters than the full linear projection.
+  SCORE [hp0/tok4]: best=0.8124, final=0.8124 (neon125_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon126
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon126: Attention-Context Only (No MLP Conv).
+  DOC: Same as neon116, but with the MLP convolution removed.
+  DOC: Replaces PureHydraMLP with standard SwiGLU_MLP.
+  DOC: Tests if Contextual Attention is sufficient for SOTA performance.
+  SCORE [hp0/tok4]: best=0.9627, final=0.9627 (neon126_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon127
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon127: Biased Full Multi-Head Conv-Attention.
+  DOC: Same as neon116, but with bias=True enabled for all attention convolutions.
+  DOC: Tests if learnable biases improve the stability of contextual head projections.
+  SCORE [hp0/tok4]: best=0.7555, final=0.7555 (neon127_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.2722, final=3.2722 (neon127_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon128
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon128: Baseline Context (No-Intent Ablation).
+  DOC: Removes the Intent gate entirely.
+  DOC: Attention: Q, K, V convolved (k=3). Standard SDPA.
+  DOC: MLP: Standard SwiGLU_MLP (No Conv).
+  SCORE [hp0/tok4]: best=0.7905, final=0.7905 (neon128_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon129
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon129: Hyper-Synergy (Full + Bias + MQI).
+  DOC: Combines:
+  DOC: 1. Biased Attention Convolutions (from neon127)
+  DOC: 2. Multi-Query Intent (from neon124)
+  SCORE [hp0/tok4]: best=0.7513, final=0.7513 (neon129_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.2524, final=3.2524 (neon129_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon130
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon130: Sharp-V Hyper-Synergy.
+  DOC: Same as neon129, but keeps V (Content) sharp (no convolution).
+  DOC: Tests if local contextualization of search (Q, K, I) is sufficient.
+  DOC: Calibration: d_ff = 630.
+  SCORE [hp0/tok4]: best=0.7265, final=0.7265 (neon130_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.2733, final=3.2733 (neon130_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon131
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon131: The Qwen-NexT Optimizer.
+  DOC: Same as neon129, but replaces RMSNorm with Zero-Centered Norm (from neon122) for Q and K.
+  DOC: Combines:
+  DOC: 1. Biased Attention Convolutions
+  SCORE [hp0/tok4]: best=0.7297, final=0.7297 (neon131_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.2840, final=3.2840 (neon131_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon132
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon132: Causal Spectral Hydra.
+  DOC: Replaces the non-causal global FFT with a Causal Spectral Pyramid.
+  DOC: Uses a bank of log-spaced causal convolutions (k=3, 9, 27) to analyze frequencies.
+  DOC: Tests if multi-scale spectral gating is superior to fixed-window Hydra.
+  SCORE [hp0/tok4]: best=0.8000, final=0.8000 (neon132_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon133
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon133: Commander Head (Low-Rank Dynamic Weights).
+  DOC: Predicts convolutional weights on-the-fly via a Low-Rank bottleneck.
+  DOC: Uses rank R=8 to keep parameters under the 3M budget.
+  DOC: Calibration: d_ff = 650.
+  SCORE [hp0/tok4]: best=0.8586, final=0.8586 (neon133_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon134
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon134: Mamba-Hydra Hybrid (Matrix-Optimized).
+  DOC: Replaces the slow loop with a Matrix-Parallel Transition Scan (MPTS).
+  DOC: Uses O(T^2) transition matrix for lightning speed at T=256.
+  DOC: Mathematically stable: masks upper triangle BEFORE exp to prevent NaNs.
+  SCORE [hp0/tok4]: best=1.0224, final=1.0224 (neon134_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon135
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon135: Holographic Projection.
+  DOC: Implements Complex-Valued Attention projections (Magnitude + Phase).
+  DOC: The Attention signal is computed in complex-space, allowing for constructive/destructive interference.
+  DOC: Tests if complex-domain representations capture higher-order sequence relationships.
+  SCORE [hp0/tok4]: best=1.4692, final=1.4692 (neon135_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon136
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon136: Hydra Mixture of Experts (2 Experts).
+  DOC: Replaces the standard PureHydraMLP with a 2-Expert MoE layer.
+  DOC: Uses Softmax-weighted MoE (Dense MoE for stability) where each expert is a PureHydraMLP.
+  DOC: Tests if ensemble intelligence can overcome the loss in per-expert capacity.
+  SCORE: NO LOGS FOUND
+
+────────────────────────────────────────────────────────────────────────────────
+  neon137
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon137: Hierarchical Context Stack.
+  DOC: Layers 0, 1, 2: Learned Intent Attention (Conv-Gated Intent, but Sharp QKV).
+  DOC: Layer 3: Full Multi-Head Conv-Attention (Convolved Q, K, V, and Intent).
+  DOC: Tests if the model only needs deep local synthesis at the final layer.
+  SCORE [hp0/tok4]: best=0.7796, final=0.7796 (neon137_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon138
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon138: Strategic Colossus (Unified Massive).
+  DOC: Simplifies the context strategy: Shapr Search, Massive Gating.
+  DOC: Q, K, V, and W1 are kept SHARP (no convolutions) to preserve signal fidelity.
+  DOC: Intent and MLP Gate use a massive k=33 kernel for large-scale context selection.
+  SCORE [hp0/tok4]: best=0.8804, final=0.8804 (neon138_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon139
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon139: Sequential Kernel Expansion (Progressive Context).
+  DOC: Layers have progressively larger kernel sizes: k=3, 5, 7, 9.
+  DOC: Applies to Q, K, and Intent in Attention, and the Hydra gate in MLP.
+  DOC: Tests if hierarchical expansion of local context through the stack is superior.
+  SCORE [hp0/tok4]: best=0.7159, final=0.7159 (neon139_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.2637, final=3.2637 (neon139_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon140
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon140: Parallel Spectral Heads.
+  DOC: Each of the 4 attention heads specializes in a different kernel scale: k=3, 5, 7, 9.
+  DOC: The MLP (Hydra) uses a 4-path spectral gate merging these same scales.
+  DOC: Tests if diversity of receptive fields within a single layer is superior to a uniform scale.
+  SCORE [hp0/tok4]: best=1.0654, final=1.0654 (neon140_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon141
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon141: Denoising Bottleneck Hydra.
+  DOC: ImplementsDiscovery: Discovered that depth in gating is better than width (k=9).
+  DOC: Replaces the single k=9 gate convolution with a Bottleneck pair: k=3 -> SiLU -> k=3.
+  DOC: This allows the gate to perform non-linear filtering of local context before deciding to open.
+  SCORE [hp0/tok4]: best=0.7374, final=0.7374 (neon141_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon142
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon142: Global Hum Hydra.
+  DOC: Injects a Global Context signal into the local gating mechanisms.
+  DOC: Computes a Causal Mean Pool as a 'Global Hum' to provide sequence-wide stability to k=3 local gates.
+  DOC: Tests if 'Locality + Global Bias' beats 'Hierarchical Locality'.
+  SCORE [hp0/tok4]: best=0.8931, final=0.8931 (neon142_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon143
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon143: The Silent Hydra (Attention-Free).
+  DOC: Removes the Softmax Scaled-Dot-Product Attention entirely.
+  DOC: Block A: Convolutional Gating (Intent * V). Purely local interaction.
+  DOC: Block B: Pure Hydra MLP.
+  SCORE [hp0/tok4]: best=0.6604, final=0.6604 (neon143_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.5287, final=3.5287 (neon143_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon144
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon144: Sigmoid Bottleneck Hydra.
+  DOC: Variation of neon141. Replaces SiLU with Sigmoid in the gate bottleneck.
+  DOC: Tests if a bounded intermediate activation (Sigmoid) provides more stable denoising than an unbounded one (SiLU).
+  DOC: Formula: k=3 -> Sigmoid -> k=3 -> Sigmoid(Gate).
+  SCORE [hp0/tok4]: best=0.8266, final=0.8266 (neon144_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon145
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon145: Multi-Head Denoising Bottleneck.
+  DOC: Variation of neon141 (Denoising Bottleneck) using Multi-Head Intent (MHI).
+  DOC: Each head has its own independent denoising context selector.
+  DOC: Tests if head-specific gating granularity is worth the FFN width trade-off.
+  SCORE [hp0/tok4]: best=0.7469, final=0.7469 (neon145_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon146
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon146: Multi-Head Global Hum.
+  DOC: Variation of neon142 (Global Hum) using Multi-Head Intent (MHI).
+  DOC: Each attention head has its own global bias signal for context selection.
+  DOC: Tests if 'Locality + Global Bias' is more effective when diversified across heads.
+  SCORE [hp0/tok4]: best=1.0156, final=1.0156 (neon146_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon147
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon147: Multi-Head Sigmoid Bottleneck.
+  DOC: Variation of neon144 (Sigmoid Bottleneck) using Multi-Head Intent (MHI).
+  DOC: Each attention head independently performs bounded denoising for context selection.
+  DOC: Tests if head-specific bounded gating provides better stability than MQI.
+  SCORE [hp0/tok4]: best=0.8477, final=0.8477 (neon147_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon148
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon148: Asymmetric Search (Sharp-Q).
+  DOC: Implements an Asymmetric context strategy:
+  DOC: Query (Q): Kept 100% SHARP (k=1) to represent a precise search probe.
+  DOC: Key (K): Convolved (k=11) to represent a broad contextual target.
+  SCORE [hp0/tok4]: best=0.7428, final=0.7428 (neon148_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon149
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon149: Dilated Receptive Fields.
+  DOC: Uses Dilated Convolutions to gain wide reach with minimal noise and zero extra parameters.
+  DOC: Replaces k=9 (9 weights) with k=3, dilation=4 (3 weights, 9-token reach).
+  DOC: Applies to Q, K, and Intent in Attention, and the Hydra gate in MLP.
+  SCORE [hp0/tok4]: best=0.7774, final=0.7774 (neon149_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon150
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon150: Intent Recurrence (Persistent Focus).
+  DOC: Propagates the 'Intent' gating signal across layers to maintain focus.
+  DOC: Layer L+1 receives Layer L's Intent signal as a residual bias.
+  DOC: Tests if 'Persistent Focus' helps build deeper syntactic stability.
+  SCORE [hp0/tok4]: best=0.8048, final=0.8048 (neon150_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon151
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon151: Inception Value (Multi-Fidelity Content).
+  DOC: Returns both 'Sharp' and 'Contextualized' content in the same attention pass.
+  DOC: Value (V) output is sum(V_sharp, Gated(Conv_k3(V_sharp))).
+  DOC: Allows the model to decide per-head how much neighbor-context to mix with the raw token.
+  SCORE [hp0/tok4]: best=0.8801, final=0.8801 (neon151_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon152
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon152: Multi-Head Asymmetric Search (Sharp-Q).
+  DOC: Variation of neon148 using Multi-Head Intent (MHI).
+  DOC: Each head has independent context target (K) and independent precise probe (Q).
+  DOC: Query (Q): Sharp (k=1).
+  SCORE [hp0/tok4]: best=0.7695, final=0.7695 (neon152_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon153
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon153: Multi-Head Dilated Context.
+  DOC: Variation of neon149 using Multi-Head Intent (MHI).
+  DOC: Each attention head has its own head-specific dilated kernels for Q, K, and I.
+  DOC: Dilated k=3, dilation=4.
+  SCORE [hp0/tok4]: best=0.7368, final=0.7368 (neon153_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon154
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon154: Multi-Head Intent Recurrence.
+  DOC: Variation of neon150 using Multi-Head Intent (MHI).
+  DOC: Propagates head-specific focus signals across layers.
+  DOC: Each head receives the intent signal from the corresponding head in the previous layer.
+  SCORE [hp0/tok4]: best=0.8286, final=0.8286 (neon154_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon155
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon155: Multi-Head Inception Value.
+  DOC: Variation of neon151 using Multi-Head Intent (MHI).
+  DOC: Each attention head has its own head-specific mix gate for Sharp vs Contextualized Value.
+  DOC: Value (V) = V_sharp + (MixGate * Conv_k3(V_sharp)).
+  SCORE [hp0/tok4]: best=0.8952, final=0.8952 (neon155_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon156
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon156: The Spectral Silent Hydra.
+  DOC: Extends the Attention-Free Silent Hydra (neon143) with a Multi-Scale Spectral Gate.
+  DOC: Replaces the single k=9 gate with a parallel bank of k=3, 5, 9 convolutions.
+  DOC: This allows the attention-free model to sense multiple temporal hierarchies simultaneously.
+  SCORE [hp0/tok4]: best=0.6975, final=0.6975 (neon156_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.5405, final=3.5405 (neon156_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon157
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon157: The Wide-Merge Silent Hydra.
+  DOC: Maximizes MLP capacity by merging projections in the Silent Hydra.
+  DOC: Combines V and G projections into a single wide projection (Synergy architecture).
+  DOC: Tests the absolute limit of the 'Raw Knowledge' hypothesis at 3M parameters.
+  SCORE [hp0/tok4]: best=0.7063, final=0.7063 (neon157_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon158
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon158: The Dilated Silent Hydra.
+  DOC: Extends the Silent Hydra with Dilated Convolutions (k=3, d=4).
+  DOC: Achieves a 9-token reach with minimal noise and zero extra parameters compared to k=3.
+  DOC: Tests if wide, sparse reach is better than dense local search in an attention-free world.
+  SCORE [hp0/tok4]: best=1.2885, final=1.2885 (neon158_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon159
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon159: The Clean-Room Silent Hydra.
+  DOC: Adds a Denoising SiLU Bottleneck to the gate of the Silent Hydra.
+  DOC: Gate Formula: k=3 -> SiLU -> k=3 -> Sigmoid.
+  DOC: Allows the attention-free model to non-linearly filter its local context.
+  SCORE [hp0/tok4]: best=0.7583, final=0.7583 (neon159_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon160
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon160: The Hybrid Ghost.
+  DOC: Layers 0, 1, 2: Attention-Free Silent Hydra (neon143).
+  DOC: Layer 3: Softmax-Attention Hydra (neon130 style).
+  DOC: Tests if a 'Silent Base' combined with a single 'Attention Finale' provides the best of both worlds.
+  SCORE [hp0/tok4]: best=0.7149, final=0.7149 (neon160_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.3071, final=3.3071 (neon160_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon161
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon161: Deep Silent Hydra (8 Layers).
+  DOC: Doubles the depth of the champion neon143 to 8 layers.
+  DOC: Tests if 'Depth and Temporal Stacking' can stabilize the spelling jitter
+  DOC: and drifting logic observed in the 4-layer wide version.
+  SCORE [hp0/tok4]: best=0.7573, final=0.7573 (neon161_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.5429, final=3.5429 (neon161_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon162
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon162: The Deep Hybrid Ghost (8 Layers).
+  DOC: Layers 0-6: Silent Hydra (Attention-Free Convolutional Gating).
+  DOC: Layer 7: Softmax Attention (Global Search Finale).
+  DOC: Tests if a deep silent backbone can be stabilized by a single global attention layer.
+  SCORE [hp0/tok4]: best=0.7910, final=0.7910 (neon162_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.3369, final=3.3369 (neon162_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon163
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon163: Alternating Ghost (8 Layers).
+  DOC: Iterative Hybrid: Silent -> Attention -> Silent -> Attention.
+  DOC: Tests if frequent global context updates stabilize the deep silent backbone.
+  DOC: Calibration: d_ff = 185.
+  SCORE [hp0/tok4]: best=0.9071, final=0.9071 (neon163_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon164
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon164: Pyramidal Silent Hydra (8 Layers).
+  DOC: Expands the receptive field per layer: k = 3, 5, 7, 9, 11, 13, 15, 17.
+  DOC: Tests if hierarchical window expansion builds better abstraction than uniform kernels.
+  DOC: Calibration: d_ff = 205.
+  SCORE [hp0/tok4]: best=0.7525, final=0.7525 (neon164_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon165
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon165: Res-Gated Silent Hydra (8 Layers).
+  DOC: Adds a residual connection to the Gating signal: gate = sigmoid(conv(x) + x).
+  DOC: Tests if 'Gate Passthrough' stabilizes the spelling jitter by allowing the model to
+  DOC: fallback to raw token data when the convolution is noisy.
+  SCORE [hp0/tok4]: best=0.7733, final=0.7733 (neon165_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon166
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon166: Deep Spectral Hydra (8 Layers).
+  DOC: Applies a Multi-Scale Spectral Bank (k=3, 5, 9) in every layer block.
+  DOC: The most computationally dense Attention-Free model in the project.
+  DOC: Goal: Maximum texture sensing and structural stabilization.
+  SCORE [hp0/tok4]: best=0.7823, final=0.7823 (neon166_tok4_hp0_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon167
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon167: Scaled Full Conv-Attention (The Giant).
+  DOC: Scaled version of neon116 to 5M Non-Embedding Parameters.
+  DOC: Architecture: Full Multi-Head Conv-Attention (Q, K, V, I blurred) + Pure Hydra MLP.
+  DOC: Calibration: d_model=272, n_layers=4, d_ff=1072 (5.0M Class).
+  SCORE [hp0/tok4]: best=0.3162, final=0.3162 (neon167_tok4_hp0_log.txt)
+  SCORE [wiki103/tok4]: best=3.1484, final=3.1484 (neon167_tok4_wiki103_tok4_log.txt)
+  SCORE [wiki103/tok5]: best=3.4540, final=3.4540 (neon167_tok5_wiki103_tok5_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon168
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon168: Sharp Intent & Value Synergy.
+  DOC: Variation of neon167.
+  DOC: - Q and K keep k=3 blur (contextual search).
+  DOC: - V (Value/Content) is SHARP (no convolution).
+  SCORE [wiki103/tok4]: best=3.1678, final=3.1678 (neon168_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon169
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon169: Hierarchical Attention Kernels (Ascending).
+  DOC: Variation of neon167.
+  DOC: - Attention Kernels grow by layer: L0:k=3, L1:k=5, L2:k=7, L3:k=9.
+  DOC: - FFN Gate stays at k=9.
+  SCORE [wiki103/tok4]: best=3.1485, final=3.1485 (neon169_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon170
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon170: Hierarchical Attention Kernels (Descending).
+  DOC: Variation of neon167.
+  DOC: - Attention Kernels shrink by layer: L0:k=9, L1:k=7, L2:k=5, L3:k=3.
+  DOC: - FFN Gate stays at k=9.
+  SCORE [wiki103/tok4]: best=3.1533, final=3.1533 (neon170_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon171
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon171: Hierarchical MLP Kernels (Ascending).
+  DOC: Variation of neon167.
+  DOC: - Attention Kernels stay at k=3 (standard Synergy).
+  DOC: - MLP Gate Kernels grow by layer: L0:k=3, L1:k=5, L2:k=7, L3:k=9.
+  SCORE [wiki103/tok4]: best=3.1492, final=3.1492 (neon171_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon172
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon172: Hierarchical MLP Kernels (Descending).
+  DOC: Variation of neon167.
+  DOC: - Attention Kernels stay at k=3 (standard Synergy).
+  DOC: - MLP Gate Kernels shrink by layer: L0:k=9, L1:k=7, L2:k=5, L3:k=3.
+  SCORE [wiki103/tok4]: best=3.1665, final=3.1665 (neon172_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon173
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon173: Dual Ascending Hierarchy (Attention & MLP).
+  DOC: Variation of neon167.
+  DOC: - Attention Kernels grow by layer: L0:k=3, L1:k=5, L2:k=7, L3:k=9.
+  DOC: - MLP Gate Kernels grow by layer: L0:k=3, L1:k=5, L2:k=7, L3:k=9.
+  SCORE [wiki103/tok4]: best=3.1502, final=3.1502 (neon173_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon174
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon174: Shared Intent Attention Hierarchy (MQI).
+  DOC: Variation of neon169.
+  DOC: - Attention Kernels grow by layer: L0:k=3, L1:k=5, L2:k=7, L3:k=9.
+  DOC: - Shared Intent (MQI) reduces parameter count.
+  SCORE [wiki103/tok4]: best=3.1601, final=3.1601 (neon174_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon175
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon175: Shared Intent MLP Hierarchy (MQI).
+  DOC: Variation of neon171.
+  DOC: - Attention Kernels stay at k=3.
+  DOC: - Shared Intent (MQI) reduces parameter count.
+  SCORE [wiki103/tok4]: best=3.1565, final=3.1565 (neon175_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon176
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon176: Shared Intent Dual Ascending (MQI).
+  DOC: Variation of neon173.
+  DOC: - Both Attention and MLP Kernels grow by layer: L0:k=3, L1:k=5, L2:k=7, L3:k=9.
+  DOC: - Shared Intent (MQI) reduces parameter count.
+  SCORE [wiki103/tok4]: best=3.1538, final=3.1538 (neon176_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon177
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon177: Multi-Query Synergy (5-Layer MQA).
+  DOC: Variation of neon167 scaled for depth.
+  DOC: - Multi-Query Attention (MQA): many Q heads, one K, one V.
+  DOC: - Shared Intent (MQI): one single Intent head for all Q heads.
+  SCORE [wiki103/tok4]: best=3.1776, final=3.1776 (neon177_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon178
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon178: Spectral MHI Giant (Spectral Synergy).
+  DOC: Variation of neon167.
+  DOC: - Multi-Head Intent (MHI): Each attention head has its own unique Intent gate.
+  DOC: - Spectral Pyramid Convolutions: Replaces single-scale k=3/9 convolutions with a bank of k=3, 9, and 27.
+  SCORE [wiki103/tok4]: best=3.1712, final=3.1712 (neon178_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon179
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon179: Sharp-Intent Synergy.
+  DOC: Variation of neon167 (5M class).
+  DOC: Configuration: Q=Blur, K=Blur, V=Blur, I=Sharp.
+  DOC: Architecture: 4 Layers, d_model=272, d_ff=1072.
+  SCORE [wiki103/tok4]: best=3.1568, final=3.1568 (neon179_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon180
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon180: Sharp-Value Synergy.
+  DOC: Variation of neon167 (5M class).
+  DOC: Configuration: Q=Blur, K=Blur, V=Sharp, I=Blur.
+  DOC: Architecture: 4 Layers, d_model=272, d_ff=1072.
+  SCORE [wiki103/tok4]: best=3.1485, final=3.1485 (neon180_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon181
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon181: Sharp-Search Synergy.
+  DOC: Variation of neon167 (5M class).
+  DOC: Configuration: Q=Sharp, K=Sharp, V=Blur, I=Blur.
+  DOC: Architecture: 4 Layers, d_model=272, d_ff=1072.
+  SCORE [wiki103/tok4]: best=3.1663, final=3.1663 (neon181_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon182
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon182: Pure Attention Synergy.
+  DOC: Variation of neon167 (5M class).
+  DOC: Configuration: Q=Sharp, K=Sharp, V=Sharp, I=Sharp.
+  DOC: Architecture: 4 Layers, d_model=272, d_ff=1072.
+  SCORE [wiki103/tok4]: best=3.1893, final=3.1893 (neon182_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon183
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon183: RoPE Before Convolution.
+  DOC: Variant of neon167 where RoPE is applied before the convolution step.
+  DOC: Architecture: Proj -> RoPE -> Conv -> Norm -> Attention.
+  SCORE [wiki103/tok4]: best=3.1496, final=3.1496 (neon183_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon184
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon184: No RoPE.
+  DOC: Variant of neon167 where RoPE is completely removed.
+  DOC: Positional information relies entirely on the 1D convolutions.
+  DOC: Architecture: Proj -> Conv -> Norm -> Attention.
+  SCORE [wiki103/tok4]: best=3.1793, final=3.1793 (neon184_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon185
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon185: Swish-Hydra MLP (SwiGLU-Conv).
+  DOC: 2. Variation of neon167 (5M class).
+  DOC: 3. MLP Gating uses SiLU (Swish) instead of Sigmoid.
+  DOC: 4. Architecture: Full Multi-Head Conv-Attention + Swish Hydra MLP.
+  SCORE [wiki103/tok4]: best=3.1364, final=3.1364 (neon185_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon186
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon186: SiLU-Gate Attention + Sigmoid MLP.
+  DOC: 2. Variation of neon167 (5M class).
+  DOC: 3. Attention Gating uses SiLU (Swish) instead of Sigmoid.
+  DOC: 4. MLP Gating remains Sigmoid (PureHydraMLP).
+  SCORE [wiki103/tok4]: best=3.1528, final=3.1528 (neon186_tok4_wiki103_tok4_log.txt)
+
+────────────────────────────────────────────────────────────────────────────────
+  neon187
+────────────────────────────────────────────────────────────────────────────────
+  DOC: Neon187: Full SiLU (Swish) Architecture.
+  DOC: 2. Variation of neon167 (5M class).
+  DOC: 3. Both Attention Gating AND MLP Gating use SiLU (Swish).
+  DOC: 4. Architecture: SiLU-Gated Conv-Attention + Swish Hydra MLP.
+  SCORE [wiki103/tok4]: best=3.1381, final=3.1381 (neon187_tok4_wiki103_tok4_log.txt)

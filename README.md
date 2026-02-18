@@ -1,170 +1,202 @@
 NeonBench is a repository dedicated to exploring novel transformer and recurrent architectures at the ~3M parameter scale. This log tracks every experiment, focusing on parameter efficiency and architectural breakthroughs.
 
-**Total Architectures Tested**: 182  
-**Total Models Trained**: 222
+**Total Architectures Tested**: 187  
+**Total Models Trained**: 227
 
 ## 📋 Master Model Inventory
 *Parameter counts exclude embeddings to ensure absolute consistency across benchmarks.*
 
 | Model | Params (Ex-Emb) | Technical Description |
 | :--- | :--- | :--- |
-| **neon001** | 2.11M | Baseline: Pre-Norm, LayerNorm, RoPE, GELU, Bias=T. |
-| neon002 | 2.10M | + RMSNorm, QK-Norm, Bias=F. |
-| neon003 | 1.71M | + Multi-Query Attention (MQA). |
-| neon004 | 1.71M | + Shared Wide MLP (d_ff=1024 shared). |
-| **neon005** | 2.62M | + SwiGLU (SiLU), RMSNorm. (Modern Baseline) |
-| neon006 | 2.49M | + MLA (Multi-head Latent Attention). |
-| neon007 | 2.63M | + DeltaNet (Associative Memory Recurrence). |
-| neon008 | 2.63M | + L2 Normalized Unit Sphere States. |
-| **⭐ neon009** | 2.89M | **QKVI Attention**: I is a Learnt Intention. |
-| **⭐ neon010** | 2.64M | **Calculated Intent**: Gated SDPA (Gate derived from Q). |
-| neon011 | 11.84M | Narrow & Deep (8 layers × 384 dim, 2× MLP). |
-| neon012 | 15.76M | Wide & Medium (6 layers × 512 dim, 2× MLP). |
-| neon013 | 8.21M | Balanced (8 layers × 320 dim, 2× MLP). |
-| neon014 | 14.19M | MLP-Heavy (6 layers × 384 dim, 4× MLP expansion). |
-| **neon015** | 2.89M | Result gating, raw I, raw V. Formula: $I_i \odot \Sigma_j(A_{ij} V_j)$. |
-| **⭐ neon016** | 2.89M | **Result gating, σ(I), raw V.** Identical to neon9 but with Sigmoid non-linearity. ([Detailed Docs](docs/neon016.md)) |
-| neon017 | 2.89M | Result gating, raw I, σ(V). |
-| neon018 | 2.89M | Result gating, σ(I), σ(V). |
-| neon019 | 2.89M | Source gating, raw I, raw V. Formula: $\Sigma_j A_{ij} (I_j \odot V_j)$. |
-| **neon020** | 2.89M | **Source gating, σ(I), raw V.** |
-| neon021 | 2.89M | Source gating, raw I, σ(V). |
-| neon022 | 2.89M | Source gating, σ(I), σ(V). |
-| neon023 | 5.77M | 8-layer deep variant. LayerDrop support (ERNIE 5 inspired). No drop. |
-| neon024 | 5.77M | same as 23, but WITH layerdrop!! |
-| neon025 | 2.89M | **Try Post-Norm**: Same as neon16 but with PostNorm (Exaone inspired). |
-| neon026 | 2.89M | neon005 scaled to neon16 size via d_ff increase. (No-Intent Control). |
-| **neon027** | 2.89M | neon010 (Gated SDPA) scaled to neon16 size. (Calculated-Intent Control). |
-| neon028 | 2.89M | neon006 (MLA) scaled to neon16 size. |
-| neon029 | 2.89M | neon001 (GPT-2) scaled to ~3M total params (inc. embeddings). |
-| neon030 | 2.89M | neon002 (RMSNorm + GELU) scaled to ~3M total params. |
-| neon031 | 2.62M | Calculated Intent — σ(Q ⊙ V). Zero extra params. |
-| neon032 | 2.62M | Calculated Intent — σ(Q ⊙ K). |
-| neon033 | 2.62M | Calculated Intent — σ(K ⊙ V). |
-| neon034 | 2.62M | Calculated Intent — σ(Q ⊙ K ⊙ V). |
-| neon035 | 2.62M | Calculated Intent — LayerNorm(Q + V). |
-| neon036 | 2.62M | Calculated Intent — normalize(Q + K + V). |
-| neon037 | 2.62M | Calculated Intent — σ(Q) ⊙ tanh(V). |
-| neon038 | 2.62M | Calculated Intent — Q + σ(K ⊙ V). |
-| neon039 | 2.62M | Calculated Intent — tanh(Q + K - V). |
-| neon040 | 2.62M | Calculated Intent — RMSNorm(Q ⊙ V). |
-| neon041 | 2.64M | Gated Calculated Intent — σ(W_g(Q ⊙ V) + b_g). Tiny learned gate. |
-| neon042 | 2.64M | Gated Calculated Intent — σ(W_g(Q ⊙ K) + b_g). |
-| neon043 | 2.64M | Gated Calculated Intent — σ(W_g(K ⊙ V) + b_g). |
-| neon044 | 2.64M | Gated Calculated Intent — σ(W_g(Q ⊙ K ⊙ V) + b_g). |
-| neon045 | 2.64M | Gated Calculated Intent — σ(W_g(Q + V) + b_g). |
-| **⭐ neon046** | 2.64M | **Gated Calculated Intent** — σ(W_g(Q + K + V) + b_g). (Milestone). |
-| neon047 | 2.64M | Gated Calculated Intent — σ(W_g(σ(Q) ⊙ tanh(V)) + b_g). |
-| neon048 | 2.64M | Gated Calculated Intent — σ(W_g(Q + σ(K ⊙ V)) + b_g). |
-| neon049 | 2.64M | Gated Calculated Intent — σ(W_g(Q + K - V) + b_g). |
-| neon050 | 2.64M | Gated Calculated Intent — σ(W_hc (Q⊙V) + b) with RMSNorm pre-gate. |
-| neon051 | 2.63M | Linear Combination Intent — σ(w_q Q + w_k K + w_v V + b). |
-| neon052 | 2.67M | Matrix Intent — σ(Q W_q + K W_k + V W_v + b). |
-| neon053 | 2.89M | QKVI Intent Attention with SiLU gating. |
-| neon054 | 2.64M | Gated Calculated Intent with SiLU — σ(W_g(Q + K + V) + b_g). |
-| **neon055** | 2.89M | neon046 with larger d_ff (592). (Final Calc-Intent test). |
-| neon056 | 2.90M | Double-Gated (Magnitude * Direction). |
-| neon057 | 2.89M | Differential Intent (Sigmoid of absolute diffs). |
-| neon058 | 2.64M | Residual Intent: Output + W_i(SiLU(Q)). |
-| neon059 | 2.89M | Norm-Gated: Context [QKV, norms]. |
-| neon060 | 2.89M | Max-Pooled: Max(Q, K, V). |
-| **⭐ neon061** | 9.72M | **Wide MLP ("Stable Winner")**: d_ff ratio approx 16x. |
-| neon062 | 2.62M | MLP-Free: Double layers, no MLP. |
-| neon063 | 3.94M | Attention-in-MLP: MLP replaced by 2nd Attention step. |
-| neon064 | 2.76M | Hadamard Head Merge: n_head=8 merged pairwise. |
-| **neon065** | 4.20M | Big Single Head: 1 Head, d_head=512. |
-| neon066 | 2.89M | Fair Fight Big Head: d_head=512, d_ff reduced to match params. |
-| neon067 | 2.89M | 2 Heads (Head Dim 128). |
-| **neon068** | 2.89M | **8 Heads (Head Dim 32)**. (Best Multi-Head Baseline). |
-| neon069 | 2.89M | 16 Heads (Head Dim 16). |
-| **neon070** | 2.84M | **Hydra MLP**: Gate = Sigmoid(Attn(x)). Context-aware activation. |
-| neon071 | 2.98M | Wide Hydra: d_ff=640. |
-| **neon072** | 3.21M | Gated-Residual Hydra: SiLU(Linear) + Sigmoid(Attn). |
-| neon073 | 2.84M | Multi-Head Hydra. |
-| neon074 | 2.84M | Swish-Gated Hydra. |
-| neon075 | 2.84M | Negative Hydra: Inhibitory Tanh gating. |
-| neon076 | 2.83M | Light Residual Hydra: neon072 with d_model=240. |
-| **⭐ neon077** | 2.82M | **Conv-Gated Hydra**: Linear + Causal Conv Gate. **Personal SOTA.** |
-| neon078 | 2.86M | **Qwen3-Next Style Hybrid**: Layers 0-2 (DeltaNet), Layer 3 (Attn). |
-| neon079 | 2.87M | **Qwen3-Next Hybrid Replica**: Full Gated DeltaNet components. |
-| **neon080** | 2.89M | **Scaling Study (Width)**: Match neon016 via d_ff=384. |
-| **⭐ neon081** | 2.87M | **Context-scaled Hydra**: Match neon016 via k=9, d_ff=378. **[MILESTONE]** ([Detailed Docs](docs/neon081.md)) |
-| **neon082** | 2.89M | **Scaling Study (Fair Hydra)**: ResHydra (neon072) with d_ff=416. |
-| **neon083** | 2.87M | **Modulation Hydra**: `SiLU(Linear) * Sigmoid(Conv9)`. |
-| **neon084** | 2.88M | **Dilated Hydra**: `kernel=5, dilation=4` (RF=17). |
-| **⭐ neon085** | **2.89M** | **Dual-Scale Hydra**: Parallel `k=3` and `k=9` gate paths. **[PROJECT SOTA]** ([Detailed Docs](docs/neon085.md)) |
-| **neon086** | 2.88M | **Res-Hydra**: Context gate with residual `x` connection. |
-| **neon087** | 2.86M | **Pyramidal Hydra**: Triple scale `k=3, 9, 27` (RF=27). |
-| **neon088** | 2.89M | **Competitive Hydra**: `Max(k3, k9)` feature selection. |
-| **neon091** | 9.72M | **10M Hydra**: Scaled `neon081` (k=9) to match `neon061`. |
-| **⭐ neon092** | 9.72M | **10M Dual-Scale Hydra**: Scaled `neon085` (k=3+9) to match `neon061`. **[10M SOTA]** ([Detailed Docs](docs/neon092.md)) |
-| **neon093** | 9.72M | **10M Deep Standard**: 8-layer pure Transformer baseline for scaling audit. |
-| **neon094** | 9.72M | **10M Hydra-Base**: Dual-Scale Hydra MLP (k=3+9) but with **Standard Attention**. |
-| **neon095** | 2.89M | **Progressive Hydra**: Kernel size increases with depth (k=3, 5, 9, 17). |
-| **neon096** | 2.89M | **Heterogeneous Stack**: Alternating Dual-Scale Hydra and SwiGLU layers. |
-| **neon097** | 2.89M | **Triple-Scale Hydra**: Parallel k=3, 5, and 9 gate paths. |
-| **neon098** | 2.89M | **Dilated Hydra (RF=65)**: Massive reach with k=3 (dense) + k=17 (dilated, d=4). |
-| **neon099** | 2.89M | **Residual Hydra**: Multiplicative residual gating logic. |
-| **⭐ neon100** | **2.89M** | **Pure Hydra**: Convolutional-only gate (no linear identity path). **Project SOTA.** |
-| **neon101** | 2.89M | **Progressive Specialization**: 2x SwiGLU -> 2x Dual-Scale Hydra. |
-| **neon102** | 2.89M | **Sandwich Hydra**: Hydra-SwiGLU-SwiGLU-Hydra stack. |
-| **neon103** | 2.89M | **Inverted Sandwich**: SwiGLU-Hydra-Hydra-SwiGLU stack. |
-| **neon104** | 2.89M | **Late Bloomer Hydra**: 3x SwiGLU -> 1x Hydra (L3). |
-| **neon105** | 2.89M | **Early Starter Hydra**: 1x Hydra (L0) -> 3x SwiGLU. |
-| **neon106** | 2.89M | **Dual-Decision Pure Hydra**: Independent sigmoid gates for k=3 and k=9. |
-| **neon107** | 2.89M | **Massive Reach Pure Hydra**: Pure architecture with k=17 dilated (RF=65). |
-| **neon108** | 2.89M | **Pure Hydra Single-Scale** (k=9). |
-| neon109 | 2.89M | **Pure Hydra High-Reach** (k=20). |
-| **neon110** | 2.89M | **Pure Hydra Swish** (MLP-Only SOTA). |
-| neon111 | 2.89M | **Space-Aware Matrix Attention** (Failed). |
-| neon112 | 2.89M | **Wide MLP** / Bottleneck Gate experiment. |
-| **⭐ neon113** | **2.89M** | **Conv-Attention**: Locally-aware convolution (k=3) on Q/K/V/I. |
-| **⭐ neon114** | **2.89M** | **Sharp-Value Conv-Attention**: Convolves Q/K/I, keeps V sharp. |
-| neon115 | 2.89M | **Multi-Head Conv-Attention** (Independent head-dim convs). |
-| **⭐ neon116** | **2.89M** | **Full Multi-Head Conv-Attention**: Dual-Level Context (Attn+MLP Conv). **[PROJECT SOTA]** |
-| neon117 | 2.89M | **Activated Multi-Head Conv-Attention** (SiLU post-conv). |
-| neon118 | 2.89M | **L2-Norm Multi-Head Conv-Attention**. |
-| neon119 | 2.89M | **Dynamic Soft-Gating**: Predicted SiLU beta for selection. |
-| neon120 | 2.89M | **Activated Intent**: SiLU activation on Intent gate. |
-| neon121 | 2.89M | **Context-Aware Intent Only**: Sharp Q/K/V, Convolved Intent. |
-| neon122 | 2.89M | **Zero-Centered Norm**: LayerNorm-style centering on Q/K. |
-| neon123 | 2.89M | **Residual Gated Attention**: Intent-controlled bypass. |
-| **neon124** | **2.89M** | **Multi-Query Intent (MQI)**: Shared Intent gate across all heads. |
-| neon125 | 2.89M | **Bottleneck Intent**: Low-rank linear projections. |
-| neon126 | 2.89M | **Attention-Context Only**: No MLP Conv ablation. |
-| neon127 | 2.89M | **Biased Attention Context**: Learnable biases in Attn Convs. |
-| neon128 | 2.89M | **Gateless Context baseline**: Convolved Q/K/V, no Intent gate. |
-| **neon129** | 2.89M | **Hyper-Synergy**: Full + MQI + Bias. |
-| **⭐ neon130** | **2.89M** | **Sharp-V Hyper-Synergy**: MQI + Sharp V context. **[Co-SOTA]** |
-| neon131 | 2.89M | **Qwen-NexT Synergy**: Adds Zero-Centered Q/K stability. |
-| **neon132** | 2.89M | **Fourier Hydra**: MLP frequency-domain filtering via FFT. |
-| **neon133** | 2.89M | **Commander Head**: Dynamic synaptic weights predicted on-the-fly. |
-| **neon134** | 2.89M | **Mamba-Hydra Hybrid**: Recurrent Intent scan for long-range context. |
-| **neon135** | 2.89M | **Holographic Projection**: Complex-valued interference attention. |
-| **neon143** | 3.15M | **Silent Hydra**: Attention-Free context gate. HP0 Specialist. |
-| **neon160** | 3.15M | **The Ghost**: Hybrid with Attention only in the final layer. |
-| **neon162** | 3.15M | **Deep Hybrid**: 8-layer Synergy (Attention + Hydra). |
+| **neon001** | 2.37M | Baseline: Pre-Norm, LayerNorm, RoPE, GELU, Bias=T. |
+| neon002 | 2.36M | + RMSNorm, QK-Norm, Bias=F. |
+| neon003 | 1.97M | + Multi-Query Attention (MQA). |
+| neon004 | 1.97M | + Shared Wide MLP (d_ff=1024 shared). |
+| **neon005** | 2.89M | + SwiGLU (SiLU), RMSNorm. (Modern Baseline) |
+| neon006 | 2.76M | + MLA (Multi-head Latent Attention). |
+| neon007 | 2.89M | + DeltaNet (Associative Memory Recurrence). |
+| neon008 | 2.89M | + L2 Normalized Unit Sphere States. |
+| **⭐ neon009** | 3.15M | **QKVI Attention**: I is a Learnt Intention. |
+| **⭐ neon010** | 2.90M | **Calculated Intent**: Gated SDPA (Gate derived from Q). |
+| neon011 | 12.23M | Narrow & Deep (8 layers × 384 dim, 2× MLP). Gated SDPA. |
+| neon012 | 16.29M | Wide & Medium (6 layers × 512 dim, 2× MLP). Gated SDPA. |
+| neon013 | 8.54M | Balanced (8 layers × 320 dim, 2× MLP). Gated SDPA. |
+| neon014 | 14.58M | MLP-Heavy (6 layers × 384 dim, 4× MLP expansion). Gated SDPA. |
+| **neon015** | 3.15M | Result gating, raw I, raw V. Formula: $I_i \odot \Sigma_j(A_{ij} V_j)$. |
+| **⭐ neon016** | 3.15M | **Result gating, σ(I), raw V.** Identical to neon9 but with Sigmoid non-linearity. ([Detailed Docs](docs/neon016.md)) |
+| neon017 | 3.15M | Result gating, raw I, σ(V). |
+| neon018 | 3.15M | Result gating, σ(I), σ(V). |
+| neon019 | 3.15M | Source gating, raw I, raw V. Formula: $\Sigma_j A_{ij} (I_j \odot V_j)$. |
+| **neon020** | 3.15M | **Source gating, σ(I), raw V.** |
+| neon021 | 3.15M | Source gating, raw I, σ(V). |
+| neon022 | 3.15M | Source gating, σ(I), σ(V). |
+| neon023 | 6.03M | 8-layer deep variant. LayerDrop support (ERNIE 5 inspired). No drop. |
+| neon024 | 6.03M | same as 23, but WITH layerdrop!! |
+| neon025 | 3.15M | **Try Post-Norm**: Same as neon16 but with PostNorm (Exaone inspired). |
+| neon026 | 3.15M | neon005 scaled to neon16 size via d_ff increase. (No-Intent Control). |
+| **neon027** | 3.15M | neon010 (Gated SDPA) scaled to neon16 size. (Calculated-Intent Control). |
+| neon028 | 3.15M | neon006 (MLA) scaled to neon16 size. |
+| neon029 | 3.15M | neon001 (GPT-2) scaled to ~3M total params (inc. embeddings). |
+| neon030 | 3.15M | neon002 (RMSNorm + GELU) scaled to ~3M total params. |
+| neon031 | 2.89M | Calculated Intent — σ(Q ⊙ V). Zero extra params. |
+| neon032 | 2.89M | Calculated Intent — σ(Q ⊙ K). |
+| neon033 | 2.89M | Calculated Intent — σ(K ⊙ V). |
+| neon034 | 2.89M | Calculated Intent — σ(Q ⊙ K ⊙ V). |
+| neon035 | 2.89M | Calculated Intent — LayerNorm(Q + V). |
+| neon036 | 2.89M | Calculated Intent — normalize(Q + K + V). |
+| neon037 | 2.89M | Calculated Intent — σ(Q) ⊙ tanh(V). |
+| neon038 | 2.89M | Calculated Intent — Q + σ(K ⊙ V). |
+| neon039 | 2.89M | Calculated Intent — tanh(Q + K - V). |
+| neon040 | 2.89M | Calculated Intent — RMSNorm(Q ⊙ V). |
+| neon041 | 2.90M | Gated Calculated Intent — σ(W_g(Q ⊙ V) + b_g). Tiny learned gate. |
+| neon042 | 2.90M | Gated Calculated Intent — σ(W_g(Q ⊙ K) + b_g). |
+| neon043 | 2.90M | Gated Calculated Intent — σ(W_g(K ⊙ V) + b_g). |
+| neon044 | 2.90M | Gated Calculated Intent — σ(W_g(Q ⊙ K ⊙ V) + b_g). |
+| neon045 | 2.90M | Gated Calculated Intent — σ(W_g(Q + V) + b_g). |
+| **⭐ neon046** | 2.90M | **Gated Calculated Intent** — σ(W_g(Q + K + V) + b_g). (Milestone). |
+| neon047 | 2.90M | Gated Calculated Intent — σ(W_g(σ(Q) ⊙ tanh(V)) + b_g). |
+| neon048 | 2.90M | Gated Calculated Intent — σ(W_g(Q + σ(K ⊙ V)) + b_g). |
+| neon049 | 2.90M | Gated Calculated Intent — σ(W_g(Q + K - V) + b_g). |
+| neon050 | 2.90M | Gated Calculated Intent — σ(W_hc (Q⊙V) + b) with RMSNorm pre-gate. |
+| neon051 | 2.89M | Linear Combination Intent — σ(w_q Q + w_k K + w_v V + b). |
+| neon052 | 2.94M | Matrix Intent — σ(Q W_q + K W_k + V W_v + b). |
+| neon053 | 3.15M | QKVI Intent Attention with SiLU gating. |
+| neon054 | 2.90M | Gated Calculated Intent with SiLU — σ(W_g(Q + K + V) + b_g). |
+| **neon055** | 3.15M | neon046 with larger d_ff (592). (Final Calc-Intent test). |
+| neon056 | 3.17M | Double-Gated (Magnitude * Direction). |
+| neon057 | 3.15M | Differential Intent (Sigmoid of absolute diffs). |
+| neon058 | 2.90M | Residual Intent: Output + W_i(SiLU(Q)). |
+| neon059 | 3.15M | Norm-Gated: Context [QKV, norms]. |
+| neon060 | 3.15M | Max-Pooled: Max(Q, K, V). |
+| **⭐ neon061** | 9.98M | **Wide MLP ("Stable Winner")**: d_ff ratio approx 16x. |
+| neon062 | 1.57M | MLP-Free: Double layers, no MLP. |
+| neon063 | 4.20M | Attention-in-MLP: MLP replaced by 2nd Attention step. |
+| neon064 | 3.02M | Hadamard Head Merge: n_head=8 merged pairwise. |
+| **neon065** | 4.46M | Big Single Head: 1 Head, d_head=512. |
+| neon066 | 2.11M | Fair Fight Big Head: d_head=512, d_ff reduced to match params. |
+| neon067 | 3.15M | 2 Heads (Head Dim 128). |
+| **neon068** | 3.15M | **8 Heads (Head Dim 32)**. (Best Multi-Head Baseline). |
+| neon069 | 3.15M | 16 Heads (Head Dim 16). |
+| **neon070** | 3.10M | **Hydra MLP**: Gate = Sigmoid(Attn(x)). Context-aware activation. |
+| neon071 | 3.25M | Wide Hydra: d_ff=640. |
+| **neon072** | 3.48M | Gated-Residual Hydra: SiLU(Linear) + Sigmoid(Attn). |
+| neon073 | 3.10M | Multi-Head Hydra. |
+| neon074 | 3.10M | Swish-Gated Hydra. |
+| neon075 | 3.10M | Negative Hydra: Inhibitory Tanh gating. |
+| neon076 | 3.07M | Light Residual Hydra: neon072 with d_model=240. |
+| **⭐ neon077** | 3.09M | **Conv-Gated Hydra**: Linear + Causal Conv Gate. **Personal SOTA.** |
+| neon078 | 3.12M | **Qwen3-Next Style Hybrid**: Layers 0-2 (DeltaNet), Layer 3 (Attn). |
+| neon079 | 3.13M | **Qwen3-Next Hybrid Replica**: Full Gated DeltaNet components. |
+| **neon080** | 3.15M | **Scaling Study (Width)**: Match neon016 via d_ff=384. |
+| **⭐ neon081** | 3.13M | **Context-scaled Hydra**: Match neon016 via k=9, d_ff=378. **[MILESTONE]** ([Detailed Docs](docs/neon081.md)) |
+| **neon082** | 3.16M | **Scaling Study (Fair Hydra)**: ResHydra (neon072) with d_ff=416. |
+| **neon083** | 3.13M | **Modulation Hydra**: `SiLU(Linear) * Sigmoid(Conv9)`. |
+| **neon084** | 3.15M | **Dilated Hydra**: `kernel=5, dilation=4` (RF=17). |
+| **⭐ neon085** | **3.15M** | **Dual-Scale Hydra**: Parallel `k=3` and `k=9` gate paths. **[PROJECT SOTA]** ([Detailed Docs](docs/neon085.md)) |
+| **neon086** | 3.14M | **Res-Hydra**: Context gate with residual `x` connection. |
+| **neon087** | 3.12M | **Pyramidal Hydra**: Triple scale `k=3, 9, 27` (RF=27). |
+| **neon088** | 3.15M | **Competitive Hydra**: `Max(k3, k9)` feature selection. |
+| **neon089** | 3.15M | **Dense Pyramidal Hydra**: Four parallel scales `k=3, 5, 7, 9`. |
+| **neon090** | 3.15M | **Recursive Hydra Gating**: Asymmetric cascaded gate logic. |
+| **neon091** | 9.98M | **10M Hydra**: Scaled `neon081` (k=9) to match `neon061`. |
+| **⭐ neon092** | 9.98M | **10M Dual-Scale Hydra**: Scaled `neon085` (k=3+9) to match `neon061`. **[10M SOTA]** ([Detailed Docs](docs/neon092.md)) |
+| **neon093** | 9.98M | **10M Deep Standard**: 8-layer pure Transformer baseline for scaling audit. |
+| **neon094** | 9.98M | **10M Hydra-Base**: Dual-Scale Hydra MLP (k=3+9) but with **Standard Attention**. |
+| **neon095** | 3.15M | **Progressive Hydra**: Kernel size increases with depth (k=3, 5, 9, 17). |
+| **neon096** | 3.15M | **Heterogeneous Stack**: Alternating Dual-Scale Hydra and SwiGLU layers. |
+| **neon097** | 3.15M | **Triple-Scale Hydra**: Parallel k=3, 5, and 9 gate paths. |
+| **neon098** | 3.15M | **Dilated Hydra (RF=65)**: Massive reach with k=3 (dense) + k=17 (dilated, d=4). |
+| **neon099** | 3.15M | **Residual Hydra**: Multiplicative residual gating logic. |
+| **⭐ neon100** | **3.15M** | **Pure Hydra**: Convolutional-only gate (no linear identity path). **Project SOTA.** |
+| **neon101** | 3.15M | **Progressive Specialization**: 2x SwiGLU -> 2x Dual-Scale Hydra. |
+| **neon102** | 3.15M | **Sandwich Hydra**: Hydra-SwiGLU-SwiGLU-Hydra stack. |
+| **neon103** | 3.15M | **Inverted Sandwich**: SwiGLU-Hydra-Hydra-SwiGLU stack. |
+| **neon104** | 3.15M | **Late Bloomer Hydra**: 3x SwiGLU -> 1x Hydra (L3). |
+| **neon105** | 3.15M | **Early Starter Hydra**: 1x Hydra (L0) -> 3x SwiGLU. |
+| **neon106** | 3.15M | **Dual-Decision Pure Hydra**: Independent sigmoid gates for k=3 and k=9. |
+| **neon107** | 3.15M | **Massive Reach Pure Hydra**: Pure architecture with k=17 dilated (RF=65). |
+| **neon108** | 3.15M | **Pure Hydra Single-Scale** (k=9). |
+| neon109 | 3.14M | **Pure Hydra High-Reach** (k=20). |
+| **neon110** | 3.15M | **Pure Hydra Swish** (MLP-Only SOTA). |
+| neon111 | 3.08M | **Space-Aware Matrix Attention** (Failed). |
+| neon112 | 3.14M | **Wide MLP** / Bottleneck Gate experiment. |
+| **⭐ neon113** | **3.15M** | **Conv-Attention**: Locally-aware convolution (k=3) on Q/K/V/I. |
+| **⭐ neon114** | **3.15M** | **Sharp-Value Conv-Attention**: Convolves Q/K/I, keeps V sharp. |
+| neon115 | 3.15M | **Multi-Head Conv-Attention** (Independent head-dim convs). |
+| **⭐ neon116** | **3.15M** | **Full Multi-Head Conv-Attention**: Dual-Level Context (Attn+MLP Conv). **[PROJECT SOTA]** |
+| neon117 | 3.15M | **Activated Multi-Head Conv-Attention** (SiLU post-conv). |
+| neon118 | 3.16M | **L2-Norm Multi-Head Conv-Attention**. |
+| neon119 | 3.16M | **Dynamic Soft-Gating**: Predicted SiLU beta for selection. |
+| neon120 | 3.16M | **Activated Intent**: SiLU activation on Intent gate. |
+| neon121 | 3.15M | **Context-Aware Intent Only**: Sharp Q/K/V, Convolved Intent. |
+| neon122 | 3.15M | **Zero-Centered Norm**: LayerNorm-style centering on Q/K. |
+| neon123 | 3.15M | **Residual Gated Attention**: Intent-controlled bypass. |
+| **neon124** | **3.23M** | **Multi-Query Intent (MQI)**: Shared Intent gate across all heads. |
+| neon125 | 3.17M | **Bottleneck Intent**: Low-rank linear projections. |
+| neon126 | 3.15M | **Attention-Context Only**: No MLP Conv ablation. |
+| neon127 | 3.15M | **Biased Attention Context**: Learnable biases in Attn Convs. |
+| neon128 | 3.42M | **Gateless Context baseline**: Convolved Q/K/V, no Intent gate. |
+| **neon129** | 3.15M | **Hyper-Synergy**: Full + MQI + Bias. |
+| **⭐ neon130** | **3.15M** | **Sharp-V Hyper-Synergy**: MQI + Sharp V context. **[Co-SOTA]** |
+| neon131 | 3.15M | **Qwen-NexT Synergy**: Adds Zero-Centered Q/K stability. |
+| **neon132** | 3.14M | **Causal Spectral Hydra**: Multi-scale causal conv bank (k=3, 9, 27). |
+| **neon133** | 3.15M | **Commander Head**: Low-rank dynamic weights predicted on-the-fly. |
+| **neon134** | 3.15M | **Mamba-Hydra Hybrid**: Matrix-Parallel Transition Scan. |
+| **neon135** | 3.16M | **Holographic Projection**: Complex-valued interference attention. |
+| **neon136** | 3.16M | **Hydra MoE**: 2-Expert Mixture of Experts (Dense MoE). |
+| **neon137** | 3.16M | **Hierarchical Context Stack**: Layers 0-2 Intent Attn, Layer 3 Full Conv-Attn. |
+| **neon138** | 3.15M | **Strategic Colossus**: Unified k=33 gate for Intent and MLP. |
+| **⭐ neon139** | 3.16M | **Sequential Kernel Expansion**: Progressive k=3→5→7→9 through layers. |
+| **neon140** | 3.16M | **Parallel Spectral Heads**: Per-head k=3, 5, 7, 9 specialization. |
+| **neon141** | 3.15M | **Denoising Bottleneck Hydra**: k=3→SiLU→k=3→σ gate. |
+| **neon142** | 3.16M | **Global Hum Hydra**: Causal Mean Pool global bias for local gates. |
+| **⭐ neon143** | 3.16M | **Silent Hydra**: Attention-Free convolutional gating. **HP0 Specialist.** |
+| **neon144** | 3.15M | **Sigmoid Bottleneck Hydra**: k=3→Sigmoid→k=3→σ gate. |
+| **neon145** | 3.16M | **Multi-Head Denoising Bottleneck**: MHI + Denoising gate. |
+| **neon146** | 3.15M | **Multi-Head Global Hum**: MHI + Global bias signal. |
+| **neon147** | 3.16M | **Multi-Head Sigmoid Bottleneck**: MHI + Bounded denoising. |
+| **neon148** | 3.16M | **Asymmetric Search (Sharp-Q)**: Q sharp (k=1), K wide (k=11). |
+| **neon149** | 3.15M | **Dilated Receptive Fields**: k=3, dilation=4 (9-token reach). |
+| **neon150** | 3.16M | **Intent Recurrence**: Cross-layer Intent signal propagation. |
+| **neon151** | 3.15M | **Inception Value**: Multi-Fidelity Content (Sharp + Gated Conv V). |
+| **neon152** | 3.16M | **Multi-Head Asymmetric Search**: MHI + Sharp-Q. |
+| **neon153** | 3.15M | **Multi-Head Dilated Context**: MHI + Dilated k=3, d=4. |
+| **neon154** | 3.16M | **Multi-Head Intent Recurrence**: MHI + Cross-layer focus. |
+| **neon155** | 3.15M | **Multi-Head Inception Value**: MHI + Multi-Fidelity Content. |
+| **neon156** | 3.15M | **Spectral Silent Hydra**: Attention-Free + Multi-Scale bank (k=3,5,9). |
+| **neon157** | 3.16M | **Wide-Merge Silent Hydra**: Merged V+G projections. |
+| **neon158** | 3.16M | **Dilated Silent Hydra**: Attention-Free + Dilated k=3, d=4. |
+| **neon159** | 3.15M | **Clean-Room Silent Hydra**: Denoising SiLU Bottleneck gate. |
+| **⭐ neon160** | 3.16M | **The Ghost**: 3x Silent Hydra + 1x Softmax Attention (L3). |
+| **neon161** | 3.15M | **Deep Silent Hydra**: 8-layer Attention-Free. |
+| **neon162** | 3.15M | **Deep Hybrid Ghost**: 7x Silent + 1x Attention (L7). 8 layers. |
+| **neon163** | 3.15M | **Alternating Ghost**: Silent→Attn→Silent→Attn (8 layers). |
+| **neon164** | 3.15M | **Pyramidal Silent Hydra**: 8 layers, k=3→17. |
+| **neon165** | 3.15M | **Res-Gated Silent Hydra**: 8 layers, gate=σ(conv(x)+x). |
+| **neon166** | 3.15M | **Deep Spectral Hydra**: 8 layers, Multi-Scale bank (k=3,5,9). |
 | | | |
 | **---** | **---** | **5M PARAMETER CLASS MODELS** |
-| **neon167** | **5.00M** | **Giant Synergy**: Scaled neon116. (d_model=272, d_ff=1072). |
-| **neon168** | 5.00M | **Sharp Giant**: Sharp Value and Intent gates. |
-| **neon169** | **5.02M** | **Ascending Giant**: Hierarchical Attn kernels (k=3 to 9). **WIKI SOTA.** |
-| **neon170** | 5.02M | **Descending Giant**: Hierarchical Attn kernels (k=9 to 3). |
-| **neon171** | **5.00M** | **Ascending MLP Giant**: Hierarchical MLP kernels (k=3 to 9). |
-| **neon172** | 5.00M | **Descending MLP Giant**: Hierarchical MLP kernels (k=9 to 3). |
-| **neon173** | 5.00M | **Dual Ascending Giant**: Hierarchical Attn + MLP kernels. |
-| **neon174** | **5.00M** | **MQI Att-Hierarchy**: Shared Intent + Attn Hierarchy (d_ff=1140). |
-| **neon175** | 5.00M | **MQI MLP-Hierarchy**: Shared Intent + MLP Hierarchy (d_ff=1140). |
-| **neon176** | **5.00M** | **MQI Dual-Hierarchy**: Shared Intent + Dual Hierarchy (d_ff=1140). |
-| **neon177** | 5.00M | **MQA Giant**: 5-Layer Multi-Query Attention attempt. |
-| **neon178** | 5.00M | **Spectral Synergy**: Multi-scale Spectral Pyramid heads. |
-| **neon179** | 5.00M | **Sharp Intent**: Blurred Q/K/V with Sharp Intent gate. |
-| **⭐ neon180** | **5.00M** | **Sharp-V Giant**: Sharp Value with Blurred Q/K/I. **Wiki CO-SOTA.** |
-| **neon181** | 5.00M | **Sharp Search**: Sharp Q/K with Blurred Value/Intent. |
+| **neon167** | **5.28M** | **Giant Synergy**: Scaled neon116. (d_model=272, d_ff=1072). |
+| **neon168** | 5.28M | **Sharp Intent & Value Giant**: Q/K blurred, V/I sharp. |
+| **⭐ neon169** | **5.30M** | **Ascending Giant**: Hierarchical Attn kernels (k=3 to 9). |
+| **neon170** | 5.30M | **Descending Giant**: Hierarchical Attn kernels (k=9 to 3). |
+| **neon171** | **5.28M** | **Ascending MLP Giant**: Hierarchical MLP kernels (k=3 to 9). |
+| **neon172** | 5.28M | **Descending MLP Giant**: Hierarchical MLP kernels (k=9 to 3). |
+| **neon173** | 5.29M | **Dual Ascending Giant**: Hierarchical Attn + MLP kernels. |
+| **neon174** | **5.29M** | **MQI Att-Hierarchy**: Shared Intent + Attn Hierarchy (d_ff=1140). |
+| **neon175** | 5.28M | **MQI MLP-Hierarchy**: Shared Intent + MLP Hierarchy (d_ff=1140). |
+| **neon176** | **5.29M** | **MQI Dual-Hierarchy**: Shared Intent + Dual Hierarchy (d_ff=1140). |
+| **neon177** | 5.28M | **MQA Giant**: 5-Layer Multi-Query Attention attempt. |
+| **neon178** | 5.28M | **Spectral Synergy**: Multi-scale Spectral Pyramid heads. |
+| **neon179** | 5.28M | **Sharp Intent**: Blurred Q/K/V with Sharp Intent gate. |
+| **⭐ neon180** | **5.28M** | **Sharp-V Giant**: Sharp Value with Blurred Q/K/I. **Wiki CO-SOTA.** |
+| **neon181** | 5.28M | **Sharp Search**: Sharp Q/K with Blurred Value/Intent. |
 | **neon182** | 5.27M | **Pure Attention**: No convolutions in projections. |
-| **⭐ neon185** | **5.00M** | **SwiGLU-Conv**: SiLU Gated MLP + Sigmoid Gated Attn. **[PROJECT SOTA]** |
-| **neon186** | 5.00M | **SiLU Gated Attn**: SiLU Gated Attn + Sigmoid Gated MLP. |
-| **neon187** | 5.00M | **Full SiLU Architecture**: SiLU Gated Attn + SiLU Gated MLP. |
+| **neon183** | 5.28M | **RoPE Before Conv**: RoPE applied before convolution step. |
+| **neon184** | 5.28M | **No RoPE**: Positional info from convolutions only. |
+| **⭐ neon185** | **5.28M** | **SwiGLU-Conv**: SiLU Gated MLP + Sigmoid Gated Attn. **[PROJECT SOTA]** |
+| **neon186** | 5.28M | **SiLU Gated Attn**: SiLU Gated Attn + Sigmoid Gated MLP. |
+| **neon187** | 5.28M | **Full SiLU Architecture**: SiLU Gated Attn + SiLU Gated MLP. |
 
 ---
 
@@ -184,13 +216,15 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **⭐ neon020** | 2.89M | **1.2809** | **Source Gating σ(I).** |
 | **⭐ neon046** | 2.64M | **1.3524** | **Gated Calc (Q+K+V)**. |
 | **⭐ neon009** | 2.89M | **1.3010** | **QKVI Attention**. |
-| **neon179** | 2.89M | 1.3029 | Max Pooled. |
+| **neon060** | 3.15M | 1.3029 | Max Pooled. |
 | **⭐ neon015** | 2.89M | 1.3042 | Dedicated Intent Head. |
 | **neon053** | 2.89M | 1.3129 | QKVI SiLU. |
-| **neon019** | 2.89M | 1.3150 | Source raw I, raw V. |
+| **neon021** | 3.15M | 1.2842 | Source raw I, σ(V). |
+| **neon019** | 3.15M | 1.3150 | Source raw I, raw V. |
 | **neon045** | 2.64M | 1.3618 | Gated Calc (Q+V). |
 | **neon025** | 2.89M | 1.3404 | Post-Norm Study. |
-| **neon057** | 2.89M | 1.3418 | Differential Intent. |
+| **neon056** | 3.17M | 1.3369 | Double-Gated. |
+| **neon057** | 3.15M | 1.3418 | Differential Intent. |
 | **neon052** | 2.67M | 1.3447 | Matrix Intent. |
 | **neon026** | 2.89M | 1.3553 | No-Intent Control. |
 | **neon028** | 2.89M | 1.3554 | MLA Control. |
@@ -244,94 +278,151 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 | Model | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- |
-| **⭐ neon130** | **2.89M** | **0.7265** | **Sharp-V Hyper-Synergy**. MQI Efficiency. [Co-SOTA] |
-| **⭐ neon116** | **2.89M** | **0.7269** | **Full Multi-Head Conv-Attention [PROJECT SOTA]**. |
-| **neon131** | **2.89M** | **0.7297** | **Qwen-NexT Synergy**. Zero-Centered stability. |
-| **neon129** | 2.89M | 0.7513 | Hyper-Synergy (Full+MQI+Bias). |
-| **neon127** | **2.89M** | **0.7555** | **Biased Attention Conv**. Significant stability gain. |
-| **⭐ neon114** | **2.89M** | **0.7652** | **Sharp-Value Conv-Attention**. |
-| **⭐ neon115** | **2.89M** | **0.7663** | **Multi-Head Conv-Attention**. |
-| **neon113** | 2.89M | 0.7707 | Conv-Attention (Shared). |
-| **neon124** | **2.89M** | **0.7727** | **Multi-Query Intent (MQI)**. Sharing works. |
-| **neon128** | 2.89M | 0.7905 | Gateless Context baseline. |
-| **neon132** | 2.89M | **0.8000** | **Spectral Hydra**. Causal multi-scale bank. Strong. |
-| **neon125** | 2.89M | 0.8124 | Bottleneck Intent. |
-| **neon121** | 2.89M | 0.8145 | Context-Aware Intent Only. |
-| **neon123** | 2.89M | 0.8203 | Residual Gated Attention. |
-| **neon122** | 2.89M | 0.8283 | Zero-Centered Norm. |
-| **neon133** | **2.89M** | **0.8586** | **Commander Head**. Dynamic weights. Solid gain. |
-| **⭐ neon110** | 2.89M | 0.8365 | Pure Hydra Swish (MLP-Only SOTA). |
-| **⭐ neon108** | 2.89M | 0.8366 | Pure Hydra Single-Scale. |
-| **neon100** | 2.89M | 0.8437 | Dual-Scale Pure Hydra. |
-| neon106 | 2.89M | 0.8608 | Dual-Gated Pure Hydra runner-up. |
-| neon102 | 2.89M | 0.8655 | Sandwich Hydra Test. |
-| **⭐ neon085** | **2.89M** | **0.8670** | **Dual-Scale Hydra**. (Previous 3M SOTA). |
-| **neon105** | 2.89M | 0.8671 | Early Starter (Hydra L0). |
-| **neon095** | 2.89M | 0.8703 | Progressive Kernels (k=3-17). |
-| **neon089** | 2.89M | 0.8768 | Dense Pyramidal (k=3,5,7,9). |
-| **neon090** | 2.89M | 0.8786 | Asymmetric Gated Hydra. |
-| **⭐ neon081** | **2.87M** | **0.8812** | **Context-scaled Hydra**. (Wiki Champion). |
-| **neon097** | 2.89M | 0.8817 | Triple-Scale Gate (k=3,5,9). |
-| **neon096** | 2.89M | 0.8832 | Heterogeneous Stack Hydra. |
-| **neon080** | 2.89M | 0.8875 | Scaling Study (Width). |
-| **neon098** | 2.89M | 0.8940 | Dilated Hydra (RF=65). |
-| **neon088** | 2.89M | 0.8944 | Competitive Hydra (Max-Pool). |
-| **neon087** | 2.86M | 0.9018 | Pyramidal Hydra (k=3,9,27). |
-| **neon107** | 2.89M | 0.9103 | Massive Reach Pure Hydra (RF=65). |
-| **⭐ neon077** | **2.82M** | **0.9172** | **Conv-Gated Hydra**. Matches Baseline. |
-| **⭐ neon016** | **2.89M** | **0.9174** | **Learned Intent [Tok4 Baseline]**. |
-| **neon086** | 2.88M | 0.9168 | Res-Hydra (Residual Context). |
-| **neon103** | 2.89M | 0.9245 | Inv Sandwich (S-H-H-S). |
-| **neon101** | 2.89M | 0.9253 | Block Hetero (2-Swi / 2-Hyd). |
-| **neon104** | 2.89M | 0.9342 | Late Bloomer (3-Swi / 1-Hyd). |
-| **neon126** | **2.89M** | **0.9627** | **No MLP Conv [ARCHITECTURAL FAIL]**. |
-| **neon134** | 2.89M | 1.0224 | **Mamba Hybrid**. Linear recurrence scan. |
-| **neon135** | 2.89M | 1.4692 | **Holographic Projection**. Failed experiment. |
-| **neon099** | 2.89M | 0.9961 | Residual Multiplicative Gating. |
-| neon111 | 2.89M | 0.9968 | Space-Aware Matrix (Failed). |
- 
-| **⭐ neon092** | **9.72M** | **0.1961** | **10M Dual-Scale Hydra [SOTA]**. |
-| **neon091** | 9.72M | 0.1962 | 10M Hydra Scaling (k=9). |
-| **neon094** | 9.72M | 0.2067 | 10M Hydra-Base (No Intent). |
-| **neon061** | 9.72M | 0.2364 | Legacy Wide MLP baseline. |
-| **neon093** | 9.72M | 0.2512 | 10M 8-Layer Deep standard. |
+| **⭐ neon143** | **3.16M** | **0.6604** | **Silent Hydra (Attention-Free)**. [HP0 CHAMPION] |
+| **neon156** | 3.15M | 0.6975 | Spectral Silent Hydra. |
+| **neon157** | 3.16M | 0.7063 | Wide-Merge Silent Hydra. |
+| **⭐ neon160** | **3.16M** | **0.7149** | **The Ghost**. Hybrid (3x Silent + 1x Attn). |
+| **⭐ neon139** | **3.16M** | **0.7159** | **Sequential Kernel Expansion** (k=3→9). |
+| **⭐ neon130** | **3.15M** | **0.7265** | **Sharp-V Hyper-Synergy**. MQI Efficiency. [Co-SOTA] |
+| **⭐ neon116** | **3.15M** | **0.7269** | **Full Multi-Head Conv-Attention**. |
+| **neon131** | **3.15M** | **0.7297** | **Qwen-NexT Synergy**. Zero-Centered stability. |
+| **neon153** | 3.15M | 0.7368 | Multi-Head Dilated Context. |
+| **neon141** | 3.15M | 0.7374 | Denoising Bottleneck Hydra. |
+| **neon148** | 3.16M | 0.7428 | Asymmetric Search (Sharp-Q). |
+| **neon145** | 3.16M | 0.7469 | Multi-Head Denoising Bottleneck. |
+| **neon129** | 3.15M | 0.7513 | Hyper-Synergy (Full+MQI+Bias). |
+| **neon164** | 3.15M | 0.7525 | Pyramidal Silent Hydra (8L). |
+| **neon127** | **3.15M** | **0.7555** | **Biased Attention Conv**. Stability gain. |
+| **neon161** | 3.15M | 0.7573 | Deep Silent Hydra (8L). |
+| **neon159** | 3.15M | 0.7583 | Clean-Room Silent Hydra. |
+| **⭐ neon114** | **3.15M** | **0.7652** | **Sharp-Value Conv-Attention**. |
+| **⭐ neon115** | **3.15M** | **0.7663** | **Multi-Head Conv-Attention**. |
+| **neon152** | 3.16M | 0.7695 | Multi-Head Asymmetric Search. |
+| **neon113** | 3.15M | 0.7707 | Conv-Attention (Shared). |
+| **neon124** | **3.23M** | **0.7727** | **Multi-Query Intent (MQI)**. Sharing works. |
+| **neon165** | 3.15M | 0.7733 | Res-Gated Silent Hydra (8L). |
+| **neon149** | 3.15M | 0.7774 | Dilated Receptive Fields. |
+| **neon137** | 3.16M | 0.7796 | Hierarchical Context Stack. |
+| **neon166** | 3.15M | 0.7823 | Deep Spectral Hydra (8L). |
+| **neon162** | 3.15M | 0.7910 | Deep Hybrid Ghost (8L). |
+| **neon128** | 3.42M | 0.7905 | Gateless Context baseline. |
+| **neon132** | 3.14M | **0.8000** | **Causal Spectral Hydra**. Multi-scale bank. |
+| **neon150** | 3.16M | 0.8048 | Intent Recurrence. |
+| **neon117** | 3.15M | 0.8050 | Activated Multi-Head Conv-Attn (SiLU). |
+| **neon125** | 3.17M | 0.8124 | Bottleneck Intent. |
+| **neon121** | 3.15M | 0.8145 | Context-Aware Intent Only. |
+| **neon123** | 3.15M | 0.8203 | Residual Gated Attention. |
+| **neon144** | 3.15M | 0.8266 | Sigmoid Bottleneck Hydra. |
+| **neon122** | 3.15M | 0.8283 | Zero-Centered Norm. |
+| **neon154** | 3.16M | 0.8286 | Multi-Head Intent Recurrence. |
+| **⭐ neon110** | 3.15M | 0.8365 | Pure Hydra Swish (MLP-Only SOTA). |
+| **⭐ neon108** | 3.15M | 0.8366 | Pure Hydra Single-Scale. |
+| **neon100** | 3.15M | 0.8437 | Dual-Scale Pure Hydra. |
+| **neon147** | 3.16M | 0.8477 | Multi-Head Sigmoid Bottleneck. |
+| **neon133** | **3.15M** | **0.8586** | **Commander Head**. Dynamic weights. |
+| neon106 | 3.15M | 0.8608 | Dual-Gated Pure Hydra runner-up. |
+| neon102 | 3.15M | 0.8655 | Sandwich Hydra Test. |
+| **⭐ neon085** | **3.15M** | **0.8670** | **Dual-Scale Hydra**. (Previous 3M SOTA). |
+| **neon105** | 3.15M | 0.8671 | Early Starter (Hydra L0). |
+| **neon095** | 3.15M | 0.8703 | Progressive Kernels (k=3-17). |
+| **neon089** | 3.15M | 0.8768 | Dense Pyramidal (k=3,5,7,9). |
+| **neon090** | 3.15M | 0.8786 | Recursive Hydra Gating. |
+| **neon109** | 3.14M | 0.8807 | Pure Hydra High-Reach (k=20). |
+| **⭐ neon081** | **3.13M** | **0.8812** | **Context-scaled Hydra**. (Wiki Champion). |
+| **neon097** | 3.15M | 0.8817 | Triple-Scale Gate (k=3,5,9). |
+| **neon096** | 3.15M | 0.8832 | Heterogeneous Stack Hydra. |
+| **neon138** | 3.15M | 0.8804 | Strategic Colossus (k=33). |
+| **neon151** | 3.15M | 0.8801 | Inception Value (Multi-Fidelity). |
+| **neon080** | 3.15M | 0.8875 | Scaling Study (Width). |
+| **neon142** | 3.16M | 0.8931 | Global Hum Hydra. |
+| **neon098** | 3.15M | 0.8940 | Dilated Hydra (RF=65). |
+| **neon088** | 3.15M | 0.8944 | Competitive Hydra (Max-Pool). |
+| **neon155** | 3.15M | 0.8952 | Multi-Head Inception Value. |
+| **neon163** | 3.15M | 0.9071 | Alternating Ghost (8L). |
+| **neon087** | 3.12M | 0.9018 | Pyramidal Hydra (k=3,9,27). |
+| **neon107** | 3.15M | 0.9103 | Massive Reach Pure Hydra (RF=65). |
+| **neon086** | 3.14M | 0.9168 | Res-Hydra (Residual Context). |
+| **⭐ neon077** | **3.09M** | **0.9172** | **Conv-Gated Hydra**. Matches Baseline. |
+| **⭐ neon016** | **3.15M** | **0.9174** | **Learned Intent [Tok4 Baseline]**. |
+| **neon112** | 3.14M | 0.9231 | Bottleneck-Gated Wide Hydra. |
+| **neon103** | 3.15M | 0.9245 | Inv Sandwich (S-H-H-S). |
+| **neon101** | 3.15M | 0.9253 | Block Hetero (2-Swi / 2-Hyd). |
+| **neon119** | 3.16M | 0.9331 | Dynamic Swish-Beta. |
+| **neon104** | 3.15M | 0.9342 | Late Bloomer (3-Swi / 1-Hyd). |
+| **neon126** | **3.15M** | **0.9627** | **No MLP Conv [ARCHITECTURAL FAIL]**. |
+| **neon082** | 3.16M | 0.9886 | Fair Hydra Scaling Study. |
+| **neon120** | 3.16M | 0.9710 | Activated Intent (SiLU). |
+| **neon099** | 3.15M | 0.9961 | Residual Multiplicative Gating. |
+| neon111 | 3.08M | 0.9968 | Space-Aware Matrix (Failed). |
+| **neon146** | 3.15M | 1.0156 | Multi-Head Global Hum. |
+| **neon134** | 3.15M | 1.0224 | **Mamba Hybrid**. Linear recurrence scan. |
+| **neon140** | 3.16M | 1.0654 | Parallel Spectral Heads. |
+| **neon118** | 3.16M | 1.1725 | L2-Norm Conv-Attention. |
+| **neon158** | 3.16M | 1.2885 | Dilated Silent Hydra. |
+| **neon135** | 3.16M | 1.4692 | **Holographic Projection**. Failed experiment. |
 
-### 🧪 Benchmark: Wiki103 / Tok1 & Tok4
-*WikiText-103 Dataset (100MB).*
+| **⭐ neon092** | **9.98M** | **0.1961** | **10M Dual-Scale Hydra [SOTA]**. |
+| **neon091** | 9.98M | 0.1962 | 10M Hydra Scaling (k=9). |
+| **neon094** | 9.98M | 0.2067 | 10M Hydra-Base (No Intent). |
+| **neon061** | 9.98M | 0.2364 | Legacy Wide MLP baseline. |
+| **neon093** | 9.98M | 0.2512 | 10M 8-Layer Deep standard. |
 
-| Model | Tok | Params (Ex-Emb) | Val Loss | Summary |
-| :--- | :--- | :--- | :--- | :--- |
-| **neon182** | tok4 | 5.00M | 3.1845 | Pure Attention (No Convs). |
-| **⭐ neon185** | tok4 | **5.00M** | **3.1364** | **Wiki103 5M SOTA**. SwiGLU + Sigmoid Attn. |
-| **neon187** | tok4 | 5.00M | 3.1381 | Full SiLU (Swish). |
-| **neon167** | tok4 | **5.00M** | **3.1484** | **Wiki103 5M Baseline**. Synergy Baseline. |
-| **neon180** | tok4 | **5.00M** | **3.1485** | Sharp-V Giant. |
-| **neon169** | tok4 | **5.02M** | **3.1485** | Ascending Attention. |
-| **neon171** | tok4 | 5.00M | 3.1492 | Ascending MLP. |
-| **neon173** | tok4 | 5.00M | 3.1502 | Dual Ascending (MHI). |
-| **neon186** | tok4 | 5.00M | 3.1528 | SiLU Attn + Sigmoid MLP. |
-| **neon176** | tok4 | 5.00M | 3.1538 | Dual Ascending (MQI + Wide MLP). |
-| **neon179** | tok4 | 5.00M | 3.1568 | Sharp Intent Giant. |
-| **neon181** | tok4 | 5.00M | 3.1663 | Sharp Search (Q,K) Giant. |
-| **neon178** | tok4 | 5.00M | 3.1712 | Spectral Synergy Giant. |
-| **neon177** | tok4 | 5.00M | 3.1776 | 5-Layer MQA Giant. |
-| **neon182** | tok4 | 5.00M | 3.1845 | Pure Attention (No Convs). |
-| **⭐ neon092** | tok4 | **9.72M** | **3.0575** | **10M Wiki SOTA**. Full Synergy. |
-| **neon091** | tok4 | 9.72M | 3.0797 | 10M Hydra Wiki. |
-| **neon061** | tok4 | 9.72M | 3.0940 | Legacy 10M Baseline. |
-| **neon093** | tok4 | 9.72M | 3.0955 | 8-Layer Deep Standard. |
-| **neon094** | tok4 | 9.72M | 3.0977 | 10M Hydra-Base (No Intent). |
-| **⭐ neon081** | tok4 | **2.87M** | **3.2750** | **Wiki103 3M SOTA**. |
-| **neon100** | tok4 | 2.89M | 3.2812 | Pure Hydra Evolution. |
-| **⭐ neon077** | tok4 | **2.82M** | **3.2880** | Conv-Gated Hydra Wiki. |
-| **neon016** | tok4 | 2.89M | 3.2885 | Wiki Tok4 Baseline. |
-| **neon085** | tok4 | 2.89M | 3.2905 | Dual-Scale Hydra Wiki. |
-| **neon102** | tok4 | 2.89M | *(Wait)* | Sandwich Hydra Wiki Test. |
-| **neon063** | tok4 | 3.94M | 3.3141 | Attention-in-MLP Wiki. |
-| **neon065** | tok4 | 4.20M | 3.3171 | Big Single Head Wiki. |
-| **neon066** | tok4 | 2.89M | 3.3377 | Fair Fight Big Head Wiki. |
-| **neon062** | tok4 | 2.62M | 3.3475 | MLP-Free Wiki. |
-| **neon064** | tok4 | 2.76M | 3.4275 | Hadamard Merge Wiki. |
+### 🧪 Benchmark: Wiki103 / Tok4
+*WikiText-103 Dataset (100MB). Tok4 = 4,096 Vocab.*
+
+| Model | Params (Ex-Emb) | Val Loss | Summary |
+| :--- | :--- | :--- | :--- |
+| **⭐ neon185** | **5.28M** | **3.1364** | **Wiki103 5M SOTA**. SwiGLU-Conv. |
+| **neon187** | 5.28M | 3.1381 | Full SiLU (Swish). |
+| **neon167** | **5.28M** | **3.1484** | **Wiki103 5M Baseline**. Giant Synergy. |
+| **⭐ neon180** | **5.28M** | **3.1485** | **Sharp-V Giant**. Wiki CO-SOTA. |
+| **⭐ neon169** | **5.30M** | **3.1485** | **Ascending Attention Hierarchy**. |
+| **neon171** | 5.28M | 3.1492 | Ascending MLP. |
+| **neon183** | 5.28M | 3.1496 | RoPE Before Convolution. |
+| **neon173** | 5.29M | 3.1502 | Dual Ascending (MHI). |
+| **neon186** | 5.28M | 3.1528 | SiLU Attn + Sigmoid MLP. |
+| **neon170** | 5.30M | 3.1533 | Descending Attention Hierarchy. |
+| **neon176** | 5.29M | 3.1538 | Dual Ascending (MQI + Wide MLP). |
+| **neon175** | 5.28M | 3.1565 | MQI MLP-Hierarchy. |
+| **neon179** | 5.28M | 3.1568 | Sharp Intent Giant. |
+| **neon174** | 5.29M | 3.1601 | MQI Att-Hierarchy. |
+| **neon181** | 5.28M | 3.1663 | Sharp Search (Q,K) Giant. |
+| **neon172** | 5.28M | 3.1665 | Descending MLP. |
+| **neon168** | 5.28M | 3.1678 | Sharp Intent & Value Giant. |
+| **neon178** | 5.28M | 3.1712 | Spectral Synergy Giant. |
+| **neon177** | 5.28M | 3.1776 | 5-Layer MQA Giant. |
+| **neon184** | 5.28M | 3.1793 | No RoPE. |
+| **neon182** | 5.27M | 3.1893 | Pure Attention (No Convs). |
+| | | | |
+| **⭐ neon092** | **9.98M** | **3.0575** | **10M Wiki SOTA**. Full Synergy. |
+| **neon091** | 9.98M | 3.0797 | 10M Hydra Wiki. |
+| **neon061** | 9.98M | 3.0940 | Legacy 10M Baseline. |
+| **neon093** | 9.98M | 3.0955 | 8-Layer Deep Standard. |
+| **neon094** | 9.98M | 3.0977 | 10M Hydra-Base (No Intent). |
+| | | | |
+| **neon116** | 3.15M | 3.2499 | Full Conv-Attention (3M class). |
+| **neon139** | 3.16M | 3.2637 | Sequential Kernel Expansion. |
+| **neon127** | 3.15M | 3.2722 | Biased Conv-Attention. |
+| **neon130** | 3.15M | 3.2733 | Sharp-V Hyper-Synergy. |
+| **neon108** | 3.15M | 3.2803 | Pure Hydra Single-Scale. |
+| **⭐ neon081** | **3.13M** | **3.2844** | **Wiki103 3M SOTA**. |
+| **neon131** | 3.15M | 3.2840 | Qwen-NexT Synergy. |
+| **⭐ neon077** | **3.09M** | **3.2880** | Conv-Gated Hydra Wiki. |
+| **neon016** | 3.15M | 3.2885 | Wiki Tok4 Baseline. |
+| **neon085** | 3.15M | 3.2905 | Dual-Scale Hydra Wiki. |
+| **neon110** | 3.15M | 3.2927 | Pure Hydra Swish. |
+| **neon100** | 3.15M | 3.2812 | Pure Hydra. |
+| **neon129** | 3.15M | 3.2524 | Hyper-Synergy. |
+| **neon160** | 3.16M | 3.3071 | The Ghost (Hybrid). |
+| **neon063** | 4.20M | 3.3141 | Attention-in-MLP Wiki. |
+| **neon065** | 4.46M | 3.3171 | Big Single Head Wiki. |
+| **neon162** | 3.15M | 3.3369 | Deep Hybrid Ghost (8L). |
+| **neon066** | 2.11M | 3.3377 | Fair Fight Big Head Wiki. |
+| **neon062** | 1.57M | 3.3475 | MLP-Free Wiki. |
+| **neon064** | 3.02M | 3.4275 | Hadamard Merge Wiki. |
+| **neon143** | 3.16M | 3.5287 | Silent Hydra. |
+| **neon156** | 3.15M | 3.5405 | Spectral Silent Hydra. |
+| **neon161** | 3.15M | 3.5429 | Deep Silent Hydra (8L). |
 
 ---
 
@@ -352,15 +443,23 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
     - **Commander Head (133)**: Achieved a solid **0.85** loss, proving that predicting kernels on-the-fly is a powerful lever for local intelligence.
     - **Holographic (135)**: Demonstrated that complex interference is highly sensitive and difficult to regularize (1.46 loss).
     - **Mamba/Fourier (134/132)**: Discovered that fast recurrent scans require careful masking (NaN fix) and dimension alignment to match the stability of spatial convolutions.
-13. **The 5M Upscale & Hierarchical Abstraction (167-176)**:
+13. **The Silent Hydra Revolution (136-166)**:
+    - **Attention-Free Pioneer**: `neon143` (Silent Hydra) achieved **0.66** val loss on HP0 — the best in the entire project — by replacing Softmax Attention with pure convolutional gating.
+    - **The Ghost Architecture**: `neon160` (3x Silent + 1x Attention) proved that a single attention layer at the end is sufficient for grounding.
+    - **Sequential Kernel Expansion**: `neon139` (progressive k=3→9) achieved **0.71**, proving that hierarchical context builds deeper abstraction than uniform kernels.
+    - **Deep Variants (161-166)**: Scaling to 8 layers showed diminishing returns for attention-free models on small datasets, but pyramidal kernels (`neon164`) remained competitive.
+    - **Wiki Gap**: Silent Hydra models excelled on HP0 but showed a significant gap on Wiki103 (~3.5 vs ~3.2), confirming that attention is critical for complex generalization.
+14. **The 5M Upscale & Hierarchical Abstraction (167-176)**:
     - **Quantity Meets Quality**: Scaling from 3M to 5M parameters and standardizing on **4x MLP width** resulted in an immediate SOTA jump on Wikipedia.
     - **Hierarchical Sensing**: Discovered that **Ascending Kernels** (starting sharp at k=3 and expanding to k=9 with depth) outperform uniform and descending kernels.
     - **The MHI Rebound**: Crucially, discovered that **Multi-Head Intent (MHI)** is superior to Multi-Query Intent (MQI) at the 5M scale, despite MQI allowing for wider MLPs. Head-specific gating diversity is key for high-level reasoning.
     - **Current Champions**: `neon167`, `neon169`, and `neon180` form a 3-way tie for the record at **3.148**.
-14. **The Search-is-King Discovery (179-182)**:
+15. **The Search-is-King Discovery (179-182)**:
     - **Convolutional Mandate**: Proved that **Blurred Search (Q, K)** and **Blurred Gating (I)** are mandatory for Wikipedia. Moving to raw dot-product (`neon182`) or sharp matching (`neon181`) caused immediate regressions.
     - **Value Flexibility**: Discovered that keeping **Value Sharp** (`neon180`) is the only viable ablation, as intelligence at 5M lies in the *selection mechanism*, not the *content smoothing*.
     - **The Depth Trap**: Confirmed that adding a 5th layer via MQA (`neon177`) is strictly worse than keeping 4 layers with full head-specific gating diversity (MHI).
-15. **The SwiGLU Mandate (185-187)**:
+16. **The Positional Study (183-184)**:
+    - **RoPE Placement**: `neon183` (RoPE before convolution) matched the baseline, while `neon184` (no RoPE, relying solely on convolutions for position) showed only minor degradation (3.179 vs 3.148), confirming that 1D convolutions provide substantial positional information.
+17. **The SwiGLU Mandate (185-187)**:
     - **SiLU MLP Winner**: `neon185` (Swish MLP) achieved a new SOTA **3.136** by replacing Sigmoid gating with SiLU (SwiGLU-style) in the MLP.
     - **Sigmoid Attention Winner**: However, using SiLU in the Attention gate (`neon186`, `neon187`) degraded performance relative to the base. Interpretation: **Attention Probability** is naturally bounded $[0,1]$ and benefits from Sigmoid, whereas **MLP features** are unbounded and benefit from SiLU's non-saturation.

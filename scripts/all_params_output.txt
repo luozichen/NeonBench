@@ -1,0 +1,377 @@
+neon001 | 2.37M | d=256 ff=512 h=4 L=4 | total=2,371,072 emb=0 non_emb=2,371,072
+neon002 | 2.36M | d=256 ff=512 h=4 L=4 | total=2,362,112 emb=0 non_emb=2,362,112
+neon003 | 1.97M | d=256 ff=512 h=4 L=4 | total=1,968,896 emb=0 non_emb=1,968,896
+neon004 | 1.97M | d=256 ff=512 h=4 L=4 | total=1,968,896 emb=0 non_emb=1,968,896
+neon005 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,886,400 emb=0 non_emb=2,886,400
+neon006 | 2.76M | d=256 ff=512 h=4 L=4 | total=2,755,328 emb=0 non_emb=2,755,328
+neon007 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,889,984 emb=0 non_emb=2,889,984
+neon008 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,888,704 emb=0 non_emb=2,888,704
+neon009 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon010 | 2.90M | d=256 ff=512 h=4 L=4 | total=2,903,040 emb=0 non_emb=2,903,040
+neon011 | 12.23M | d=384 ff=768 h=6 L=8 | total=12,230,528 emb=0 non_emb=12,230,528
+neon012 | 16.29M | d=512 ff=1024 h=8 L=6 | total=16,285,312 emb=0 non_emb=16,285,312
+neon013 | 8.54M | d=320 ff=640 h=8 L=8 | total=8,538,880 emb=0 non_emb=8,538,880
+neon014 | 14.58M | d=384 ff=1536 h=6 L=6 | total=14,579,712 emb=0 non_emb=14,579,712
+neon015 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon016 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon017 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon018 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon019 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon020 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon021 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon022 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon023 | 6.03M | d=256 ff=512 h=4 L=8 | total=6,034,688 emb=0 non_emb=6,034,688
+neon024 | 6.03M | d=256 ff=512 h=4 L=8 | total=6,034,688 emb=0 non_emb=6,034,688
+neon025 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon026 | 3.15M | d=256 ff=598 h=4 L=4 | total=3,150,592 emb=0 non_emb=3,150,592
+neon027 | 3.15M | d=256 ff=592 h=4 L=4 | total=3,148,800 emb=0 non_emb=3,148,800
+neon028 | 3.15M | d=256 ff=640 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon029 | 3.15M | d=256 ff=891 h=4 L=4 | total=3,148,780 emb=0 non_emb=3,148,780
+neon030 | 3.15M | d=256 ff=896 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon031 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,886,400 emb=0 non_emb=2,886,400
+neon032 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,886,400 emb=0 non_emb=2,886,400
+neon033 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,886,400 emb=0 non_emb=2,886,400
+neon034 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,886,400 emb=0 non_emb=2,886,400
+neon035 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,886,912 emb=0 non_emb=2,886,912
+neon036 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,886,400 emb=0 non_emb=2,886,400
+neon037 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,886,400 emb=0 non_emb=2,886,400
+neon038 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,886,400 emb=0 non_emb=2,886,400
+neon039 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,886,400 emb=0 non_emb=2,886,400
+neon040 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,886,656 emb=0 non_emb=2,886,656
+neon041 | 2.90M | d=256 ff=512 h=4 L=4 | total=2,903,040 emb=0 non_emb=2,903,040
+neon042 | 2.90M | d=256 ff=512 h=4 L=4 | total=2,903,040 emb=0 non_emb=2,903,040
+neon043 | 2.90M | d=256 ff=512 h=4 L=4 | total=2,903,040 emb=0 non_emb=2,903,040
+neon044 | 2.90M | d=256 ff=512 h=4 L=4 | total=2,903,040 emb=0 non_emb=2,903,040
+neon045 | 2.90M | d=256 ff=512 h=4 L=4 | total=2,903,040 emb=0 non_emb=2,903,040
+neon046 | 2.90M | d=256 ff=512 h=4 L=4 | total=2,903,040 emb=0 non_emb=2,903,040
+neon047 | 2.90M | d=256 ff=512 h=4 L=4 | total=2,903,040 emb=0 non_emb=2,903,040
+neon048 | 2.90M | d=256 ff=512 h=4 L=4 | total=2,903,040 emb=0 non_emb=2,903,040
+neon049 | 2.90M | d=256 ff=512 h=4 L=4 | total=2,903,040 emb=0 non_emb=2,903,040
+neon050 | 2.90M | d=256 ff=512 h=4 L=4 | total=2,903,296 emb=0 non_emb=2,903,296
+neon051 | 2.89M | d=256 ff=512 h=4 L=4 | total=2,887,424 emb=0 non_emb=2,887,424
+neon052 | 2.94M | d=256 ff=512 h=4 L=4 | total=2,935,808 emb=0 non_emb=2,935,808
+neon053 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon054 | 2.90M | d=256 ff=512 h=4 L=4 | total=2,903,040 emb=0 non_emb=2,903,040
+neon055 | 3.15M | d=256 ff=592 h=4 L=4 | total=3,148,800 emb=0 non_emb=3,148,800
+neon056 | 3.17M | d=256 ff=592 h=4 L=4 | total=3,165,440 emb=0 non_emb=3,165,440
+neon057 | 3.15M | d=256 ff=592 h=4 L=4 | total=3,148,800 emb=0 non_emb=3,148,800
+neon058 | 2.90M | d=256 ff=512 h=4 L=4 | total=2,902,784 emb=0 non_emb=2,902,784
+neon059 | 3.15M | d=256 ff=592 h=4 L=4 | total=3,149,568 emb=0 non_emb=3,149,568
+neon060 | 3.15M | d=256 ff=592 h=4 L=4 | total=3,148,800 emb=0 non_emb=3,148,800
+neon061 | 9.98M | d=256 ff=2736 h=4 L=4 | total=9,980,672 emb=0 non_emb=9,980,672
+neon062 | 1.57M | d=256 ff=512 h=4 L=4 | total=1,574,656 emb=0 non_emb=1,574,656
+neon063 | 4.20M | d=256 ff=512 h=4 L=4 | total=4,199,168 emb=0 non_emb=4,199,168
+neon064 | 3.02M | d=256 ff=512 h=4 L=4 | total=3,017,472 emb=0 non_emb=3,017,472
+neon065 | 4.46M | d=256 ff=512 h=4 L=4 | total=4,462,848 emb=0 non_emb=4,462,848
+neon066 | 2.11M | d=256 ff=172 h=4 L=4 | total=2,105,600 emb=0 non_emb=2,105,600
+neon067 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon068 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon069 | 3.15M | d=256 ff=512 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon070 | 3.10M | d=256 ff=576 h=4 L=4 | total=3,099,392 emb=0 non_emb=3,099,392
+neon071 | 3.25M | d=256 ff=640 h=4 L=4 | total=3,246,848 emb=0 non_emb=3,246,848
+neon072 | 3.48M | d=256 ff=512 h=4 L=4 | total=3,476,224 emb=0 non_emb=3,476,224
+neon073 | 3.10M | d=256 ff=576 h=4 L=4 | total=3,099,392 emb=0 non_emb=3,099,392
+neon074 | 3.10M | d=256 ff=576 h=4 L=4 | total=3,099,392 emb=0 non_emb=3,099,392
+neon075 | 3.10M | d=256 ff=576 h=4 L=4 | total=3,099,392 emb=0 non_emb=3,099,392
+neon076 | 3.07M | d=240 ff=480 h=4 L=4 | total=3,070,800 emb=0 non_emb=3,070,800
+neon077 | 3.09M | d=256 ff=368 h=4 L=4 | total=3,086,080 emb=0 non_emb=3,086,080
+neon078 | 3.12M | d=256 ff=500 h=4 L=4 | total=3,124,352 emb=0 non_emb=3,124,352
+neon079 | 3.13M | d=256 ff=480 h=4 L=4 | total=3,129,240 emb=0 non_emb=3,129,240
+neon080 | 3.15M | d=256 ff=384 h=4 L=4 | total=3,151,616 emb=0 non_emb=3,151,616
+neon081 | 3.13M | d=256 ff=378 h=4 L=4 | total=3,133,184 emb=0 non_emb=3,133,184
+neon082 | 3.16M | d=256 ff=416 h=4 L=4 | total=3,156,736 emb=0 non_emb=3,156,736
+neon083 | 3.13M | d=256 ff=378 h=4 L=4 | total=3,133,184 emb=0 non_emb=3,133,184
+neon084 | 3.15M | d=256 ff=382 h=4 L=4 | total=3,145,472 emb=0 non_emb=3,145,472
+neon085 | 3.15M | d=256 ff=381 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon086 | 3.14M | d=256 ff=380 h=4 L=4 | total=3,141,376 emb=0 non_emb=3,141,376
+neon087 | 3.12M | d=256 ff=368 h=4 L=4 | total=3,122,944 emb=0 non_emb=3,122,944
+neon088 | 3.15M | d=256 ff=381 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon089 | 3.15M | d=256 ff=378 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon090 | 3.15M | d=256 ff=381 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon091 | 9.98M | d=256 ff=2050 h=4 L=4 | total=9,981,696 emb=0 non_emb=9,981,696
+neon092 | 9.98M | d=256 ff=2049 h=4 L=4 | total=9,980,672 emb=0 non_emb=9,980,672
+neon093 | 9.98M | d=256 ff=1240 h=4 L=8 | total=9,983,232 emb=0 non_emb=9,983,232
+neon094 | 9.98M | d=256 ff=2113 h=4 L=4 | total=9,980,672 emb=0 non_emb=9,980,672
+neon095 | 3.15M | d=256 ff=381 h=4 L=4 | total=3,148,032 emb=0 non_emb=3,148,032
+neon096 | 3.15M | d=256 ff=437 h=4 L=4 | total=3,148,032 emb=0 non_emb=3,148,032
+neon097 | 3.15M | d=256 ff=379 h=4 L=4 | total=3,145,472 emb=0 non_emb=3,145,472
+neon098 | 3.15M | d=256 ff=379 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon099 | 3.15M | d=256 ff=381 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon100 | 3.15M | d=256 ff=508 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon101 | 3.15M | d=256 ff=437 h=4 L=4 | total=3,148,032 emb=0 non_emb=3,148,032
+neon102 | 3.15M | d=256 ff=437 h=4 L=4 | total=3,148,032 emb=0 non_emb=3,148,032
+neon103 | 3.15M | d=256 ff=437 h=4 L=4 | total=3,148,032 emb=0 non_emb=3,148,032
+neon104 | 3.15M | d=256 ff=472 h=4 L=4 | total=3,149,568 emb=0 non_emb=3,149,568
+neon105 | 3.15M | d=256 ff=472 h=4 L=4 | total=3,149,568 emb=0 non_emb=3,149,568
+neon106 | 3.15M | d=256 ff=381 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon107 | 3.15M | d=256 ff=505 h=4 L=4 | total=3,147,520 emb=0 non_emb=3,147,520
+neon108 | 3.15M | d=256 ff=509 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon109 | 3.14M | d=256 ff=503 h=4 L=4 | total=3,141,376 emb=0 non_emb=3,141,376
+neon110 | 3.15M | d=256 ff=509 h=4 L=4 | total=3,148,544 emb=0 non_emb=3,148,544
+neon111 | 3.08M | d=256 ff=210 h=4 L=4 | total=3,080,960 emb=0 non_emb=3,080,960
+neon112 | 3.14M | d=256 ff=648 h=4 L=4 | total=3,143,424 emb=0 non_emb=3,143,424
+neon113 | 3.15M | d=256 ff=507 h=4 L=4 | total=3,145,472 emb=0 non_emb=3,145,472
+neon114 | 3.15M | d=256 ff=510 h=4 L=4 | total=3,154,688 emb=0 non_emb=3,154,688
+neon115 | 3.15M | d=256 ff=508 h=4 L=4 | total=3,154,688 emb=0 non_emb=3,154,688
+neon116 | 3.15M | d=256 ff=507 h=4 L=4 | total=3,154,688 emb=0 non_emb=3,154,688
+neon117 | 3.15M | d=256 ff=507 h=4 L=4 | total=3,154,688 emb=0 non_emb=3,154,688
+neon118 | 3.16M | d=256 ff=510 h=4 L=4 | total=3,163,392 emb=0 non_emb=3,163,392
+neon119 | 3.16M | d=256 ff=338 h=4 L=4 | total=3,159,808 emb=0 non_emb=3,159,808
+neon120 | 3.16M | d=256 ff=338 h=4 L=4 | total=3,159,808 emb=0 non_emb=3,159,808
+neon121 | 3.15M | d=256 ff=510 h=4 L=4 | total=3,154,688 emb=0 non_emb=3,154,688
+neon122 | 3.15M | d=256 ff=510 h=4 L=4 | total=3,151,616 emb=0 non_emb=3,151,616
+neon123 | 3.15M | d=256 ff=508 h=4 L=4 | total=3,145,472 emb=0 non_emb=3,145,472
+neon124 | 3.23M | d=256 ff=600 h=4 L=4 | total=3,232,256 emb=0 non_emb=3,232,256
+neon125 | 3.17M | d=256 ff=560 h=4 L=4 | total=3,174,144 emb=0 non_emb=3,174,144
+neon126 | 3.15M | d=256 ff=510 h=4 L=4 | total=3,154,688 emb=0 non_emb=3,154,688
+neon127 | 3.15M | d=256 ff=505 h=4 L=4 | total=3,152,640 emb=0 non_emb=3,152,640
+neon128 | 3.42M | d=256 ff=682 h=4 L=4 | total=3,417,856 emb=0 non_emb=3,417,856
+neon129 | 3.15M | d=256 ff=570 h=4 L=4 | total=3,152,640 emb=0 non_emb=3,152,640
+neon130 | 3.15M | d=256 ff=572 h=4 L=4 | total=3,154,688 emb=0 non_emb=3,154,688
+neon131 | 3.15M | d=256 ff=570 h=4 L=4 | total=3,152,640 emb=0 non_emb=3,152,640
+neon132 | 3.14M | d=256 ff=557 h=4 L=4 | total=3,139,328 emb=0 non_emb=3,139,328
+neon133 | 3.15M | d=256 ff=550 h=4 L=4 | total=3,151,616 emb=0 non_emb=3,151,616
+neon134 | 3.15M | d=256 ff=571 h=4 L=4 | total=3,154,688 emb=0 non_emb=3,154,688
+neon135 | 3.16M | d=256 ff=405 h=4 L=4 | total=3,156,736 emb=0 non_emb=3,156,736
+neon136 | 3.16M | d=256 ff=252 h=4 L=4 | total=3,156,736 emb=0 non_emb=3,156,736
+neon137 | 3.16M | d=256 ff=558 h=4 L=4 | total=3,155,456 emb=0 non_emb=3,155,456
+neon138 | 3.15M | d=256 ff=563 h=4 L=4 | total=3,151,104 emb=0 non_emb=3,151,104
+neon139 | 3.16M | d=256 ff=571 h=4 L=4 | total=3,155,456 emb=0 non_emb=3,155,456
+neon140 | 3.16M | d=256 ff=500 h=4 L=4 | total=3,157,760 emb=0 non_emb=3,157,760
+neon141 | 3.15M | d=256 ff=572 h=4 L=4 | total=3,152,640 emb=0 non_emb=3,152,640
+neon142 | 3.16M | d=256 ff=466 h=4 L=4 | total=3,156,736 emb=0 non_emb=3,156,736
+neon143 | 3.16M | d=256 ff=678 h=4 L=4 | total=3,155,200 emb=0 non_emb=3,155,200
+neon144 | 3.15M | d=256 ff=572 h=4 L=4 | total=3,152,640 emb=0 non_emb=3,152,640
+neon145 | 3.16M | d=256 ff=507 h=4 L=4 | total=3,155,712 emb=0 non_emb=3,155,712
+neon146 | 3.15M | d=256 ff=336 h=4 L=4 | total=3,153,664 emb=0 non_emb=3,153,664
+neon147 | 3.16M | d=256 ff=507 h=4 L=4 | total=3,155,712 emb=0 non_emb=3,155,712
+neon148 | 3.16M | d=256 ff=571 h=4 L=4 | total=3,155,712 emb=0 non_emb=3,155,712
+neon149 | 3.15M | d=256 ff=574 h=4 L=4 | total=3,154,688 emb=0 non_emb=3,154,688
+neon150 | 3.16M | d=256 ff=575 h=4 L=4 | total=3,155,712 emb=0 non_emb=3,155,712
+neon151 | 3.15M | d=256 ff=488 h=4 L=4 | total=3,154,688 emb=0 non_emb=3,154,688
+neon152 | 3.16M | d=256 ff=507 h=4 L=4 | total=3,158,784 emb=0 non_emb=3,158,784
+neon153 | 3.15M | d=256 ff=507 h=4 L=4 | total=3,154,688 emb=0 non_emb=3,154,688
+neon154 | 3.16M | d=256 ff=510 h=4 L=4 | total=3,155,712 emb=0 non_emb=3,155,712
+neon155 | 3.15M | d=256 ff=423 h=4 L=4 | total=3,154,688 emb=0 non_emb=3,154,688
+neon156 | 3.15M | d=256 ff=675 h=4 L=4 | total=3,151,104 emb=0 non_emb=3,151,104
+neon157 | 3.16M | d=256 ff=680 h=4 L=4 | total=3,158,272 emb=0 non_emb=3,158,272
+neon158 | 3.16M | d=256 ff=683 h=4 L=4 | total=3,155,200 emb=0 non_emb=3,155,200
+neon159 | 3.15M | d=256 ff=679 h=4 L=4 | total=3,153,152 emb=0 non_emb=3,153,152
+neon160 | 3.16M | d=256 ff=654 h=4 L=4 | total=3,158,336 emb=0 non_emb=3,158,336
+neon161 | 3.15M | d=256 ff=207 h=4 L=8 | total=3,154,176 emb=0 non_emb=3,154,176
+neon162 | 3.15M | d=256 ff=194 h=4 L=8 | total=3,153,472 emb=0 non_emb=3,153,472
+neon163 | 3.15M | d=256 ff=155 h=4 L=8 | total=3,151,360 emb=0 non_emb=3,151,360
+neon164 | 3.15M | d=256 ff=204 h=4 L=8 | total=3,154,176 emb=0 non_emb=3,154,176
+neon165 | 3.15M | d=256 ff=207 h=4 L=8 | total=3,154,176 emb=0 non_emb=3,154,176
+neon166 | 3.15M | d=256 ff=205 h=4 L=8 | total=3,152,128 emb=0 non_emb=3,152,128
+neon167 | 5.28M | d=272 ff=1072 h=4 L=4 | total=5,283,056 emb=0 non_emb=5,283,056
+neon168 | 5.28M | d=272 ff=1072 h=4 L=4 | total=5,276,528 emb=0 non_emb=5,276,528
+neon169 | 5.30M | d=272 ff=1072 h=4 L=4 | total=5,296,112 emb=0 non_emb=5,296,112
+neon170 | 5.30M | d=272 ff=1072 h=4 L=4 | total=5,296,112 emb=0 non_emb=5,296,112
+neon171 | 5.28M | d=272 ff=1072 h=4 L=4 | total=5,279,792 emb=0 non_emb=5,279,792
+neon172 | 5.28M | d=272 ff=1072 h=4 L=4 | total=5,279,792 emb=0 non_emb=5,279,792
+neon173 | 5.29M | d=272 ff=1072 h=4 L=4 | total=5,292,848 emb=0 non_emb=5,292,848
+neon174 | 5.29M | d=272 ff=1140 h=4 L=4 | total=5,291,216 emb=0 non_emb=5,291,216
+neon175 | 5.28M | d=272 ff=1140 h=4 L=4 | total=5,277,344 emb=0 non_emb=5,277,344
+neon176 | 5.29M | d=272 ff=1140 h=4 L=4 | total=5,287,952 emb=0 non_emb=5,287,952
+neon177 | 5.28M | d=272 ff=972 h=4 L=5 | total=5,284,620 emb=0 non_emb=5,284,620
+neon178 | 5.28M | d=272 ff=1014 h=4 L=4 | total=5,283,056 emb=0 non_emb=5,283,056
+neon179 | 5.28M | d=272 ff=1072 h=4 L=4 | total=5,279,792 emb=0 non_emb=5,279,792
+neon180 | 5.28M | d=272 ff=1072 h=4 L=4 | total=5,279,792 emb=0 non_emb=5,279,792
+neon181 | 5.28M | d=272 ff=1072 h=4 L=4 | total=5,276,528 emb=0 non_emb=5,276,528
+neon182 | 5.27M | d=272 ff=1072 h=4 L=4 | total=5,270,000 emb=0 non_emb=5,270,000
+neon183 | 5.28M | d=272 ff=1072 h=4 L=4 | total=5,283,056 emb=0 non_emb=5,283,056
+neon184 | 5.28M | d=272 ff=1072 h=4 L=4 | total=5,283,056 emb=0 non_emb=5,283,056
+neon185 | 5.28M | d=272 ff=1072 h=4 L=4 | total=5,283,056 emb=0 non_emb=5,283,056
+neon186 | 5.28M | d=272 ff=1072 h=4 L=4 | total=5,283,056 emb=0 non_emb=5,283,056
+neon187 | 5.28M | d=272 ff=1072 h=4 L=4 | total=5,283,056 emb=0 non_emb=5,283,056
+
+
+=== SUMMARY ===
+neon001: 2.37M (d=256, ff=512, h=4, L=4)
+neon002: 2.36M (d=256, ff=512, h=4, L=4)
+neon003: 1.97M (d=256, ff=512, h=4, L=4)
+neon004: 1.97M (d=256, ff=512, h=4, L=4)
+neon005: 2.89M (d=256, ff=512, h=4, L=4)
+neon006: 2.76M (d=256, ff=512, h=4, L=4)
+neon007: 2.89M (d=256, ff=512, h=4, L=4)
+neon008: 2.89M (d=256, ff=512, h=4, L=4)
+neon009: 3.15M (d=256, ff=512, h=4, L=4)
+neon010: 2.90M (d=256, ff=512, h=4, L=4)
+neon011: 12.23M (d=384, ff=768, h=6, L=8)
+neon012: 16.29M (d=512, ff=1024, h=8, L=6)
+neon013: 8.54M (d=320, ff=640, h=8, L=8)
+neon014: 14.58M (d=384, ff=1536, h=6, L=6)
+neon015: 3.15M (d=256, ff=512, h=4, L=4)
+neon016: 3.15M (d=256, ff=512, h=4, L=4)
+neon017: 3.15M (d=256, ff=512, h=4, L=4)
+neon018: 3.15M (d=256, ff=512, h=4, L=4)
+neon019: 3.15M (d=256, ff=512, h=4, L=4)
+neon020: 3.15M (d=256, ff=512, h=4, L=4)
+neon021: 3.15M (d=256, ff=512, h=4, L=4)
+neon022: 3.15M (d=256, ff=512, h=4, L=4)
+neon023: 6.03M (d=256, ff=512, h=4, L=8)
+neon024: 6.03M (d=256, ff=512, h=4, L=8)
+neon025: 3.15M (d=256, ff=512, h=4, L=4)
+neon026: 3.15M (d=256, ff=598, h=4, L=4)
+neon027: 3.15M (d=256, ff=592, h=4, L=4)
+neon028: 3.15M (d=256, ff=640, h=4, L=4)
+neon029: 3.15M (d=256, ff=891, h=4, L=4)
+neon030: 3.15M (d=256, ff=896, h=4, L=4)
+neon031: 2.89M (d=256, ff=512, h=4, L=4)
+neon032: 2.89M (d=256, ff=512, h=4, L=4)
+neon033: 2.89M (d=256, ff=512, h=4, L=4)
+neon034: 2.89M (d=256, ff=512, h=4, L=4)
+neon035: 2.89M (d=256, ff=512, h=4, L=4)
+neon036: 2.89M (d=256, ff=512, h=4, L=4)
+neon037: 2.89M (d=256, ff=512, h=4, L=4)
+neon038: 2.89M (d=256, ff=512, h=4, L=4)
+neon039: 2.89M (d=256, ff=512, h=4, L=4)
+neon040: 2.89M (d=256, ff=512, h=4, L=4)
+neon041: 2.90M (d=256, ff=512, h=4, L=4)
+neon042: 2.90M (d=256, ff=512, h=4, L=4)
+neon043: 2.90M (d=256, ff=512, h=4, L=4)
+neon044: 2.90M (d=256, ff=512, h=4, L=4)
+neon045: 2.90M (d=256, ff=512, h=4, L=4)
+neon046: 2.90M (d=256, ff=512, h=4, L=4)
+neon047: 2.90M (d=256, ff=512, h=4, L=4)
+neon048: 2.90M (d=256, ff=512, h=4, L=4)
+neon049: 2.90M (d=256, ff=512, h=4, L=4)
+neon050: 2.90M (d=256, ff=512, h=4, L=4)
+neon051: 2.89M (d=256, ff=512, h=4, L=4)
+neon052: 2.94M (d=256, ff=512, h=4, L=4)
+neon053: 3.15M (d=256, ff=512, h=4, L=4)
+neon054: 2.90M (d=256, ff=512, h=4, L=4)
+neon055: 3.15M (d=256, ff=592, h=4, L=4)
+neon056: 3.17M (d=256, ff=592, h=4, L=4)
+neon057: 3.15M (d=256, ff=592, h=4, L=4)
+neon058: 2.90M (d=256, ff=512, h=4, L=4)
+neon059: 3.15M (d=256, ff=592, h=4, L=4)
+neon060: 3.15M (d=256, ff=592, h=4, L=4)
+neon061: 9.98M (d=256, ff=2736, h=4, L=4)
+neon062: 1.57M (d=256, ff=512, h=4, L=4)
+neon063: 4.20M (d=256, ff=512, h=4, L=4)
+neon064: 3.02M (d=256, ff=512, h=4, L=4)
+neon065: 4.46M (d=256, ff=512, h=4, L=4)
+neon066: 2.11M (d=256, ff=172, h=4, L=4)
+neon067: 3.15M (d=256, ff=512, h=4, L=4)
+neon068: 3.15M (d=256, ff=512, h=4, L=4)
+neon069: 3.15M (d=256, ff=512, h=4, L=4)
+neon070: 3.10M (d=256, ff=576, h=4, L=4)
+neon071: 3.25M (d=256, ff=640, h=4, L=4)
+neon072: 3.48M (d=256, ff=512, h=4, L=4)
+neon073: 3.10M (d=256, ff=576, h=4, L=4)
+neon074: 3.10M (d=256, ff=576, h=4, L=4)
+neon075: 3.10M (d=256, ff=576, h=4, L=4)
+neon076: 3.07M (d=240, ff=480, h=4, L=4)
+neon077: 3.09M (d=256, ff=368, h=4, L=4)
+neon078: 3.12M (d=256, ff=500, h=4, L=4)
+neon079: 3.13M (d=256, ff=480, h=4, L=4)
+neon080: 3.15M (d=256, ff=384, h=4, L=4)
+neon081: 3.13M (d=256, ff=378, h=4, L=4)
+neon082: 3.16M (d=256, ff=416, h=4, L=4)
+neon083: 3.13M (d=256, ff=378, h=4, L=4)
+neon084: 3.15M (d=256, ff=382, h=4, L=4)
+neon085: 3.15M (d=256, ff=381, h=4, L=4)
+neon086: 3.14M (d=256, ff=380, h=4, L=4)
+neon087: 3.12M (d=256, ff=368, h=4, L=4)
+neon088: 3.15M (d=256, ff=381, h=4, L=4)
+neon089: 3.15M (d=256, ff=378, h=4, L=4)
+neon090: 3.15M (d=256, ff=381, h=4, L=4)
+neon091: 9.98M (d=256, ff=2050, h=4, L=4)
+neon092: 9.98M (d=256, ff=2049, h=4, L=4)
+neon093: 9.98M (d=256, ff=1240, h=4, L=8)
+neon094: 9.98M (d=256, ff=2113, h=4, L=4)
+neon095: 3.15M (d=256, ff=381, h=4, L=4)
+neon096: 3.15M (d=256, ff=437, h=4, L=4)
+neon097: 3.15M (d=256, ff=379, h=4, L=4)
+neon098: 3.15M (d=256, ff=379, h=4, L=4)
+neon099: 3.15M (d=256, ff=381, h=4, L=4)
+neon100: 3.15M (d=256, ff=508, h=4, L=4)
+neon101: 3.15M (d=256, ff=437, h=4, L=4)
+neon102: 3.15M (d=256, ff=437, h=4, L=4)
+neon103: 3.15M (d=256, ff=437, h=4, L=4)
+neon104: 3.15M (d=256, ff=472, h=4, L=4)
+neon105: 3.15M (d=256, ff=472, h=4, L=4)
+neon106: 3.15M (d=256, ff=381, h=4, L=4)
+neon107: 3.15M (d=256, ff=505, h=4, L=4)
+neon108: 3.15M (d=256, ff=509, h=4, L=4)
+neon109: 3.14M (d=256, ff=503, h=4, L=4)
+neon110: 3.15M (d=256, ff=509, h=4, L=4)
+neon111: 3.08M (d=256, ff=210, h=4, L=4)
+neon112: 3.14M (d=256, ff=648, h=4, L=4)
+neon113: 3.15M (d=256, ff=507, h=4, L=4)
+neon114: 3.15M (d=256, ff=510, h=4, L=4)
+neon115: 3.15M (d=256, ff=508, h=4, L=4)
+neon116: 3.15M (d=256, ff=507, h=4, L=4)
+neon117: 3.15M (d=256, ff=507, h=4, L=4)
+neon118: 3.16M (d=256, ff=510, h=4, L=4)
+neon119: 3.16M (d=256, ff=338, h=4, L=4)
+neon120: 3.16M (d=256, ff=338, h=4, L=4)
+neon121: 3.15M (d=256, ff=510, h=4, L=4)
+neon122: 3.15M (d=256, ff=510, h=4, L=4)
+neon123: 3.15M (d=256, ff=508, h=4, L=4)
+neon124: 3.23M (d=256, ff=600, h=4, L=4)
+neon125: 3.17M (d=256, ff=560, h=4, L=4)
+neon126: 3.15M (d=256, ff=510, h=4, L=4)
+neon127: 3.15M (d=256, ff=505, h=4, L=4)
+neon128: 3.42M (d=256, ff=682, h=4, L=4)
+neon129: 3.15M (d=256, ff=570, h=4, L=4)
+neon130: 3.15M (d=256, ff=572, h=4, L=4)
+neon131: 3.15M (d=256, ff=570, h=4, L=4)
+neon132: 3.14M (d=256, ff=557, h=4, L=4)
+neon133: 3.15M (d=256, ff=550, h=4, L=4)
+neon134: 3.15M (d=256, ff=571, h=4, L=4)
+neon135: 3.16M (d=256, ff=405, h=4, L=4)
+neon136: 3.16M (d=256, ff=252, h=4, L=4)
+neon137: 3.16M (d=256, ff=558, h=4, L=4)
+neon138: 3.15M (d=256, ff=563, h=4, L=4)
+neon139: 3.16M (d=256, ff=571, h=4, L=4)
+neon140: 3.16M (d=256, ff=500, h=4, L=4)
+neon141: 3.15M (d=256, ff=572, h=4, L=4)
+neon142: 3.16M (d=256, ff=466, h=4, L=4)
+neon143: 3.16M (d=256, ff=678, h=4, L=4)
+neon144: 3.15M (d=256, ff=572, h=4, L=4)
+neon145: 3.16M (d=256, ff=507, h=4, L=4)
+neon146: 3.15M (d=256, ff=336, h=4, L=4)
+neon147: 3.16M (d=256, ff=507, h=4, L=4)
+neon148: 3.16M (d=256, ff=571, h=4, L=4)
+neon149: 3.15M (d=256, ff=574, h=4, L=4)
+neon150: 3.16M (d=256, ff=575, h=4, L=4)
+neon151: 3.15M (d=256, ff=488, h=4, L=4)
+neon152: 3.16M (d=256, ff=507, h=4, L=4)
+neon153: 3.15M (d=256, ff=507, h=4, L=4)
+neon154: 3.16M (d=256, ff=510, h=4, L=4)
+neon155: 3.15M (d=256, ff=423, h=4, L=4)
+neon156: 3.15M (d=256, ff=675, h=4, L=4)
+neon157: 3.16M (d=256, ff=680, h=4, L=4)
+neon158: 3.16M (d=256, ff=683, h=4, L=4)
+neon159: 3.15M (d=256, ff=679, h=4, L=4)
+neon160: 3.16M (d=256, ff=654, h=4, L=4)
+neon161: 3.15M (d=256, ff=207, h=4, L=8)
+neon162: 3.15M (d=256, ff=194, h=4, L=8)
+neon163: 3.15M (d=256, ff=155, h=4, L=8)
+neon164: 3.15M (d=256, ff=204, h=4, L=8)
+neon165: 3.15M (d=256, ff=207, h=4, L=8)
+neon166: 3.15M (d=256, ff=205, h=4, L=8)
+neon167: 5.28M (d=272, ff=1072, h=4, L=4)
+neon168: 5.28M (d=272, ff=1072, h=4, L=4)
+neon169: 5.30M (d=272, ff=1072, h=4, L=4)
+neon170: 5.30M (d=272, ff=1072, h=4, L=4)
+neon171: 5.28M (d=272, ff=1072, h=4, L=4)
+neon172: 5.28M (d=272, ff=1072, h=4, L=4)
+neon173: 5.29M (d=272, ff=1072, h=4, L=4)
+neon174: 5.29M (d=272, ff=1140, h=4, L=4)
+neon175: 5.28M (d=272, ff=1140, h=4, L=4)
+neon176: 5.29M (d=272, ff=1140, h=4, L=4)
+neon177: 5.28M (d=272, ff=972, h=4, L=5)
+neon178: 5.28M (d=272, ff=1014, h=4, L=4)
+neon179: 5.28M (d=272, ff=1072, h=4, L=4)
+neon180: 5.28M (d=272, ff=1072, h=4, L=4)
+neon181: 5.28M (d=272, ff=1072, h=4, L=4)
+neon182: 5.27M (d=272, ff=1072, h=4, L=4)
+neon183: 5.28M (d=272, ff=1072, h=4, L=4)
+neon184: 5.28M (d=272, ff=1072, h=4, L=4)
+neon185: 5.28M (d=272, ff=1072, h=4, L=4)
+neon186: 5.28M (d=272, ff=1072, h=4, L=4)
+neon187: 5.28M (d=272, ff=1072, h=4, L=4)
