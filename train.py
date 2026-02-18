@@ -216,6 +216,12 @@ def get_config(model_name):
                 config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Bipolar Intent variants
             elif model_name == 'neon197':
                 config['d_model'], config['d_ff'] = 272, 981 # 5.0M Gated Polarity Residual (fair comparison)
+            elif model_name == 'neon202':
+                config['d_model'], config['d_ff'] = 272, 1254 # 5.0M Silent Hydra (attention-free)
+            elif model_name in ['neon203', 'neon204', 'neon205']:
+                config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Intent activation variants
+            elif model_name == 'neon206':
+                config['d_model'], config['d_ff'] = 272, 1075 # 5.0M Standard SwiGLU (no conv MLP)
             else: config['d_ff'] = 512
         
         return config
