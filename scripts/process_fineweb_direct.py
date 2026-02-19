@@ -1,8 +1,8 @@
 """Process FineWeb-Edu parquet directly to Tokenizer/Bin (Zero-Disk-Text).
-1. Loads parquet into RAM.
-2. Trains 16k tokenizer from memory.
-3. Pre-tokenizes to binary file.
-Avoids creating massive intermediate .txt files.
+1. Loads parquet into RAM (requires ~1-2GB for 32GB RAM machine).
+2. Trains 16k tokenizer from memory (skips if exists).
+3. Pre-tokenizes to binary file using STREAMING WRITE (fixes OOM).
+Avoids creating massive intermediate .txt files or holding 1B tokens in RAM.
 """
 import os
 import argparse
@@ -38,42 +38,49 @@ def main():
     print(f"Loaded {len(texts):,} documents.")
 
     # 2. Train Tokenizer
-    print("Training Tokenizer...")
-    tokenizer = Tokenizer(models.BPE(unk_token="[UNK]"))
-    tokenizer.pre_tokenizer = pre_tokenizers.ByteLevel(add_prefix_space=False)
-    tokenizer.decoder = decoders.ByteLevel()
-    
-    trainer = trainers.BpeTrainer(
-        vocab_size=args.vocab_size,
-        special_tokens=["[UNK]", "[PAD]", "[CLS]", "[SEP]", "[MASK]"]
-    )
-    
-    tokenizer.train_from_iterator(get_training_corpus(texts), trainer=trainer)
-    
-    os.makedirs(os.path.dirname(args.tokenizer_save), exist_ok=True)
-    tokenizer.save(args.tokenizer_save)
-    print(f"Tokenizer saved to {args.tokenizer_save}")
+    if os.path.exists(args.tokenizer_save):
+        print(f"Loading existing tokenizer from {args.tokenizer_save}...")
+        tokenizer = Tokenizer.from_file(args.tokenizer_save)
+    else:
+        print("Training Tokenizer...")
+        tokenizer = Tokenizer(models.BPE(unk_token="[UNK]"))
+        tokenizer.pre_tokenizer = pre_tokenizers.ByteLevel(add_prefix_space=False)
+        tokenizer.decoder = decoders.ByteLevel()
+        
+        trainer = trainers.BpeTrainer(
+            vocab_size=args.vocab_size,
+            special_tokens=["[UNK]", "[PAD]", "[CLS]", "[SEP]", "[MASK]"]
+        )
+        
+        tokenizer.train_from_iterator(get_training_corpus(texts), trainer=trainer)
+        
+        os.makedirs(os.path.dirname(args.tokenizer_save), exist_ok=True)
+        tokenizer.save(args.tokenizer_save)
+        print(f"Tokenizer saved to {args.tokenizer_save}")
 
-    # 3. Pre-tokenize to Binary
-    print("Pre-tokenizing to binary...")
-    all_ids = []
+    # 3. Pre-tokenize to Binary (STREAMING WRITE)
+    print(f"Pre-tokenizing to {args.bin_save} (Streaming Mode)...")
     batch_size = 1000
     total = len(texts)
     
-    for i in range(0, total, batch_size):
-        batch = texts[i : i + batch_size]
-        encoded = tokenizer.encode_batch(batch)
-        for enc in encoded:
-            all_ids.extend(enc.ids)
+    with open(args.bin_save, 'wb') as f:
+        for i in range(0, total, batch_size):
+            batch = texts[i : i + batch_size]
+            encoded = tokenizer.encode_batch(batch)
             
-        if (i + batch_size) % 50000 == 0:
-            print(f"  Processed {i + batch_size:,}/{total:,} docs...")
+            # Collect batch tokens
+            batch_ids = []
+            for enc in encoded:
+                batch_ids.extend(enc.ids)
+            
+            # Convert to uint16 and write immediately
+            arr = np.array(batch_ids, dtype=np.uint16)
+            f.write(arr.tobytes())
+            
+            if (i + batch_size) % 50000 == 0:
+                print(f"  Processed {i + batch_size:,}/{total:,} docs...")
 
-    print(f"Total tokens: {len(all_ids):,}")
-    
-    # Save as uint16
-    arr = np.array(all_ids, dtype=np.uint16)
-    arr.tofile(args.bin_save)
+    print(f"Appended tokens directly to file.")
     
     file_size_mb = os.path.getsize(args.bin_save) / (1024 * 1024)
     print(f"Saved {file_size_mb:.1f} MB to {args.bin_save}")
