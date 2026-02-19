@@ -96,7 +96,7 @@ def get_config(model_name):
             config['d_ff'] = 592
         
         # Frankenstein Configs
-        if model_name in [f"neon{i:03d}" for i in range(61, 207)]:
+        if model_name in [f"neon{i:03d}" for i in range(61, 212)]:
             config['d_model'], config['n_layers'], config['n_head'] = 256, 4, 4
             if model_name == 'neon061': config['d_ff'] = 2736 # ~10M
             elif model_name == 'neon066': config['d_ff'] = 172 # match neon016
@@ -222,6 +222,10 @@ def get_config(model_name):
                 config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Intent activation variants
             elif model_name == 'neon206':
                 config['d_model'], config['d_ff'] = 272, 1075 # 5.0M Standard SwiGLU (no conv MLP)
+            elif model_name in ['neon207', 'neon208', 'neon209', 'neon210']:
+                config['d_model'], config['d_ff'] = 272, 1072 # 5.0M New Architecture Ideas
+            elif model_name == 'neon211':
+                config['d_model'], config['d_ff'] = 280, 1106 # 5.0M Reflective Attention (larger d_model, no I proj)
             else: config['d_ff'] = 512
         
         return config
