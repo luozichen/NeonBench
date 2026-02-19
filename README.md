@@ -1,7 +1,7 @@
 NeonBench is a repository dedicated to exploring novel transformer and recurrent architectures at the ~3M parameter scale. This log tracks every experiment, focusing on parameter efficiency and architectural breakthroughs.
 
 **Total Architectures Tested**: 211  
-**Total Models Trained**: 256
+**Total Models Trained**: 261
 
 ## 📋 Master Model Inventory
 *Parameter counts exclude embeddings to ensure absolute consistency across benchmarks.*
@@ -458,19 +458,24 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | :--- | :--- | :--- | :--- |
 | **⭐ neon185** | **5.00M** | **3.4278** | **Wiki103 Tok5 SOTA**. SwiGLU-Conv Baseline. |
 | **⭐ neon198** | **5.00M** | **3.4333** | Shifted Tanh Intent `tanh(I)+1`. Range [0,2], init=1. |
+| **neon207** | 5.01M | 3.4350 | Texture MLP (value conv k=3). +0.007. |
 | **neon194** | 5.28M | 3.4364 | Gated Polarity Residual (5.28M). |
 | **⭐ neon205** | **5.00M** | **3.4381** | **Double Gate `σ(I)·SiLU(I)`**. Fine-grained control. |
 | **neon197** | 5.00M | 3.4400 | Gated Polarity Residual (5M fair ver). |
 | **neon201** | 5.00M | 3.4401 | Learnable Blend `α·σ(I)+(1-α)·tanh(I)`. |
 | **neon199** | 5.00M | 3.4404 | Biased Bipolar Intent `tanh(I+0.55)`. |
+| **neon211** | 5.00M | 3.4424 | Reflective Attention (post-gate bottleneck, d=280). |
+| **neon209** | 5.00M | 3.4431 | Recursive Intent (train of thought). |
 | **neon195** | 5.00M | 3.4468 | Bipolar Intent `tanh(I)`. |
 | **neon204** | 5.00M | 3.4504 | SiLU Intent `SiLU(I)`. Unbounded amplification. |
 | **neon167** | 5.28M | 3.4540 | Giant Synergy (5M Baseline, no SwiGLU MLP). |
 | **neon196** | 5.00M | 3.4568 | Sparse Bipolar `tanh³(I)`. |
+| **neon208** | 5.01M | 3.4585 | Texture MLP (value conv k=9). Symmetric but slower convergence. |
 | **neon200** | 5.00M | 3.4585 | Split Intent (half sigmoid / half tanh). |
 | **neon192** | 5.28M | 3.4591 | Soft Flip + Learned Skip α. |
 | **neon190** | 5.28M | 3.4636 | Signed Residual. |
 | **neon203** | 5.00M | 3.4661 | Shifted Tanh² `(tanh(I)+1)²`. Range [0,4]. |
+| **neon210** | 5.00M | 3.4680 | Differential Attention `softmax(Q1K1)-λ·softmax(Q2K2)`. |
 | **neon193** | 5.28M | 3.4727 | Residual Flip (branch attn). |
 | **neon206** | 5.00M | 3.5146 | Standard SwiGLU MLP (no Hydra conv). |
 | **neon189** | 5.28M | 3.5296 | Pure Tanh Gate (init problem). |
@@ -523,3 +528,10 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
     - **Init Matters**: Models initializing the gate at 1.0 (identity) consistently outperformed those starting at 0.5 or 0.0. `neon189` (pure tanh, init=0) suffered a 2000-step convergence delay.
     - **Hydra Conv Confirmed**: `neon206` (standard SwiGLU MLP without Hydra conv) scored **3.5146** vs baseline **3.4278** — a **0.087 gap** proving the Hydra convolutional gate in the MLP is worth ~0.09 val loss points.
     - **Attention-Free Gap**: `neon202` (Silent Hydra at 5M) scored **3.7389** — a massive **0.31 gap** from baseline, confirming that attention is critical for Wikipedia-scale generalization even with 4.6x MLP width.
+19. **Structural Experiments (207-211)**:
+    - **Core Question**: Can deeper architectural changes (convolutional value paths, recursive intent, differential attention, reflective gating) break through the sigmoid barrier?
+    - **All Failed**: None of the 5 structural ideas beat `neon185` (3.4278). Best was `neon207` (Texture MLP k=3) at **3.4350** (+0.007).
+    - **Texture MLP**: Making the value path convolutional didn't help. k=3 (**3.4350**) was marginal, k=9 (**3.4585**) actively hurt — the symmetric conv likely over-smoothed the value path.
+    - **Recursive Intent**: `neon209` (**3.4431**) — passing intent across layers showed no benefit. Each layer apparently needs to re-evaluate intent from its own residual stream.
+    - **Differential Attention**: `neon210` (**3.4680**) — worst of the structural batch. The noise-cancellation idea hurt at this scale; possibly the half-dimension Q/K splits reduce attention capacity too much at 4 heads.
+    - **Reflective Attention**: `neon211` (**3.4424**) — the post-gate bottleneck nearly matched pre-intent gating despite having no learned Intent projection. Suggests the model *can* evaluate attention output quality, but a 16-dim bottleneck is too narrow for full expressiveness.
