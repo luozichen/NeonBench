@@ -18,7 +18,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from tokenizers import Tokenizer
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 from tqdm import tqdm
 
 sys.path.append(os.getcwd())
@@ -88,42 +88,34 @@ def expand_kernels(model, old_k, new_k, config, device):
 # ============================================================
 # Data (Memory-Mapped — near-zero RAM usage)
 # ============================================================
-class BinDataset(Dataset):
-    def __init__(self, data_path, block_size, start=0, end=None):
+class DataSampler:
+    """Samples random batches directly from memmap. No index arrays."""
+    def __init__(self, data_path, block_size, batch_size, train_frac=0.9):
         self.data = np.memmap(data_path, dtype=np.uint16, mode='r')
-        self.start = start
-        self.end = end if end is not None else len(self.data)
+        n = len(self.data)
+        self.split = int(train_frac * n)
         self.block_size = block_size
+        self.batch_size = batch_size
+        print(f"Loaded {n:,} tokens (memmap). Train: {self.split:,}, Val: {n - self.split:,}")
 
-    def __len__(self):
-        return (self.end - self.start) - self.block_size
-
-    def __getitem__(self, idx):
-        i = self.start + idx
-        chunk = self.data[i : i + self.block_size + 1].astype(np.int64)
-        x = torch.from_numpy(chunk[:-1].copy())
-        y = torch.from_numpy(chunk[1:].copy())
-        return x, y
-
-def make_loaders(data_path, block_size, batch_size):
-    n = len(np.memmap(data_path, dtype=np.uint16, mode='r'))
-    split = int(0.9 * n)
-    print(f"Loaded {n:,} tokens (memmap). Train: {split:,}, Val: {n - split:,}")
-    train_ds = BinDataset(data_path, block_size, start=0, end=split)
-    val_ds = BinDataset(data_path, block_size, start=split, end=n)
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=0)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
-    return train_loader, val_loader
+    def get_batch(self, split='train'):
+        hi = self.split if split == 'train' else len(self.data)
+        lo = 0 if split == 'train' else self.split
+        max_idx = hi - self.block_size - 1
+        idxs = np.random.randint(lo, max_idx, size=self.batch_size)
+        x = np.stack([self.data[i : i + self.block_size].astype(np.int64) for i in idxs])
+        y = np.stack([self.data[i+1 : i+1 + self.block_size].astype(np.int64) for i in idxs])
+        return torch.from_numpy(x), torch.from_numpy(y)
 
 # ============================================================
 # Eval / Checkpoint
 # ============================================================
-def estimate_loss(model, dataloader, device, eval_iters=50):
+def estimate_loss(model, sampler, device, eval_iters=50):
     model.eval()
     losses = torch.zeros(eval_iters)
     with torch.no_grad():
-        for i, (X, Y) in enumerate(dataloader):
-            if i >= eval_iters: break
+        for i in range(eval_iters):
+            X, Y = sampler.get_batch('val')
             X, Y = X.to(device), Y.to(device)
             _, loss = model(X, Y)
             losses[i] = loss.item()
@@ -161,9 +153,9 @@ def main():
     vocab_size = tokenizer.get_vocab_size()
     print(f"Vocab size: {vocab_size}")
 
-    # Data (memory-mapped)
-    train_loader, val_loader = make_loaders(
-        args.data, BASE_CONFIG['block_size'], BASE_CONFIG['batch_size'])
+    # Data (memory-mapped, random sampling)
+    sampler = DataSampler(args.data, BASE_CONFIG['block_size'],
+                          BASE_CONFIG['batch_size'])
 
     # Logging
     os.makedirs(args.log_dir, exist_ok=True)
@@ -226,16 +218,10 @@ def main():
 
         # Train
         model.train()
-        train_iter = iter(train_loader)
         pbar = tqdm(range(remaining), desc=f"Stage {stage_idx+1}")
 
         for _ in pbar:
-            try:
-                X, Y = next(train_iter)
-            except StopIteration:
-                train_iter = iter(train_loader)
-                X, Y = next(train_iter)
-
+            X, Y = sampler.get_batch('train')
             X, Y = X.to(device), Y.to(device)
             _, loss = model(X, Y)
             optimizer.zero_grad(set_to_none=True)
@@ -244,7 +230,7 @@ def main():
             global_step += 1
 
             if global_step % args.eval_interval == 0:
-                val_loss = estimate_loss(model, val_loader, device)
+                val_loss = estimate_loss(model, sampler, device)
                 msg = (f"Stage {stage_idx+1} | Step {global_step}: "
                        f"Train {loss.item():.4f}, Val {val_loss:.4f} "
                        f"(L={stage['n_layers']}, k={stage['conv_k']})")
