@@ -96,7 +96,7 @@ def get_config(model_name):
             config['d_ff'] = 592
         
         # Frankenstein Configs
-        if model_name in [f"neon{i:03d}" for i in range(61, 213)]:
+        if model_name in [f"neon{i:03d}" for i in range(61, 214)]:
             config['d_model'], config['n_layers'], config['n_head'] = 256, 4, 4
             if model_name == 'neon061': config['d_ff'] = 2736 # ~10M
             elif model_name == 'neon066': config['d_ff'] = 172 # match neon016
@@ -228,6 +228,9 @@ def get_config(model_name):
                 config['d_model'], config['d_ff'] = 280, 1106 # 5.0M Reflective Attention (larger d_model, no I proj)
             elif model_name == 'neon212':
                 config['d_model'], config['n_layers'], config['d_ff'] = 240, 5, 981 # 5.0M 5-Layer neon185 (depth test)
+            elif model_name == 'neon213':
+                config['d_model'], config['n_head'], config['n_layers'], config['d_ff'] = 384, 6, 4, 1536 # ~20M Growable (uses train_growth.py)
+                config['conv_k'], config['mlp_k'] = 1, 1
             else: config['d_ff'] = 512
         
         return config
