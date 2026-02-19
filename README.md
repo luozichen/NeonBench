@@ -542,11 +542,11 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 | Model | Params (Ex-Emb) | Technical Description |
 | :--- | :--- | :--- |
-| **⭐ neon213** | **20.20M** | **Growable SwiGLU-Conv**: 9-Stage Progressive Growth (k=1→9). First 20M Model. ([Detailed Docs](docs/neon213.md)) |
+| **⭐ neon213** | **26.49M** (20.2M Ex-Emb) | **Growable SwiGLU-Conv**: 9-Stage Progressive Growth (k=1→9). First 26M Model. ([Detailed Docs](docs/neon213.md)) |
 
 ### 🧪 Benchmark: FineWeb-Edu / Tok6
 *Vocabulary Size: 16,384. Embeddings: ~6.29M.*
 
-| Model | Params (Ex-Emb) | Val Loss | Summary |
+| Model | Params (Total) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- |
-| **⭐ neon213** | **20.20M** | **3.6900** | **20M Baseline**. Coherent text generation. |
+| **⭐ neon213** | **26.49M** | **3.6900** | **26M Baseline**. Coherent text generation. |

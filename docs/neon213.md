@@ -1,10 +1,11 @@
 # neon213: The Growable 20M Model
 
-**neon213** is the first **20M parameter** model in the NeonBench series, trained on the **FineWeb-Edu** dataset using a **Progressive Growth** strategy. It represents a significant scale-up from the previous 3M/5M classes.
+**neon213** is the first **26M parameter** model (20M non-embedding) in the NeonBench series, trained on the **FineWeb-Edu** dataset using a **Progressive Growth** strategy. It represents a significant scale-up from the previous 5M class.
 
 | Property | Value |
 |---|---|
-| **Parameters** | **20.20M** (Non-Embedding) / **26.49M** (Total) |
+| **Parameters (Total)** | **26.49M** |
+| **Parameters (Active)** | **20.20M** (Non-Embedding) |
 | **Architecture** | **Growable SwiGLU-Conv** (neon185 base) |
 | **Dataset** | **FineWeb-Edu** (Sample-10GT) |
 | **Tokenizer** | **tok6** (16,384 Vocab, GPT-2 subset) |
