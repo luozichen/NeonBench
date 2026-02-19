@@ -83,4 +83,5 @@ To resolve this, the checkpoint was converted to **Float16 (Half Precision)**.
 | **Generation** | Coherent | Produces grammatically correct English paragraphs. |
 
 **Sample Generation**:
-> *"The meaning of life is the relationship between the two, the other, the other. As people grow older, they are more vulnerable to life and they become more vulnerable to illness."*
+> *"**The meaning of life is** not obvious. It is a story about the way things change. It is a very great story about the great place to go and the future — everything you really expect from the past — of history and"*
+
