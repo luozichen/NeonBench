@@ -1,7 +1,7 @@
 NeonBench is a repository dedicated to exploring novel transformer and recurrent architectures at the ~3M parameter scale. This log tracks every experiment, focusing on parameter efficiency and architectural breakthroughs.
 
-**Total Architectures Tested**: 211  
-**Total Models Trained**: 261
+**Total Architectures Tested**: 212  
+**Total Models Trained**: 262
 
 ## 📋 Master Model Inventory
 *Parameter counts exclude embeddings to ensure absolute consistency across benchmarks.*
@@ -535,3 +535,18 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
     - **Recursive Intent**: `neon209` (**3.4431**) — passing intent across layers showed no benefit. Each layer apparently needs to re-evaluate intent from its own residual stream.
     - **Differential Attention**: `neon210` (**3.4680**) — worst of the structural batch. The noise-cancellation idea hurt at this scale; possibly the half-dimension Q/K splits reduce attention capacity too much at 4 heads.
     - **Reflective Attention**: `neon211` (**3.4424**) — the post-gate bottleneck nearly matched pre-intent gating despite having no learned Intent projection. Suggests the model *can* evaluate attention output quality, but a 16-dim bottleneck is too narrow for full expressiveness.
+
+---
+
+## 🚀 20M PARAMETER CLASS MODELS
+
+| Model | Params (Ex-Emb) | Technical Description |
+| :--- | :--- | :--- |
+| **⭐ neon213** | **20.20M** | **Growable SwiGLU-Conv**: 9-Stage Progressive Growth (k=1→9). First 20M Model. ([Detailed Docs](docs/neon213.md)) |
+
+### 🧪 Benchmark: FineWeb-Edu / Tok6
+*Vocabulary Size: 16,384. Embeddings: ~6.29M.*
+
+| Model | Params (Ex-Emb) | Val Loss | Summary |
+| :--- | :--- | :--- | :--- |
+| **⭐ neon213** | **20.20M** | **3.6900** | **20M Baseline**. Coherent text generation. |
