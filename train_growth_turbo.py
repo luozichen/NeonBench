@@ -195,12 +195,19 @@ def main():
 
             if global_step % 250 == 0:
                 # Direct evaluation (no autocast here for precision)
+                # We average over 50 batches to match the previous logs exactly
                 model.eval()
                 with torch.no_grad():
-                    vX, vY = sampler.get_batch('val')
-                    _, v_loss = model(vX, vY)
+                    eval_iters = 50
+                    v_losses = torch.zeros(eval_iters)
+                    for i in range(eval_iters):
+                        vX, vY = sampler.get_batch('val')
+                        _, v_loss_batch = model(vX, vY)
+                        v_losses[i] = v_loss_batch.item()
+                    v_loss = v_losses.mean()
+                    
                     msg = (f"Turbo Stage {actual_stage_num} | Step {global_step}: "
-                           f"Train {loss.item():.4f}, Val {v_loss.item():.4f} (k={current_k})")
+                           f"Train {loss.item():.4f}, Val {v_loss:.4f} (k={current_k})")
                     tqdm.write(msg)
                     with open(log_path, "a") as f:
                         f.write(msg + "\n")
