@@ -150,8 +150,9 @@ def main():
     model = torch.compile(model)
 
     # Calculate which index in STAGES to start from
-    # STAGES[0] is k=11 (Stage 10). If checkpoint_stage_idx is 11, it means Stage 10 is done.
-    start_offset = checkpoint_stage_idx - 10 
+    # If checkpoint_stage_idx is 10 (finished stage 10), we want index 1 (stage 11).
+    # If it's 9 (finished stage 9), we want index 0 (stage 10).
+    start_offset = 0 if checkpoint_stage_idx < 10 else (checkpoint_stage_idx - 10 + 1)
 
     for stage_idx in range(start_offset, len(STAGES)):
         stage = STAGES[stage_idx]
