@@ -1,0 +1,7 @@
+Extended Stage 10 | Step 31500: Train 3.6466, Val 3.6060 (k=11)
+Extended Stage 10 | Step 32000: Train 3.6246, Val 3.6045 (k=11)
+Extended Stage 10 | Step 32500: Train 3.5189, Val 3.5897 (k=11)
+Extended Stage 10 | Step 33000: Train 3.5979, Val 3.5789 (k=11)
+Extended Stage 10 | Step 33500: Train 3.5889, Val 3.5782 (k=11)
+Extended Stage 10 | Step 34000: Train 3.5059, Val 3.5667 (k=11)
+Extended Stage 11 | Step 34500: Train 3.4683, Val 3.5792 (k=13)

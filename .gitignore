@@ -13,3 +13,5 @@ __pycache__/
 *.pyc
 .DS_Store
 checkpoints/neon213_growth/
+checkpoints/neon213_extended/
+checkpoints/neon213_turbo/
