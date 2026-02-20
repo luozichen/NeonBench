@@ -229,7 +229,13 @@ def main():
                         {**BASE_CONFIG, **stage, 'vocab_size': vocab_size}, 
                         os.path.join(args.out_dir, f"stage{stage_idx+10}.pth"))
 
-    print(f"\nTURBO TRAINING COMPLETE! Saved to {args.out_dir}")
+    # Final Save (Stripped version for inference, ~106MB)
+    final_path = os.path.join(args.out_dir, "neon213_k21_final.pth")
+    base_model = model._orig_mod if hasattr(model, '_orig_mod') else model
+    torch.save(base_model.state_dict(), final_path)
+    
+    print(f"\nTURBO TRAINING COMPLETE! Final kernel size: {current_k}")
+    print(f"Final inference weights saved to: {final_path}")
 
 if __name__ == "__main__":
     main()
