@@ -39,6 +39,41 @@ self.conv_gate = nn.Conv1d(d, d, kernel_size=k, groups=d) # k grows 1->9
 
 ---
 
+## 💡 Key Innovations
+
+### 1. Learned Intent Gating
+
+Standard Gated Scaled Dot-Product Attention (as seen in architectures like Qwen 3.5) derives its output gate from existing projections — typically the Query. The gate is *calculated*, not independently learned:
+
+$$\text{Gated-SDPA}: \quad y = \sigma(W_g \cdot Q) \odot \text{Attn}(Q, K, V)$$
+
+In neon213, the gate is a **fully independent learned projection** called **Intent ($I$)**. Intent has its own dedicated weights (`c_attn` slice) and its own dedicated convolution (`conv_i`), giving it a completely separate representational capacity from Q, K, and V:
+
+$$\text{Intent-Gated}: \quad y = \sigma(\text{Conv}(I)) \odot \text{Attn}(Q, K, V)$$
+
+This means the model can learn **what information to keep** (Intent) independently from **what information to search for** (Query) and **what information to retrieve** (Value). The gate is not a byproduct of the search — it is a first-class citizen with its own parameters.
+
+### 2. Depthwise Convolutions as Communication Channels
+
+The depthwise convolutions applied to Q, K, V, and I are **not simple blurs**. Each convolution kernel is a set of **fully learned, unconstrained weights** — including negative values. This means each dimension can independently decide:
+- **How much** of a neighboring token's signal to incorporate (weight magnitude).
+- **Whether to amplify or inhibit** that signal (positive vs. negative weights).
+- **Which temporal direction** to prioritize (the causal padding ensures only past tokens are visible).
+
+In practice, this creates an **additional token-to-token communication pathway** that operates *before* the attention mechanism. While attention allows tokens to selectively read from any position, the convolutions provide a **fixed, local, per-dimension** channel for adjacent tokens to share information — a form of inductive bias that complements the global, content-based routing of attention.
+
+### 3. Progressive Kernel Growth
+
+Convolutions at large kernel sizes ($k=9$) are powerful but difficult to train from scratch — the model must simultaneously learn *what* to convolve and *how far* to look. neon213 solves this with **Progressive Kernel Growth**:
+
+1. Training begins with **pointwise kernels** ($k=1$), which are equivalent to no convolution at all. The model first learns the fundamentals of attention and MLP gating without any local context.
+2. Kernels are then **gradually expanded** ($k=1 \to 3 \to 5 \to 7 \to 9$) using **zero-padding initialization** — the new kernel positions are filled with zeros, so the model's behavior is perfectly preserved at the moment of expansion.
+3. The model then **learns to use the new context** during the subsequent training steps, gradually discovering how to exploit wider local neighborhoods.
+
+This approach is analogous to curriculum learning: the model masters simple patterns first, then progressively gains the capacity to leverage richer local context.
+
+---
+
 ## 📈 Progressive Growth Training
 
 Training was split into **9 Stages** to stabilize convergence and save compute. The model grew in **Depth** (Layers) and **Context** (Kernel Size).
