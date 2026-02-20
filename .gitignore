@@ -4,11 +4,9 @@ data/
 *.parquet
 *.pt
 
-# Large model checkpoints (10M+ params, neon011-014)
-checkpoints/neon011*
-checkpoints/neon012*
-checkpoints/neon013*
-checkpoints/neon014*
+# Legacy model checkpoints (neon000-neon199)
+checkpoints/neon0*
+checkpoints/neon1*
 
 # Python/System
 __pycache__/

@@ -11,7 +11,7 @@
 | **Tokenizer** | **tok6** (16,384 Vocab, GPT-2 subset) |
 | **Dimensions** | $d_{model}=384, n_{head}=6, n_{layers}=8, d_{ff}=1536$ |
 | **Context** | **Growable** ($k=1 \to 9$) |
-| **Status** | **Active (FP16 Checkpoint Available)** |
+| **Status** | **Active (FP16 Checkpoint: `neon213_tok6_fineweb_fp16_best.pth`)** |
 
 ---
 
