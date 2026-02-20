@@ -199,7 +199,8 @@ def main():
                 with torch.no_grad():
                     vX, vY = sampler.get_batch('val')
                     _, v_loss = model(vX, vY)
-                    msg = f"Step {global_step}: Val {v_loss.item():.4f} (k={current_k})"
+                    msg = (f"Turbo Stage {actual_stage_num} | Step {global_step}: "
+                           f"Train {loss.item():.4f}, Val {v_loss.item():.4f} (k={current_k})")
                     tqdm.write(msg)
                     with open(log_path, "a") as f:
                         f.write(msg + "\n")
