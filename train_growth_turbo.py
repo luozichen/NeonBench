@@ -36,6 +36,13 @@ BASE_CONFIG = {
     'device': 'cuda' if torch.cuda.is_available() else 'cpu',
 }
 
+# Suppress annoying warning messages
+logging.set_verbosity_error()
+warnings.filterwarnings("ignore")
+torch._dynamo.config.suppress_errors = True
+# Increase recompile limit for growth stages
+torch._dynamo.config.recompile_limit = 32
+
 # ============================================================
 # GPU-Accelerated Sampler
 # ============================================================
@@ -51,8 +58,8 @@ class TurboSampler:
         self.batch_size = batch_size
         self.device = device
         
-        # Move entire dataset to GPU (1GB for 500M tokens)
-        self.data_gpu = torch.from_numpy(data_np.astype(np.int32)).to(device)
+        # MUST use int64 (Long) for labels in CUDA cross_entropy
+        self.data_gpu = torch.from_numpy(data_np.astype(np.int64)).to(device)
         print(f"Dataset Ready on {device} ({n:,} tokens).")
 
     def get_batch(self, split='train'):
