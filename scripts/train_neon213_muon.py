@@ -100,12 +100,25 @@ def train():
     # AdamW for 1D params (scales, biases)
     adam = torch.optim.AdamW(adam_params, lr=0.0003)
     
-    sampler = TurboSampler(args.data, batch_size=32, seq_len= SEQ_LEN := 256, device=DEVICE)
+    # Match the original Neon213 baseline batch size
+    BATCH_SIZE = 64
+    sampler = TurboSampler(args.data, batch_size=BATCH_SIZE, seq_len=256, device=DEVICE)
+    
+    # Simple LR Linear Decay
+    def get_lr(it, max_it, base_lr):
+        return base_lr * (1.0 - it / max_it)
+
     scaler = GradScaler()
     model.train()
 
     pbar = tqdm(range(args.steps), desc="Neon213 + Muon")
     for step in pbar:
+        # Update LRs
+        curr_muon_lr = get_lr(step, args.steps, 0.02)
+        curr_adam_lr = get_lr(step, args.steps, 0.0003)
+        for g in optimizer.param_groups: g['lr'] = curr_muon_lr
+        for g in adam.param_groups: g['lr'] = curr_adam_lr
+
         x, y = sampler.get_batch('train')
         
         with autocast():
