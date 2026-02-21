@@ -24,24 +24,31 @@ def muon_update(p, grad, lr, momentum, state):
     else:
         g = grad
 
-    if g.ndim == 2: # Linear or Conv weights
-        X = g.to(torch.float32)
+    if g.ndim >= 2: # Linear or Conv weights (handles Conv1d [D, 1, K])
+        # Flatten to 2D
+        X = g.view(g.shape[0], -1)
         if X.shape[0] < X.shape[1]: X = X.T
         
-        # Critical: Pre-normalize to ensure Newton-Schulz convergence
+        # 1. Newton-Schulz Pre-normalization
+        X = X.to(torch.float32)
         X /= (X.norm() + 1e-7)
         
-        # Iterative Orthogonalization (Newton-Schulz)
+        # 2. Iterative Orthogonalization
         for _ in range(5):
             X = 1.5 * X - 0.5 * X @ (X.T @ X)
             
-        if g.shape[0] < g.shape[1]: X = X.T
-        g = X.to(g.dtype)
+        # 3. Transpose back if necessary
+        if g.shape[0] < g.view(g.shape[0], -1).shape[1]: X = X.T
+        
+        # 4. Learning Rate Scaling Factor
+        # Muon updates need to be scaled by matrix geometry factors
+        scale = 0.5 * max(g.shape[0], g.view(g.shape[0], -1).shape[1])**0.5
+        g = (X.view(g.shape) * scale).to(g.dtype)
         
     p.data.add_(g, alpha=-lr)
 
 class Muon(torch.optim.Optimizer):
-    def __init__(self, params, lr=0.02, momentum=0.95):
+    def __init__(self, params, lr=0.01, momentum=0.95):
         defaults = dict(lr=lr, momentum=momentum)
         super().__init__(params, defaults)
         
@@ -97,7 +104,7 @@ def train():
     muon_params = [p for p in model.parameters() if p.ndim >= 2]
     adam_params = [p for p in model.parameters() if p.ndim < 2]
     
-    # Muon usually works best with a higher LR (0.01 is safer for small BS)
+    # Muon safer starting LR
     optimizer = Muon(muon_params, lr=0.01)
     # AdamW for 1D params (scales, biases)
     adam = torch.optim.AdamW(adam_params, lr=0.0003)
@@ -115,7 +122,7 @@ def train():
 
     pbar = tqdm(range(args.steps), desc="Neon213 + Muon")
     for step in pbar:
-        # Update LRs with a steeper decay or standard linear
+        # Update LRs
         curr_muon_lr = get_lr(step, args.steps, 0.01)
         curr_adam_lr = get_lr(step, args.steps, 0.0003)
         for g in optimizer.param_groups: g['lr'] = curr_muon_lr
