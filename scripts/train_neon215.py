@@ -1,4 +1,8 @@
+import sys
 import os
+# Fix import error if run from scripts/
+sys.path.append(os.getcwd())
+
 import time
 import argparse
 import numpy as np
