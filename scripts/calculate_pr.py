@@ -8,7 +8,7 @@ import json
 
 # Fix import error if run from scripts/
 sys.path.append(os.getcwd())
-from networks.neon213 import Neon213
+from models.neon213 import Neon213
 
 # CONFIGURATION (Neon213 is FineWeb-Edu tok6)
 paths = {
