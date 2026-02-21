@@ -18,7 +18,7 @@ paths = {
 }
 
 BATCH_SIZE = 4
-SEQ_LEN = 512
+SEQ_LEN = 256
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def get_participation_ratio(x):
