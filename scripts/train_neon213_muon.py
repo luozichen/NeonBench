@@ -28,8 +28,10 @@ def muon_update(p, grad, lr, momentum, state):
         X = g.to(torch.float32)
         if X.shape[0] < X.shape[1]: X = X.T
         
+        # Critical: Pre-normalize to ensure Newton-Schulz convergence
+        X /= (X.norm() + 1e-7)
+        
         # Iterative Orthogonalization (Newton-Schulz)
-        # This preconditioning is what pushes PR higher
         for _ in range(5):
             X = 1.5 * X - 0.5 * X @ (X.T @ X)
             
@@ -95,8 +97,8 @@ def train():
     muon_params = [p for p in model.parameters() if p.ndim >= 2]
     adam_params = [p for p in model.parameters() if p.ndim < 2]
     
-    # Muon usually works best with a higher LR (0.02 is standard)
-    optimizer = Muon(muon_params, lr=0.02)
+    # Muon usually works best with a higher LR (0.01 is safer for small BS)
+    optimizer = Muon(muon_params, lr=0.01)
     # AdamW for 1D params (scales, biases)
     adam = torch.optim.AdamW(adam_params, lr=0.0003)
     
@@ -113,8 +115,8 @@ def train():
 
     pbar = tqdm(range(args.steps), desc="Neon213 + Muon")
     for step in pbar:
-        # Update LRs
-        curr_muon_lr = get_lr(step, args.steps, 0.02)
+        # Update LRs with a steeper decay or standard linear
+        curr_muon_lr = get_lr(step, args.steps, 0.01)
         curr_adam_lr = get_lr(step, args.steps, 0.0003)
         for g in optimizer.param_groups: g['lr'] = curr_muon_lr
         for g in adam.param_groups: g['lr'] = curr_adam_lr
