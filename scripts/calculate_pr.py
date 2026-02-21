@@ -8,11 +8,11 @@ import json
 
 # Fix import error if run from scripts/
 sys.path.append(os.getcwd())
-from models.neon214 import Neon214
+from models.neon213 import Neon213
 
 # CONFIGURATION (Neon214 Audit)
 paths = {
-    "model": "checkpoints/neon214_depth/stage3.pth",
+    "model": "checkpoints/neon213_muon/neon213_muon_final.pth",
     "data": "data/fineweb/fineweb_tok6.bin",
     "tokenizer": "tokenizers/fineweb_tok6.json"
 }
@@ -45,12 +45,12 @@ def get_participation_ratio(x):
 def probe_model():
     # 1. Load Model (Config for neon214)
     config = {
-        'd_model': 192, 'n_head': 6, 'n_layers': 24, 'd_ff': 768, 
+        'd_model': 384, 'n_head': 6, 'n_layers': 8, 'd_ff': 1536, 
         'vocab_size': 16384, 'block_size': 256, 'conv_k': 21, 'mlp_k': 21
     }
     
     print(f"Loading model: {paths['model']}")
-    model = Neon214(config).to(DEVICE)
+    model = Neon213(config).to(DEVICE)
     checkpoint = torch.load(paths["model"], map_location=DEVICE)
     # Check if checkpoint is a dict with 'model' key or just weights
     sd = checkpoint['model'] if 'model' in checkpoint else checkpoint
@@ -113,8 +113,9 @@ def probe_model():
         
         # Calculate Activity Map (Variance per coordinate)
         variances = res_flat.var(dim=0)
-        # Group into 32-dim chunks to see head alignment
-        chunks = variances.view(-1, 32).mean(dim=1)
+        # Visualization: 64-dim chunks for Neon213
+        chunk_size = 64
+        chunks = variances.view(-1, chunk_size).mean(dim=1)
         norm_chunks = chunks / chunks.max() if chunks.max() > 0 else chunks
         activity_str = "".join(["█" if v > 0.8 else "▓" if v > 0.6 else "▒" if v > 0.4 else "░" if v > 0.2 else "." for v in norm_chunks])
         
