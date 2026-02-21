@@ -202,8 +202,14 @@ def main():
             if global_step % 250 == 0:
                 model.eval()
                 with torch.no_grad():
-                    vX, vY = sampler.get_batch('val')
-                    _, v_loss = model(vX, vY)
+                    eval_iters = 50
+                    v_losses = torch.zeros(eval_iters)
+                    for i in range(eval_iters):
+                        vX, vY = sampler.get_batch('val')
+                        _, v_loss_batch = model(vX, vY)
+                        v_losses[i] = v_loss_batch.item()
+                    v_loss = v_losses.mean()
+                    
                     msg = f"Neon214 S{stage_idx+1} | Step {global_step}: Train {loss.item():.4f}, Val {v_loss.item():.4f} ({current_config['n_layers']}L)"
                     tqdm.write(msg)
                     with open(log_path, "a") as f:
