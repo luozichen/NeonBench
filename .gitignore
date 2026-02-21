@@ -17,4 +17,6 @@ checkpoints/neon213_extended/
 checkpoints/neon213_turbo/
 checkpoints/neon214*
 checkpoints/neon215*
-checkpoints/neon213*
+checkpoints/neon213_muon_growth/
+checkpoints/neon213_muon_long/
+checkpoints/neon213_muon/
