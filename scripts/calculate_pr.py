@@ -64,62 +64,58 @@ def probe_model():
     ix = torch.randint(len(data) - SEQ_LEN, (BATCH_SIZE,))
     x = torch.stack([torch.from_numpy((data[i:i+SEQ_LEN]).astype(np.int64)) for i in ix]).to(DEVICE)
 
-    # 3. Setup Hooks to capture Q and K
-    pr_data = {l: {"q": [], "k": []} for l in range(config['n_layers'])}
+    # 3. Setup hooks to capture Q, K, V, I
+    pr_data = {l: {"q": [], "k": [], "v": [], "i": []} for l in range(config['n_layers'])}
     
-    def get_hook(layer_idx, name):
+    # We will use a more direct method: registering hooks on the conv layers
+    # to capture and reshape them exactly as they are used in attention.
+    def get_conv_hook(layer_idx, name):
         def hook(module, inp, out):
-            # We want to capture the vectors that are actually used in Softmax
-            # In GrowableConvAttention, these are q, k after norm and rotary
-            # This hook should be placed after RoPE
-            # But theRoPE is applied in the forward, so we hook 'q_norm'/'k_norm' 
-            # and simulate RoPE or just measure on normalized Q/K
-            pr_data[layer_idx][name] = out.detach().cpu()
+            # out is [B, D, T] -> transpose to [B, T, D] -> view [B, T, h, d]
+            B, D, T = out.shape
+            x = out.transpose(1, 2).view(B, T, config['n_head'], config['d_model'] // config['n_head'])
+            pr_data[layer_idx][name] = x.detach().cpu()
         return hook
 
     hooks = []
     for i, block in enumerate(model.blocks):
-        hooks.append(block.attn.q_norm.register_forward_hook(get_hook(i, "q")))
-        hooks.append(block.attn.k_norm.register_forward_hook(get_hook(i, "k")))
+        hooks.append(block.attn.conv_q.register_forward_hook(get_conv_hook(i, "q")))
+        hooks.append(block.attn.conv_k.register_forward_hook(get_conv_hook(i, "k")))
+        hooks.append(block.attn.conv_v.register_forward_hook(get_conv_hook(i, "v")))
+        hooks.append(block.attn.conv_i.register_forward_hook(get_conv_hook(i, "i")))
 
     # 4. Forward
-    print("Running Calibration Forward Pass...")
+    print("Running Calibration Forward Pass (Capturing Q, K, V, I)...")
     with torch.no_grad():
         model(x)
 
     # 5. Calculate PR
-    print("\n" + "="*50)
-    print(f"{'LAYER':<8} | {'HEAD':<6} | {'Q-PR':<8} | {'K-PR':<8} | {'UTIL %':<8}")
-    print("-" * 50)
+    print("\n" + "="*70)
+    print(f"{'LAYER':<8} | {'H':<3} | {'Q-PR':<7} | {'K-PR':<7} | {'V-PR':<7} | {'I-PR':<7} | {'UTIL %':<8}")
+    print("-" * 70)
     
     head_dim = config['d_model'] // config['n_head']
-    all_q_prs = []
-    all_k_prs = []
+    all_q, all_k, all_v, all_i = [], [], [], []
 
     for l in range(config['n_layers']):
-        # q, k shape: [B, T, n_head, head_dim]
-        q = pr_data[l]["q"]
-        k = pr_data[l]["k"]
+        q, k, v, i_ = pr_data[l]["q"], pr_data[l]["k"], pr_data[l]["v"], pr_data[l]["i"]
         
         for h in range(config['n_head']):
-            # Gather all tokens across batch/seq for this head
-            q_head = q[:, :, h, :].reshape(-1, head_dim)
-            k_head = k[:, :, h, :].reshape(-1, head_dim)
-            
-            q_pr = get_participation_ratio(q_head)
-            k_pr = get_participation_ratio(k_head)
+            q_pr = get_participation_ratio(q[:, :, h, :].reshape(-1, head_dim))
+            k_pr = get_participation_ratio(k[:, :, h, :].reshape(-1, head_dim))
+            v_pr = get_participation_ratio(v[:, :, h, :].reshape(-1, head_dim))
+            i_pr = get_participation_ratio(i_[:, :, h, :].reshape(-1, head_dim))
             
             util = (q_pr / head_dim) * 100
-            print(f"L{l:<7} | H{h:<5} | {q_pr:>8.2f} | {k_pr:>8.2f} | {util:>7.1f}%")
+            print(f"L{l:<7} | {h:<3} | {q_pr:>7.1f} | {k_pr:>7.1f} | {v_pr:>7.1f} | {i_pr:>7.1f} | {util:>7.1f}%")
             
-            all_q_prs.append(q_pr)
-            all_k_prs.append(k_pr)
-        print("-" * 50)
+            all_q.append(q_pr); all_k.append(k_pr); all_v.append(v_pr); all_i.append(i_pr)
+        print("-" * 70)
 
-    avg_q = sum(all_q_prs) / len(all_q_prs)
-    avg_k = sum(all_k_prs) / len(all_k_prs)
-    print(f"{'AVERAGE':<17} | {avg_q:>8.2f} | {avg_k:>8.2f} | {(avg_q/head_dim)*100:>7.1f}%")
-    print("="*50)
+    avg_q, avg_k, avg_v, avg_i = np.mean(all_q), np.mean(all_k), np.mean(all_v), np.mean(all_i)
+    avg_util = (avg_q / head_dim) * 100
+    print(f"{'AVERAGE':<13} | {avg_q:>7.1f} | {avg_k:>7.1f} | {avg_v:>7.1f} | {avg_i:>7.1f} | {avg_util:>7.1f}%")
+    print("="*70)
 
     # Cleanup
     for h in hooks: h.remove()
