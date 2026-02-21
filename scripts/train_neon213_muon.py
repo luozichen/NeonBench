@@ -13,50 +13,63 @@ from tqdm import tqdm
 sys.path.append(os.getcwd())
 from models.neon213 import Neon213
 
-# --- Muon Optimizer Implementation (V3 - Hardened) ---
-def muon_update(p, grad, lr, momentum, state):
-    if momentum > 0:
-        if 'momentum_buffer' not in state:
-            state['momentum_buffer'] = torch.zeros_like(grad)
-        buf = state['momentum_buffer']
-        buf.mul_(momentum).add_(grad)
-        g = buf
-    else:
-        g = grad
+# --- Muon Optimizer Implementation (V4 - Reference Aligned) ---
 
-    # Muon is only for 2D Dense weights.
-    # Depthwise Convolutions are handled by AdamW.
-    if g.ndim == 2:
-        X = g.to(torch.float32)
-        if X.shape[0] < X.shape[1]: X = X.T
-        
-        # Pre-normalize for Newton-Schulz convergence
-        X /= (X.norm() + 1e-7)
-        
-        for _ in range(5):
-            X = 1.5 * X - 0.5 * X @ (X.T @ X)
-            
-        if g.shape[0] < g.shape[1]: X = X.T
-        
-        # Matrix Scaling: matches AdamW update energy
-        scale = 0.5 * max(g.shape[0], g.shape[1])**0.5
-        g = (X * scale).to(g.dtype)
-        
-    p.data.add_(g, alpha=-lr)
+# Coeffs for Polar Express iterative orthogonalization
+coeffs_list = [
+    (8.156554524902461, -22.48329292557795, 15.878769915207462),
+    (4.042929935166739, -2.808917465908714, 0.5000178451051316),
+    (3.8916678022926607, -2.772484153217685, 0.5060648178503393),
+    (3.285753657755655, -2.3681294933425376, 0.46449024233003106),
+    (2.3465413258596377, -1.7097828382687081, 0.42323551169305323)
+]
+
+def zeropower_polar_express(G: torch.Tensor, steps: int = 5):
+    """Polar express as replacement for Newton-Schulz iteration"""
+    X = G.to(torch.float32)
+    transpose_needed = X.size(-2) > X.size(-1) 
+    if transpose_needed: X = X.mT 
+    
+    # Safety normalization
+    X = X / (X.norm(dim=(-2, -1), keepdim=True) * 1.01 + 1e-7)
+    
+    for a, b, c in coeffs_list[:steps]:
+        A = X @ X.mT 
+        A2 = A @ A 
+        B = b * A + c * A2
+        X = a * X + B @ X 
+    
+    if transpose_needed: X = X.mT 
+    return X
 
 class Muon(torch.optim.Optimizer):
-    def __init__(self, params, lr=0.01, momentum=0.95):
-        defaults = dict(lr=lr, momentum=momentum)
+    def __init__(self, params, lr=0.02, momentum=0.95, ns_steps=5):
+        defaults = dict(lr=lr, momentum=momentum, ns_steps=ns_steps)
         super().__init__(params, defaults)
-        
+
+    @torch.no_grad()
     def step(self):
         for group in self.param_groups:
-            lr = group['lr']
-            momentum = group['momentum']
-            for p in group['params']:
+            for p in group["params"]:
                 if p.grad is None: continue
+                g = p.grad
                 state = self.state[p]
-                muon_update(p, p.grad, lr, momentum, state)
+
+                if "momentum_buffer" not in state:
+                    state["momentum_buffer"] = torch.zeros_like(g)
+
+                # Use lerp_ for stable momentum (Ref implementation)
+                buf = state["momentum_buffer"]
+                buf.lerp_(g, 1 - group["momentum"])
+                g = g.lerp_(buf, group["momentum"]) # Uses nesterov-like logic implicitly or just lerped buf
+                
+                # Use Polar Express for orthogonalization
+                g = zeropower_polar_express(g, steps=group["ns_steps"])
+                g = g.to(p.dtype)
+                
+                # Aspect-ratio based scaling (Key to avoiding NaNs)
+                scale = max(1, p.size(-2) / p.size(-1))**0.5
+                p.add_(g.view_as(p), alpha=-group["lr"] * scale)
 
 # --- Data Sampler ---
 class TurboSampler:
@@ -94,25 +107,21 @@ def train():
         'vocab_size': 16384, 'block_size': 256, 'conv_k': 21, 'mlp_k': 21
     }
 
-    print(f"Initializing Neon213 (Muon Experiment)...")
+    print(f"Initializing Neon213 (Muon V4 - Reference Aligned)...")
     model = Neon213(config).to(DEVICE)
     
-    # MUON RULES (Keller Jordan):
-    # Apply only to 2D parameters.
-    # Exclude Embeddings and Head.
-    # Our Convolutions are Depthwise (Groups=D), so exclude them too.
+    # Hybrid Optimizer setup
     muon_params = []
     adam_params = []
-    
     for name, p in model.named_parameters():
         if p.ndim == 2 and "token_emb" not in name and "head" not in name:
             muon_params.append(p)
         else:
             adam_params.append(p)
     
-    print(f"Muon parameters: {len(muon_params)} | AdamW parameters: {len(adam_params)}")
+    print(f"Muon params: {len(muon_params)} | AdamW params: {len(adam_params)}")
     
-    optimizer = Muon(muon_params, lr=0.01)
+    optimizer = Muon(muon_params, lr=0.01) # Ref uses 0.02, we use 0.01 for stability on small BS
     adam = torch.optim.AdamW(adam_params, lr=0.0003)
     
     BATCH_SIZE = 64
@@ -124,8 +133,9 @@ def train():
     scaler = GradScaler()
     model.train()
 
-    pbar = tqdm(range(args.steps), desc="Neon213 + Muon")
+    pbar = tqdm(range(args.steps), desc="Neon213 + Muon V4")
     for step in pbar:
+        # Linear decay
         curr_muon_lr = get_lr(step, args.steps, 0.01)
         curr_adam_lr = get_lr(step, args.steps, 0.0003)
         for g in optimizer.param_groups: g['lr'] = curr_muon_lr
@@ -161,7 +171,7 @@ def train():
                     v_losses[i] = v_loss_batch.item()
                 v_loss = v_losses.mean()
                 
-                msg = f"Neon213 Muon | Step {step+1}: Train {loss.item():.4f}, Val {v_loss.item():.4f}"
+                msg = f"Neon213 Muon V4 | Step {step+1}: Train {loss.item():.4f}, Val {v_loss.item():.4f}"
                 tqdm.write(msg)
                 with open(log_path, "a") as f:
                     f.write(msg + "\n")
