@@ -15,3 +15,6 @@ __pycache__/
 checkpoints/neon213_growth/
 checkpoints/neon213_extended/
 checkpoints/neon213_turbo/
+checkpoints/neon214*
+checkpoints/neon215*
+checkpoints/neon213*

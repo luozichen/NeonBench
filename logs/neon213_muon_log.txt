@@ -1,0 +1,47 @@
+Neon213 Muon | Step 250: Train nan, Val 9.0432
+Neon213 Muon | Step 500: Train nan, Val nan
+Neon213 Muon | Step 250: Train nan, Val 7.0458
+Neon213 Muon | Step 500: Train nan, Val 7.0466
+Neon213 Muon | Step 750: Train nan, Val 7.0470
+Neon213 Muon | Step 1000: Train nan, Val nan
+Neon213 Muon | Step 1250: Train nan, Val nan
+Neon213 Muon V4 | Step 250: Train 6.0136, Val 5.9700
+Neon213 Muon V4 | Step 500: Train 5.5578, Val 5.4619
+Neon213 Muon V4 | Step 750: Train 5.2485, Val 5.1751
+Neon213 Muon V4 | Step 1000: Train 4.9762, Val 4.9729
+Neon213 Muon V4 | Step 1250: Train 4.8482, Val 4.8284
+Neon213 Muon V4 | Step 1500: Train 4.7500, Val 4.7269
+Neon213 Muon V4 | Step 1750: Train 4.7110, Val 4.6494
+Neon213 Muon V4 | Step 2000: Train 4.7046, Val 4.5674
+Neon213 Muon V4 | Step 2250: Train 4.5328, Val 4.4868
+Neon213 Muon V4 | Step 2500: Train 4.5087, Val 4.4218
+Neon213 Muon V4 | Step 2750: Train 4.3224, Val 4.3440
+Neon213 Muon V4 | Step 3000: Train 4.2879, Val 4.2842
+Neon213 Muon V4 | Step 3250: Train 4.1798, Val 4.2126
+Neon213 Muon V4 | Step 3500: Train 4.2236, Val 4.1720
+Neon213 Muon V4 | Step 3750: Train 4.2111, Val 4.1442
+Neon213 Muon V4 | Step 4000: Train 4.1604, Val 4.0977
+Neon213 Muon V4 | Step 4250: Train 4.1323, Val 4.0767
+Neon213 Muon V4 | Step 4500: Train 4.0312, Val 4.0715
+Neon213 Muon V4 | Step 4750: Train 4.0491, Val 4.0465
+Neon213 Muon V4 | Step 5000: Train 4.0417, Val 4.0197
+Neon213 Muon V4 | Step 5250: Train 4.0337, Val 4.0081
+Neon213 Muon V4 | Step 5500: Train 4.0564, Val 3.9908
+Neon213 Muon V4 | Step 5750: Train 4.1208, Val 3.9735
+Neon213 Muon V4 | Step 6000: Train 4.0116, Val 3.9645
+Neon213 Muon V4 | Step 6250: Train 3.9916, Val 3.9364
+Neon213 Muon V4 | Step 6500: Train 3.9020, Val 3.9298
+Neon213 Muon V4 | Step 6750: Train 3.9109, Val 3.9305
+Neon213 Muon V4 | Step 7000: Train 3.8904, Val 3.9062
+Neon213 Muon V4 | Step 7250: Train 4.0167, Val 3.9093
+Neon213 Muon V4 | Step 7500: Train 3.9448, Val 3.8768
+Neon213 Muon V4 | Step 7750: Train 3.8174, Val 3.8863
+Neon213 Muon V4 | Step 8000: Train 3.9542, Val 3.8794
+Neon213 Muon V4 | Step 8250: Train 3.9476, Val 3.8641
+Neon213 Muon V4 | Step 8500: Train 3.8092, Val 3.8513
+Neon213 Muon V4 | Step 8750: Train 3.8648, Val 3.8525
+Neon213 Muon V4 | Step 9000: Train 3.8611, Val 3.8423
+Neon213 Muon V4 | Step 9250: Train 3.9573, Val 3.8383
+Neon213 Muon V4 | Step 9500: Train 3.9158, Val 3.8445
+Neon213 Muon V4 | Step 9750: Train 3.8710, Val 3.8236
+Neon213 Muon V4 | Step 10000: Train 3.8510, Val 3.8342
