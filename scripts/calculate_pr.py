@@ -3,14 +3,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import os
+import sys
 import json
+
+# Fix import error if run from scripts/
+sys.path.append(os.getcwd())
 from networks.neon213 import Neon213
 
-# CONFIGURATION (Adjust these on server if needed)
+# CONFIGURATION (Neon213 is FineWeb-Edu tok6)
 paths = {
     "model": "checkpoints/neon213_turbo/neon213_k21_final.pth",
-    "data": "data/wiki103/wiki103_tok5.bin",
-    "tokenizer": "tokenizers/wiki103_tok5.json"
+    "data": "data/fineweb/fineweb_tok6.bin",
+    "tokenizer": "tokenizers/fineweb_tok6.json"
 }
 
 BATCH_SIZE = 4
