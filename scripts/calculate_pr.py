@@ -45,7 +45,7 @@ def get_participation_ratio(x):
 def probe_model():
     # 1. Load Model (Config for neon214)
     config = {
-        'd_model': 192, 'n_head': 6, 'n_layers': 32, 'd_ff': 768, 
+        'd_model': 192, 'n_head': 6, 'n_layers': 24, 'd_ff': 768, 
         'vocab_size': 16384, 'block_size': 256, 'conv_k': 21, 'mlp_k': 21
     }
     
