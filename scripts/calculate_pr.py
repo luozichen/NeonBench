@@ -12,7 +12,7 @@ from models.neon213 import Neon213
 
 # CONFIGURATION (Neon214 Audit)
 paths = {
-    "model": "checkpoints/neon213_muon/neon213_muon_final.pth",
+    "model": "checkpoints/neon213_muon_growth/stage_21.pth",
     "data": "data/fineweb/fineweb_tok6.bin",
     "tokenizer": "tokenizers/fineweb_tok6.json"
 }
