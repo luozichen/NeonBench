@@ -44,10 +44,10 @@ def get_participation_ratio(x):
         return 0.0
 
 def probe_model():
-    # 1. Load Model
+    # 1. Load Model (Config must match the neon213 checkpoint)
     config = {
         'd_model': 384, 'n_head': 6, 'n_layers': 8, 'd_ff': 1536, 
-        'vocab_size': 16384, 'block_size': 1024, 'conv_k': 21
+        'vocab_size': 16384, 'block_size': 256, 'conv_k': 21, 'mlp_k': 21
     }
     
     print(f"Loading model: {paths['model']}")
