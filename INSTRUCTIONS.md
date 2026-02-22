@@ -164,19 +164,3 @@ for model in neon023 neon024; do
     python3 train.py --model $model --data data/hp/hp0.txt --tokenizer tokenizers/hp_tok1.json --tok_name tok1
 done
 ```
-
----
-
-## 8. Attention Visualizer (local only)
-
-Interactive browser app for visualizing attention heatmaps.
-
-```bash
-# Install deps (once)
-pip install streamlit plotly
-
-# Run
-python3 -m streamlit run scripts/visualizer.py
-```
-
-Open http://localhost:8501 — select a model, type a prompt, click Visualize.
