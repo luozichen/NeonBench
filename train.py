@@ -104,9 +104,14 @@ def get_config(model_name):
             elif model_name == 'neon071': config['d_ff'] = 640
             elif model_name == 'neon072': config['d_ff'] = 512
             elif model_name == 'neon076': config['d_model'], config['d_ff'] = 240, 480
-            elif model_name == 'neon077': config['d_ff'] = 368
-            elif model_name == 'neon078': config['d_ff'] = 500
-            elif model_name == 'neon079': config['d_ff'] = 480
+            elif model_name == 'neon222': config['d_ff'] = 981
+            elif model_name == 'neon223': config['d_ff'] = 1072
+            elif model_name == 'neon224': config['d_ff'] = 1062
+            elif model_name == 'neon225': config['d_ff'] = 804
+            elif model_name == 'neon226': config['d_ff'] = 1072
+            elif model_name == 'neon227': config['d_ff'] = 1072
+            elif model_name == 'neon228': config['d_ff'] = 1072
+            elif model_name == 'neon229': config['d_ff'] = 1072
             elif model_name == 'neon080': config['d_ff'] = 384 # Match neon016 Width
             elif model_name == 'neon081': config['d_ff'] = 378 # Match neon016 Context
             elif model_name == 'neon082': config['d_ff'] = 416 # Match neon016 ResHydra
@@ -222,7 +227,7 @@ def get_config(model_name):
                 config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Intent activation variants
             elif model_name == 'neon206':
                 config['d_model'], config['d_ff'] = 272, 1075 # 5.0M Standard SwiGLU (no conv MLP)
-            elif model_name in ['neon207', 'neon208', 'neon209', 'neon210']:
+            elif model_name in ['neon207', 'neon208', 'neon209', 'neon210', "neon222", "neon223", "neon224", "neon225", "neon226", "neon227", "neon228", "neon229"]:
                 config['d_model'], config['d_ff'] = 272, 1072 # 5.0M New Architecture Ideas
             elif model_name == 'neon211':
                 config['d_model'], config['d_ff'] = 280, 1106 # 5.0M Reflective Attention (larger d_model, no I proj)

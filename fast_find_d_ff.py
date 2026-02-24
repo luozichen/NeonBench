@@ -12,7 +12,7 @@ target_total = count_parameters(m185)
 
 print(f"Target total parameters (Neon185): {target_total:,}")
 
-models_to_test = ["neon222", "neon223", "neon224", "neon225"]
+models_to_test = ["neon222", "neon223", "neon224", "neon225", "neon226", "neon227", "neon228", "neon229"]
 
 for m_name in models_to_test:
     module = __import__(f"models.{m_name}", fromlist=[m_name.capitalize()])
