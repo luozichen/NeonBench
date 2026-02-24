@@ -96,7 +96,7 @@ def get_config(model_name):
             config['d_ff'] = 592
         
         # Frankenstein Configs
-        if model_name in [f"neon{i:03d}" for i in range(61, 214)]:
+        if model_name in [f"neon{i:03d}" for i in range(61, 230)]:
             config['d_model'], config['n_layers'], config['n_head'] = 256, 4, 4
             if model_name == 'neon061': config['d_ff'] = 2736 # ~10M
             elif model_name == 'neon066': config['d_ff'] = 172 # match neon016
@@ -229,15 +229,15 @@ def get_config(model_name):
             elif model_name == 'neon212':
                 config['d_model'], config['n_layers'], config['d_ff'] = 240, 5, 981 # 5.0M 5-Layer neon185 (depth test)
             elif model_name == 'neon217':
-                config['d_model'], config['d_ff'] = 272, 1200 # 5.0M Full Rank Intent Stream
+                config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Full Rank Intent Stream
             elif model_name == 'neon218':
-                config['d_model'], config['d_ff'] = 272, 1264 # 5.0M Bottleneck Intent Stream
+                config['d_model'], config['d_ff'] = 272, 1141 # 5.0M Bottleneck Intent Stream
             elif model_name == 'neon219':
-                config['d_model'], config['d_ff'] = 272, 1265 # 5.0M Universal Shared Stream
+                config['d_model'], config['d_ff'] = 272, 1141 # 5.0M Universal Shared Stream
             elif model_name == 'neon220':
-                config['d_model'], config['d_ff'] = 272, 1199 # 5.0M Momentum Decay Stream
+                config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Momentum Decay Stream
             elif model_name == 'neon221':
-                config['d_model'], config['d_ff'] = 272, 1114 # 5.0M Cross-Linked Feedback Stream
+                config['d_model'], config['d_ff'] = 272, 981 # 5.0M Cross-Linked Feedback Stream
             elif model_name == 'neon213':
                 config['d_model'], config['n_head'], config['n_layers'], config['d_ff'] = 384, 6, 4, 1536 # ~20M Growable (uses train_growth.py)
                 config['conv_k'], config['mlp_k'] = 1, 1
