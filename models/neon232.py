@@ -5,7 +5,7 @@ No <Z> token or physical shift.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.neon015 import RMSNorm, apply_rotary_emb
+from models.neon185 import RMSNorm, apply_rotary_emb
 
 class StaggeredMHA(nn.Module):
     def __init__(self, config):
@@ -24,13 +24,14 @@ class StaggeredMHA(nn.Module):
         mask_a = torch.tril(torch.ones(self.block_size, self.block_size))
         for i in range(0, self.block_size, 2):
             if i + 1 < self.block_size: mask_a[i, i+1] = 1.0
-        self.register_buffer("mask_a", mask_a.view(1, 1, self.block_size, self.block_size))
+        # Register as boolean mask (True = attend, False = mask)
+        self.register_buffer("mask_a", mask_a.view(1, 1, self.block_size, self.block_size).bool())
         
         # Mask B: Staggered Blocks (0), (1,2), (3,4)
         mask_b = torch.tril(torch.ones(self.block_size, self.block_size))
         for i in range(1, self.block_size - 1, 2):
             mask_b[i, i+1] = 1.0
-        self.register_buffer("mask_b", mask_b.view(1, 1, self.block_size, self.block_size))
+        self.register_buffer("mask_b", mask_b.view(1, 1, self.block_size, self.block_size).bool())
 
     def forward(self, x, freqs_cos, freqs_sin, is_odd_stream=False):
         B, T, C = x.shape
@@ -45,10 +46,25 @@ class StaggeredMHA(nn.Module):
         q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
         
         mask = self.mask_b if is_odd_stream else self.mask_a
-        y = F.scaled_dot_product_attention(q, k, v, attn_mask=mask[:, :, :T, :T])
+        
+        # SDPA with boolean mask
+        y = F.scaled_dot_product_attention(
+            q, k, v, 
+            attn_mask=mask[:, :, :T, :T]
+        )
         
         y = y.transpose(1, 2).contiguous().view(B, T, C)
         return self.c_proj(y)
+
+class SwiGLU_MLP(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        d_model, d_ff = config['d_model'], config['d_ff']
+        self.w_gate = nn.Linear(d_model, d_ff, bias=False)
+        self.w1 = nn.Linear(d_model, d_ff, bias=False)
+        self.w2 = nn.Linear(d_ff, d_model, bias=False)
+    def forward(self, x):
+        return self.w2(F.silu(self.w_gate(x)) * self.w1(x))
 
 class Block(nn.Module):
     def __init__(self, config):
@@ -61,16 +77,6 @@ class Block(nn.Module):
         x = x + self.attn(self.ln1(x), f_cos, f_sin, is_odd_stream=is_odd_stream)
         x = x + self.mlp(self.ln2(x))
         return x
-
-class SwiGLU_MLP(nn.Module):
-    def __init__(self, config):
-        super().__init__()
-        d_model, d_ff = config['d_model'], config['d_ff']
-        self.w_gate = nn.Linear(d_model, d_ff, bias=False)
-        self.w1 = nn.Linear(d_model, d_ff, bias=False)
-        self.w2 = nn.Linear(d_ff, d_model, bias=False)
-    def forward(self, x):
-        return self.w2(F.silu(self.w_gate(x)) * self.w1(x))
 
 class Neon232(nn.Module):
     def __init__(self, config, warm_embeddings=None):
@@ -101,10 +107,20 @@ class Neon232(nn.Module):
         if targets is not None:
             flat_logits = logits.view(-1, self.config['vocab_size'])
             flat_targets = targets.view(-1)
+            
+            # Loss Masking
             mask = torch.ones(T, device=x.device, dtype=torch.bool)
-            if is_odd_stream: mask[1::2] = False # Mask 1, 3, 5 -> Keep even targets (predicting odd tokens)
-            else: mask[0::2] = False # Mask 0, 2, 4 -> Keep odd targets (predicting even tokens)
+            if is_odd_stream:
+                # Mask B (Odd): Contamination at output 1, 3, 5... (predicting 2, 4, 6)
+                # Keep even outputs (predict odd tokens): 0, 2, 4...
+                mask[1::2] = False
+            else:
+                # Mask A (Even): Contamination at output 0, 2, 4... (predicting 1, 3, 5)
+                # Keep odd outputs (predict even tokens): 1, 3, 5...
+                mask[0::2] = False
+            
             batch_mask = mask.repeat(B)
             loss_full = F.cross_entropy(flat_logits, flat_targets, reduction='none')
+            # Critical: Ensure reduction and selection are exact
             loss = loss_full[batch_mask].mean()
         return logits, loss

@@ -21,20 +21,22 @@ class TurboSampler:
         self.seq_len = seq_len
         self.batch_size = batch_size
         self.device = device
+        
+        # Simple split for eval consistency
+        n = len(self.data)
+        self.train_data = self.data[:int(n*0.9)]
+        self.val_data = self.data[int(n*0.9):]
 
     def get_batch(self, split, parity_shift=False):
-        # We always keep y = x.clone() shifted by 1 relative to raw file for parity logic
-        # data[i:i+L] vs data[i+1:i+1+L]
-        data = self.data # simplified for demo, in real we split train/val
+        data = self.train_data if split == 'train' else self.val_data
         ix = torch.randint(len(data) - self.seq_len - 1, (self.batch_size,))
         x = torch.stack([torch.from_numpy((data[i:i+self.seq_len]).astype(np.int64)) for i in ix])
         
         if parity_shift:
-            # Physical shift for models that need it (Neon231)
-            # Targets are the original tokens
+            # Physical shift for neon231 (prepends Z-token internally)
             y = x.clone()
         else:
-            # Standard shifted targets for models that use internal masking (Neon232/233)
+            # Standard shifted targets for internal masking (neon232/233)
             y = torch.stack([torch.from_numpy((data[i+1:i+1+self.seq_len]).astype(np.int64)) for i in ix])
             
         return x.to(self.device), y.to(self.device)
@@ -45,7 +47,6 @@ def run_eval(model, sampler, model_name, steps=10):
     with torch.no_grad():
         for _ in range(steps):
             for strm in [False, True]:
-                # Neon231 needs sampler shift. 232/233 use mask shift.
                 s_shift = strm if model_name == "neon231" else False
                 vx, vy = sampler.get_batch('val', parity_shift=s_shift)
                 if model_name == "neon231":
@@ -91,23 +92,26 @@ def main():
         # Strict Alternation
         is_odd_stream = (step % 2 != 0)
         
-        # Logging check (mirror train.py: log at 0, 500... 9500)
+        # Step label E/O (Fixed length)
+        p_label = "O" if is_odd_stream else "E"
+        
+        # Logging (Match train.py exactly: Step X: Train Loss Y, Val Loss Z)
         if step % args.eval_interval == 0:
             val_loss = run_eval(model, sampler, args.model)
-            # Forward pass just for the train loss log
+            # Capture train loss for this specific step
             s_shift = is_odd_stream if args.model == "neon231" else False
-            x, y = sampler.get_batch('train', parity_shift=s_shift)
+            tx, ty = sampler.get_batch('train', parity_shift=s_shift)
             with torch.no_grad():
-                if args.model == "neon231": _, train_loss = model(x, y, parity_shift=is_odd_stream)
-                else: _, train_loss = model(x, y, is_odd_stream=is_odd_stream)
+                if args.model == "neon231": _, train_loss = model(tx, ty, parity_shift=is_odd_stream)
+                else: _, train_loss = model(tx, ty, is_odd_stream=is_odd_stream)
             
             log_msg = f"Step {step}: Train Loss {train_loss.item():.4f}, Val Loss {val_loss:.4f}"
             tqdm.write(log_msg)
             with open(log_path, "a") as f: f.write(log_msg + "\n")
 
-        # Training Step
-        sampler_shift = is_odd_stream if args.model == "neon231" else False
-        x, y = sampler.get_batch('train', parity_shift=sampler_shift)
+        # Training
+        s_shift = is_odd_stream if args.model == "neon231" else False
+        x, y = sampler.get_batch('train', parity_shift=s_shift)
         
         if args.model == "neon231":
             logits, loss = model(x, y, parity_shift=is_odd_stream)
@@ -118,7 +122,7 @@ def main():
         loss.backward()
         optimizer.step()
         
-        pbar.set_postfix(loss=f"{loss.item():.4f}", p=("Odd" if is_odd_stream else "Even"))
+        pbar.set_postfix(loss=f"{loss.item():.4f}", p=p_label)
 
     print("Training Complete.")
     os.makedirs("checkpoints", exist_ok=True)

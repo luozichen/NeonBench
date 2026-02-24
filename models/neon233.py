@@ -5,7 +5,7 @@ No padding <Z> tokens. Preserves KV purity for Token 0.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.neon015 import RMSNorm, apply_rotary_emb
+from models.neon185 import RMSNorm, apply_rotary_emb
 
 class StaggeredMHA(nn.Module):
     def __init__(self, config):
@@ -24,14 +24,13 @@ class StaggeredMHA(nn.Module):
         mask_a = torch.tril(torch.ones(self.block_size, self.block_size))
         for i in range(0, self.block_size, 2):
             if i + 1 < self.block_size: mask_a[i, i+1] = 1.0
-        self.register_buffer("mask_a", mask_a.view(1, 1, self.block_size, self.block_size))
+        self.register_buffer("mask_a", mask_a.view(1, 1, self.block_size, self.block_size).bool())
         
         # Mask B: Staggered/Odd Block Boundaries: (0), (1,2), (3,4), (5)
-        # KV-Safe: Token 0 is isolated.
         mask_b = torch.tril(torch.ones(self.block_size, self.block_size))
         for i in range(1, self.block_size - 1, 2):
             mask_b[i, i+1] = 1.0
-        self.register_buffer("mask_b", mask_b.view(1, 1, self.block_size, self.block_size))
+        self.register_buffer("mask_b", mask_b.view(1, 1, self.block_size, self.block_size).bool())
 
     def forward(self, x, freqs_cos, freqs_sin, is_odd_stream=False):
         B, T, C = x.shape
@@ -102,16 +101,12 @@ class Neon233(nn.Module):
         if targets is not None:
             flat_logits = logits.view(-1, self.config['vocab_size'])
             flat_targets = targets.view(-1)
-            # Loss Mask derives: 
-            # Logit i predicts Input i+1. If i sees i+1, mask it.
             mask = torch.ones(T, device=x.device, dtype=torch.bool)
-            if is_odd_stream: 
-                # Odd Stream (Mask B): Row 1 sees Col 2. Logit 1 contaminated.
-                # Pattern: Keep Even, Mask Odd.
+            if is_odd_stream:
+                # Mask B (Odd): Loss on 0, 2, 4... Keep even outputs.
                 mask[1::2] = False 
             else: 
-                # Even Stream (Mask A): Row 0 sees Col 1. Logit 0 contaminated.
-                # Pattern: Mask Even, Keep Odd.
+                # Mask A (Even): Loss on 1, 3, 5... Keep odd outputs.
                 mask[0::2] = False 
             batch_mask = mask.repeat(B)
             loss_full = F.cross_entropy(flat_logits, flat_targets, reduction='none')
