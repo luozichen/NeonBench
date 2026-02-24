@@ -227,8 +227,8 @@ def get_config(model_name):
                 config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Intent activation variants
             elif model_name == 'neon206':
                 config['d_model'], config['d_ff'] = 272, 1075 # 5.0M Standard SwiGLU (no conv MLP)
-            elif model_name in ['neon207', 'neon208', 'neon209', 'neon210', "neon222", "neon223", "neon224", "neon225", "neon226", "neon227", "neon228", "neon229"]:
-                config['d_model'], config['d_ff'] = 272, 1072 # 5.0M New Architecture Ideas
+            elif model_name in ['neon207', 'neon208', 'neon209', 'neon210', "neon222", "neon223", "neon224", "neon225", "neon226", "neon227", "neon228", "neon229", "neon230"]:
+                config['d_model'], config['d_ff'] = 272, 1072 # 5.0M New Architecture Ideas (neon230 will override d_model later)
             elif model_name == 'neon211':
                 config['d_model'], config['d_ff'] = 280, 1106 # 5.0M Reflective Attention (larger d_model, no I proj)
             elif model_name == 'neon212':
@@ -254,6 +254,8 @@ def get_config(model_name):
                 config['d_model'], config['d_ff'] = 272, 1062 # 5.0M Wide Kernel
             elif model_name == 'neon225':
                 config['d_model'], config['d_ff'] = 272, 804 # 5.0M MLP Synergy
+            elif model_name == 'neon229': config['d_model'], config['d_ff'] = 272, 1198 # Balanced
+            elif model_name == 'neon230': config['d_model'], config['n_head'], config['n_layers'], config['d_ff'] = 384, 6, 4, 1502 # 29M Progressive Momentum
             else: config['d_ff'] = 512
         
         return config
