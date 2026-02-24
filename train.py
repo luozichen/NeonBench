@@ -254,11 +254,10 @@ def get_config(model_name):
                 config['d_model'], config['d_ff'] = 272, 1062 # 5.0M Wide Kernel
             elif model_name == 'neon225':
                 config['d_model'], config['d_ff'] = 272, 804 # 5.0M MLP Synergy
-            elif model_name == 'neon229': config['d_model'], config['d_ff'] = 272, 1198 # Balanced
-            elif model_name == 'neon230': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1166 # 5M Pure Transformer Baseline
-            elif model_name == 'neon231': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 787  # 5M Quasi-Encoder Fusion (Layer 2)
-            elif model_name == 'neon232': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1166 # 5M Staircase (Block-Causal) Attention
-            elif model_name == 'neon233': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1166 # 5M Phantom Shift Mask
+            elif model_name == 'neon230': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed parity
+            elif model_name == 'neon231': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 834  # 5.0M non-embed parity
+            elif model_name == 'neon232': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed parity
+            elif model_name == 'neon233': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed parity
             else: config['d_ff'] = 512
         
         return config
