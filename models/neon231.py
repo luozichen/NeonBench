@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from models.neon015 import RMSNorm, apply_rotary_emb
 
-class StandardMHA(nn.Module):
+class BlockCausalMHA(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.n_head = config['n_head']
@@ -19,7 +19,7 @@ class StandardMHA(nn.Module):
         self.k_norm = RMSNorm(self.head_dim)
         self.c_proj = nn.Linear(d_model, d_model, bias=False)
 
-    def forward(self, x, freqs_cos, freqs_sin, mask=None):
+    def forward(self, x, freqs_cos, freqs_sin, mask):
         B, T, C = x.shape
         q, k, v = self.c_attn(x).split(C, dim=2)
         q = q.view(B, T, self.n_head, self.head_dim)
@@ -30,8 +30,8 @@ class StandardMHA(nn.Module):
         k = apply_rotary_emb(k, freqs_cos, freqs_sin)
         q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
         
-        # SDPA handles mask if provided, else is_causal
-        y = F.scaled_dot_product_attention(q, k, v, attn_mask=mask, is_causal=(mask is None))
+        # SDPA with explicit boolean staircase mask
+        y = F.scaled_dot_product_attention(q, k, v, attn_mask=mask[:, :, :T, :T])
         y = y.transpose(1, 2).contiguous().view(B, T, C)
         return self.c_proj(y)
 
@@ -65,11 +65,11 @@ class Block(nn.Module):
     def __init__(self, config, is_fusion=False):
         super().__init__()
         self.ln1 = RMSNorm(config['d_model'])
-        self.attn = StandardMHA(config)
+        self.attn = BlockCausalMHA(config)
         self.ln2 = RMSNorm(config['d_model'])
         self.mlp = FusionSplitMLP(config) if is_fusion else SwiGLU_MLP(config)
-    def forward(self, x, f_cos, f_sin):
-        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+    def forward(self, x, f_cos, f_sin, mask):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin, mask)
         x = x + self.mlp(self.ln2(x))
         return x
 
@@ -91,6 +91,14 @@ class Neon231(nn.Module):
         freqs = torch.outer(t, inv_freq)
         self.register_buffer("freqs_cos", torch.cos(freqs))
         self.register_buffer("freqs_sin", torch.sin(freqs))
+        
+        # Precompute the Pair-Causal Mask (Staircase)
+        # Pairs (0,1), (2,3), (4,5) are allowed to attend to each other
+        mask = torch.tril(torch.ones(config['block_size'], config['block_size']))
+        for i in range(0, config['block_size'], 2):
+            if i + 1 < config['block_size']: mask[i, i+1] = 1.0
+        # Register as boolean
+        self.register_buffer("causal_mask", mask.view(1, 1, config['block_size'], config['block_size']).bool())
 
     def forward(self, idx, targets=None, is_odd_stream=False):
         B, T = idx.shape
@@ -107,7 +115,7 @@ class Neon231(nn.Module):
         f_cos, f_sin = self.freqs_cos[:T], self.freqs_sin[:T]
         
         for block in self.blocks:
-            x = block(x, f_cos, f_sin)
+            x = block(x, f_cos, f_sin, self.causal_mask)
         logits = self.head(self.ln_f(x))
         
         loss = None

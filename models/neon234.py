@@ -1,13 +1,15 @@
-"""Neon233: KV-Safe Staggered Block-Causal Attention (5M class).
-Natively alternates between Mask A (Even) and Mask B (Staggered/Odd).
-No padding <Z> tokens. Preserves KV purity for Token 0.
+"""Neon234: SplitBrain Asymmetric Attention (5M class).
+Variation 1 of the Quasi-Encoder Lookahead (Phase 6).
+Half of the heads are strictly causal, forming a deep historical world model.
+Half of the heads use Staggered Lookahead masks (Mask A/B).
+This resolves the 'laziness' and 'dilution' bugs of neon233 by forcing causal rigor.
 """
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.neon185 import RMSNorm, apply_rotary_emb
+from models.neon015 import RMSNorm, apply_rotary_emb
 
-class StaggeredMHA(nn.Module):
+class SplitBrainMHA(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.n_head = config['n_head']
@@ -20,15 +22,17 @@ class StaggeredMHA(nn.Module):
         self.k_norm = RMSNorm(self.head_dim)
         self.c_proj = nn.Linear(d_model, d_model, bias=False)
         
-        # Mask A: Even Block Boundaries: (0,1), (2,3), (4,5)
-        # MUST start with full causal history (tril), then add lookahead
+        # 1. Strict Causal Mask (for Heads 0, 1)
+        causal_mask = torch.tril(torch.ones(self.block_size, self.block_size))
+        self.register_buffer("causal_mask", causal_mask.view(1, 1, self.block_size, self.block_size).bool())
+        
+        # 2. Mask A (Even Block Boundaries) for Heads 2, 3
         mask_a = torch.tril(torch.ones(self.block_size, self.block_size))
         for i in range(0, self.block_size, 2):
             if i + 1 < self.block_size: mask_a[i, i+1] = 1.0
         self.register_buffer("mask_a", mask_a.view(1, 1, self.block_size, self.block_size).bool())
         
-        # Mask B: Staggered/Odd Block Boundaries: (0), (1,2), (3,4), (5)
-        # MUST start with full causal history (tril), then add lookahead
+        # 3. Mask B (Odd Block Boundaries) for Heads 2, 3
         mask_b = torch.tril(torch.ones(self.block_size, self.block_size))
         for i in range(1, self.block_size - 1, 2):
             mask_b[i, i+1] = 1.0
@@ -36,29 +40,51 @@ class StaggeredMHA(nn.Module):
 
     def forward(self, x, freqs_cos, freqs_sin, is_odd_stream=False):
         B, T, C = x.shape
-        q_raw, k_raw, v_raw = self.c_attn(x).split(C, dim=2)
-        q = q_raw.view(B, T, self.n_head, self.head_dim)
-        k = k_raw.view(B, T, self.n_head, self.head_dim)
-        v = v_raw.view(B, T, self.n_head, self.head_dim)
+        q, k, v = self.c_attn(x).split(C, dim=2)
+        q = q.view(B, T, self.n_head, self.head_dim)
+        k = k.view(B, T, self.n_head, self.head_dim)
+        v = v.view(B, T, self.n_head, self.head_dim)
         
         q, k = self.q_norm(q), self.k_norm(k)
         q = apply_rotary_emb(q, freqs_cos, freqs_sin)
         k = apply_rotary_emb(k, freqs_cos, freqs_sin)
+        
         q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
         
-        mask = self.mask_b if is_odd_stream else self.mask_a
-        y = F.scaled_dot_product_attention(q, k, v, attn_mask=mask[:, :, :T, :T])
+        # Split into causal heads and lookahead heads
+        n_causal = self.n_head // 2
+        q_causal, q_look = q[:, :n_causal], q[:, n_causal:]
+        k_causal, k_look = k[:, :n_causal], k[:, n_causal:]
+        v_causal, v_look = v[:, :n_causal], v[:, n_causal:]
         
+        # Causal Attention
+        y_causal = F.scaled_dot_product_attention(
+            q_causal, k_causal, v_causal,
+            attn_mask=self.causal_mask[:, :, :T, :T]
+        )
+        
+        # Lookahead Attention
+        look_mask = self.mask_b if is_odd_stream else self.mask_a
+        y_look = F.scaled_dot_product_attention(
+            q_look, k_look, v_look,
+            attn_mask=look_mask[:, :, :T, :T]
+        )
+        
+        # Concat heads
+        y = torch.cat([y_causal, y_look], dim=1)
         y = y.transpose(1, 2).contiguous().view(B, T, C)
+        
         return self.c_proj(y)
 
 class SwiGLU_MLP(nn.Module):
     def __init__(self, config):
         super().__init__()
-        d_model, d_ff = config['d_model'], config['d_ff']
+        d_model = config['d_model']
+        d_ff = config['d_ff']
         self.w_gate = nn.Linear(d_model, d_ff, bias=False)
         self.w1 = nn.Linear(d_model, d_ff, bias=False)
         self.w2 = nn.Linear(d_ff, d_model, bias=False)
+
     def forward(self, x):
         return self.w2(F.silu(self.w_gate(x)) * self.w1(x))
 
@@ -66,21 +92,25 @@ class Block(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.ln1 = RMSNorm(config['d_model'])
-        self.attn = StaggeredMHA(config)
+        self.attn = SplitBrainMHA(config)
         self.ln2 = RMSNorm(config['d_model'])
         self.mlp = SwiGLU_MLP(config)
+
     def forward(self, x, f_cos, f_sin, is_odd_stream=False):
         x = x + self.attn(self.ln1(x), f_cos, f_sin, is_odd_stream=is_odd_stream)
         x = x + self.mlp(self.ln2(x))
         return x
 
-class Neon233(nn.Module):
+class Neon234(nn.Module):
     def __init__(self, config, warm_embeddings=None):
         super().__init__()
         self.config = config
         self.token_emb = nn.Embedding(config['vocab_size'], config['d_model'])
-        if warm_embeddings is not None: self.token_emb.weight.data.copy_(warm_embeddings)
+        if warm_embeddings is not None:
+             self.token_emb.weight.data.copy_(warm_embeddings)
+
         self.blocks = nn.ModuleList([Block(config) for _ in range(config['n_layers'])])
+
         self.ln_f = RMSNorm(config['d_model'])
         self.head = nn.Linear(config['d_model'], config['vocab_size'], bias=False)
         self.token_emb.weight = self.head.weight
@@ -95,14 +125,18 @@ class Neon233(nn.Module):
     def forward(self, idx, targets=None, is_odd_stream=False):
         B, T = idx.shape
         x = self.token_emb(idx)
+        
         f_cos, f_sin = self.freqs_cos[:T], self.freqs_sin[:T]
         for block in self.blocks:
             x = block(x, f_cos, f_sin, is_odd_stream=is_odd_stream)
+        
         logits = self.head(self.ln_f(x))
+        
         loss = None
         if targets is not None:
             flat_logits = logits.view(-1, self.config['vocab_size'])
             flat_targets = targets.view(-1)
+            
             mask = torch.ones(T, device=x.device, dtype=torch.bool)
             if is_odd_stream:
                 # Mask B (Odd): Loss on 0, 2, 4... Keep even outputs.
@@ -110,7 +144,9 @@ class Neon233(nn.Module):
             else: 
                 # Mask A (Even): Loss on 1, 3, 5... Keep odd outputs.
                 mask[0::2] = False 
+            
             batch_mask = mask.repeat(B)
             loss_full = F.cross_entropy(flat_logits, flat_targets, reduction='none')
             loss = loss_full[batch_mask].mean()
+            
         return logits, loss

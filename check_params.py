@@ -12,6 +12,7 @@ from models.neon230 import Neon230
 from models.neon231 import Neon231
 from models.neon232 import Neon232
 from models.neon233 import Neon233
+from models.neon234 import Neon234
 
 def count_non_embed(model):
     shared_params = model.token_emb.weight.numel()
@@ -39,3 +40,4 @@ check("neon230", Neon230, 1170)
 check("neon231", Neon231, 834)
 check("neon232", Neon232, 1170)
 check("neon233", Neon233, 1170)
+check("neon234", Neon234, 1170)
