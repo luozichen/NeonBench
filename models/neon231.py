@@ -101,6 +101,8 @@ class Neon231(nn.Module):
             # Shift the stream by prepending <Z> to create new pairs
             # This makes pairs (Z, X0), (X1, X2)... instead of (X0, X1), (X2, X3)...
             x = torch.cat([self.z_token.expand(B, -1, -1), x[:, :-1, :]], dim=1)
+            if targets is not None:
+                targets = torch.cat([targets.new_zeros(B, 1), targets[:, :-1]], dim=1)
         
         f_cos, f_sin = self.freqs_cos[:T], self.freqs_sin[:T]
         
