@@ -27,18 +27,12 @@ class TurboSampler:
         self.train_data = self.data[:int(n*0.9)]
         self.val_data = self.data[int(n*0.9):]
 
-    def get_batch(self, split, parity_shift=False):
+    def get_batch(self, split):
         data = self.train_data if split == 'train' else self.val_data
         ix = torch.randint(len(data) - self.seq_len - 1, (self.batch_size,))
         x = torch.stack([torch.from_numpy((data[i:i+self.seq_len]).astype(np.int64)) for i in ix])
-        
-        if parity_shift:
-            # Physical shift for neon231 (prepends Z-token internally)
-            y = x.clone()
-        else:
-            # Standard shifted targets for internal masking (neon232/233)
-            y = torch.stack([torch.from_numpy((data[i+1:i+1+self.seq_len]).astype(np.int64)) for i in ix])
-            
+        # Standard shifted targets for all models
+        y = torch.stack([torch.from_numpy((data[i+1:i+1+self.seq_len]).astype(np.int64)) for i in ix])
         return x.to(self.device), y.to(self.device)
 
 def run_eval(model, sampler, model_name, steps=10):
@@ -47,8 +41,7 @@ def run_eval(model, sampler, model_name, steps=10):
     with torch.no_grad():
         for _ in range(steps):
             for strm in [False, True]:
-                s_shift = strm if model_name == "neon231" else False
-                vx, vy = sampler.get_batch('val', parity_shift=s_shift)
+                vx, vy = sampler.get_batch('val')
                 _, loss = model(vx, vy, is_odd_stream=strm)
                 losses.append(loss.item())
     model.train()
@@ -96,8 +89,7 @@ def main():
         if step % args.eval_interval == 0:
             val_loss = run_eval(model, sampler, args.model)
             # Capture train loss for this specific step
-            s_shift = is_odd_stream if args.model == "neon231" else False
-            tx, ty = sampler.get_batch('train', parity_shift=s_shift)
+            tx, ty = sampler.get_batch('train')
             with torch.no_grad():
                 _, train_loss = model(tx, ty, is_odd_stream=is_odd_stream)
             
@@ -106,8 +98,7 @@ def main():
             with open(log_path, "a") as f: f.write(log_msg + "\n")
 
         # Training
-        s_shift = is_odd_stream if args.model == "neon231" else False
-        x, y = sampler.get_batch('train', parity_shift=s_shift)
+        x, y = sampler.get_batch('train')
         
         logits, loss = model(x, y, is_odd_stream=is_odd_stream)
             

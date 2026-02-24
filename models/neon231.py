@@ -95,8 +95,11 @@ class Neon231(nn.Module):
     def forward(self, idx, targets=None, is_odd_stream=False):
         B, T = idx.shape
         x = self.token_emb(idx)
+        
+        # Parity Switching for Fusion
         if is_odd_stream:
-            # Physical shift for neon231: prepend Z-token
+            # Shift the stream by prepending <Z> to create new pairs
+            # This makes pairs (Z, X0), (X1, X2)... instead of (X0, X1), (X2, X3)...
             x = torch.cat([self.z_token.expand(B, -1, -1), x[:, :-1, :]], dim=1)
         
         f_cos, f_sin = self.freqs_cos[:T], self.freqs_sin[:T]
@@ -104,15 +107,32 @@ class Neon231(nn.Module):
         for block in self.blocks:
             x = block(x, f_cos, f_sin)
         logits = self.head(self.ln_f(x))
+        
         loss = None
         if targets is not None:
             flat_logits = logits.view(-1, self.config['vocab_size'])
             flat_targets = targets.view(-1)
             
-            # 2N-Fusion Cheat Prevention:
-            # Mask indices 0, 2, 4... (where Logit i has seen Input i+1 via Fusion)
+            # Loss Masking for Fusion-Split MLP (Pair-Causality)
+            # Logit i has seen (Input i, Input i+1) via Fusion.
+            # Normal task: Logit i predicts Input i+1. -> CHEAT!
+            # We must mask every token that has seen its own target.
             mask = torch.ones(T, device=x.device, dtype=torch.bool)
-            mask[0::2] = False 
+            
+            if is_odd_stream:
+                # Sequence is: Z(0), X0(1), X1(2), X2(3)...
+                # Target is:  X0(0), X1(1), X2(2), X3(3)... (standard shifted targets)
+                # Pair (Z, X0) at index 0,1. Logit 0 predicts X0? Cheat!
+                # Pair (X1, X2) at index 2,3. Logit 2 predicts X2? Cheat!
+                # Keep odd indices (1, 3, 5...)
+                mask[0::2] = False
+            else:
+                # Sequence is: X0(0), X1(1), X2(2), X3(3)...
+                # Target is:  X1(0), X2(1), X3(2), X4(3)...
+                # Pair (X0, X1) at index 0,1. Logit 0 predicts X1? Cheat!
+                # Pair (X2, X3) at index 2,3. Logit 2 predicts X3? Cheat!
+                # Keep odd indices (1, 3, 5...)
+                mask[0::2] = False
             
             batch_mask = mask.repeat(B)
             loss_full = F.cross_entropy(flat_logits, flat_targets, reduction='none')
