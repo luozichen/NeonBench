@@ -1,5 +1,5 @@
-"""Progressive Trainer for Neon230 (29M Momentum Model) - Self-Contained.
-Optimized for the NeonBench server environment.
+"""Progressive Trainer for Neon230 (8-layer Progressive Momentum Model).
+Refactored for 8 layers and absolute stability.
 """
 import argparse
 import os
@@ -12,6 +12,9 @@ from tqdm import tqdm
 import math
 import numpy as np
 from tokenizers import Tokenizer
+
+# Fix torch.compile re-compilation loops
+torch._dynamo.config.cache_size_limit = 64
 
 # Project Imports
 sys.path.append(os.getcwd())
@@ -66,7 +69,7 @@ class Muon(torch.optim.Optimizer):
                 p.add_(g.view_as(p), alpha=-group["lr"] * scale)
 
 # ============================================================
-# 2. Data Sampler (TurboSampler - Efficient memmap)
+# 2. Data Sampler (TurboSampler)
 # ============================================================
 class TurboSampler:
     def __init__(self, data_path, batch_size, seq_len, device):
@@ -75,7 +78,6 @@ class TurboSampler:
         self.seq_len = seq_len
         self.device = device
         self.n_total = len(self.data)
-        # 99% train, 1% val
         self.train_data = self.data[:int(self.n_total * 0.99)]
         self.val_data = self.data[int(self.n_total * 0.99):]
 
@@ -87,18 +89,17 @@ class TurboSampler:
         return x.to(self.device), y.to(self.device)
 
 # ============================================================
-# 3. Main Training Execution
+# 3. Main Training Loop
 # ============================================================
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 def main():
-    parser = argparse.ArgumentParser(description="Neon230 Progressive Trainer")
+    parser = argparse.ArgumentParser(description="Neon230 Progressive Trainer (8L)")
     parser.add_argument("--data", type=str, required=True)
     parser.add_argument("--tokenizer", type=str, required=True)
     parser.add_argument("--steps", type=int, default=30000)
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--out_dir", type=str, default="checkpoints/neon230")
-    parser.add_argument("--eval_interval", type=int, default=250)
     args = parser.parse_args()
 
     DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -106,22 +107,18 @@ def main():
     os.makedirs("logs", exist_ok=True)
     log_path = "logs/neon230_training_log.txt"
 
-    # 1. Setup Data & Config
     tokenizer = Tokenizer.from_file(args.tokenizer)
     sampler = TurboSampler(args.data, batch_size=args.batch_size, seq_len=256, device=DEVICE)
     
     config = get_config("neon230")
     config['vocab_size'] = tokenizer.get_vocab_size()
-    config['batch_size'] = args.batch_size
     
-    # 2. Initialize Model
-    print(f"Initializing Neon230 (29M Momentum)...")
+    print(f"Initializing Neon230 (8 layers, {config['d_ff']} d_ff)...")
     model = Neon230(config).to(DEVICE)
     
-    print("Compiling model for stability...")
+    print("Compiling model (using cache_size_limit=64)...")
     model = torch.compile(model)
     
-    # 3. Optimizers
     muon_params = []
     adam_params = []
     for name, p in model.named_parameters():
@@ -130,11 +127,11 @@ def main():
         else:
             adam_params.append(p)
             
-    optimizer_muon = Muon(muon_params, lr=0.01) # Baseline Muon LR
+    optimizer_muon = Muon(muon_params, lr=0.01)
     optimizer_adam = torch.optim.AdamW(adam_params, lr=3e-4, weight_decay=0.1)
     scaler = GradScaler()
 
-    # 4. Growth Schedule (Masking-based set_kernel_size)
+    # Growth Schedule (Extended to 30k)
     growth_thresholds = {
         15000: 3, 20000: 5, 23000: 7, 25000: 9, 26000: 11,
         27000: 13, 28000: 15, 28500: 17, 29000: 19, 29500: 21
@@ -142,28 +139,29 @@ def main():
     current_k = 1
     model.set_kernel_size(current_k)
 
-    # 5. Training Loop
     model.train()
     pbar = tqdm(range(args.steps), desc="Neon230")
     for step in pbar:
-        # Growth Check
         if step in growth_thresholds:
             target_k = growth_thresholds[step]
             print(f"\n[GROWTH] Step {step}: k={current_k} -> k={target_k}")
             model.set_kernel_size(target_k)
             current_k = target_k
-            torch.cuda.empty_cache() # Essential for torch.compile stability
+            torch.cuda.empty_cache() 
         
-        # Linear LR Decay
+        # Manual Linear Decay
         lr_scale = 1.0 - (step / args.steps)
         for g in optimizer_muon.param_groups: g['lr'] = 0.01 * lr_scale
         for g in optimizer_adam.param_groups: g['lr'] = 0.0003 * lr_scale
             
         x, y = sampler.get_batch('train')
-        
         with autocast('cuda'):
             logits, loss = model(x, y)
         
+        if torch.isnan(loss):
+            print(f"\nCRITICAL: NaN Loss detected at step {step}!")
+            break
+
         optimizer_muon.zero_grad(set_to_none=True)
         optimizer_adam.zero_grad(set_to_none=True)
         
@@ -178,24 +176,10 @@ def main():
         
         pbar.set_postfix({"loss": f"{loss.item():.4f}", "k": current_k})
         
-        # Eval
-        if (step + 1) % args.eval_interval == 0:
-            model.eval()
-            with torch.no_grad():
-                v_iters = 50
-                vl = torch.zeros(v_iters)
-                for i in range(v_iters):
-                    vx, vy = sampler.get_batch('val')
-                    _, vb = model(vx, vy)
-                    vl[i] = vb.item()
-                val_loss = vl.mean()
-                msg = f"Neon230 | Step {step+1} (k={current_k}): Train {loss.item():.4f}, Val {val_loss.item():.4f}"
-                tqdm.write(msg)
-                with open(log_path, "a") as f: f.write(msg + "\n")
-            model.train()
+        if (step + 1) % 500 == 0:
             torch.save(model.state_dict(), os.path.join(args.out_dir, "latest.pth"))
 
-    print("\nTRAINING COMPLETE!")
+    print("\nTRAINING DONE.")
     torch.save(model.state_dict(), os.path.join(args.out_dir, "neon230_final.pth"))
 
 if __name__ == "__main__":

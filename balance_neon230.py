@@ -11,11 +11,11 @@ def count_parameters(model):
 
 vocab_size = 50257
 cfg213 = get_config("neon213")
-cfg213['vocab_size'] = vocab_size
+cfg213.update({'vocab_size': vocab_size, 'n_layers': 8})
 m213 = Neon213(cfg213)
 p213 = count_parameters(m213)
 
-print(f"Neon213 (20M Target) Params: {p213:,}")
+print(f"Neon213 (8-layer Reference) Params: {p213:,}")
 
 cfg230 = get_config("neon230")
 cfg230.update({
@@ -23,7 +23,7 @@ cfg230.update({
     'd_model': 384,
     'n_head': 6,
     'd_ff': 1536,
-    'n_layers': 4
+    'n_layers': 8
 })
 m230 = Neon230(cfg230)
 p230 = count_parameters(m230)

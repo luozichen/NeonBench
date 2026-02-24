@@ -255,7 +255,7 @@ def get_config(model_name):
             elif model_name == 'neon225':
                 config['d_model'], config['d_ff'] = 272, 804 # 5.0M MLP Synergy
             elif model_name == 'neon229': config['d_model'], config['d_ff'] = 272, 1198 # Balanced
-            elif model_name == 'neon230': config['d_model'], config['n_head'], config['n_layers'], config['d_ff'] = 384, 6, 4, 1502 # 29M Progressive Momentum
+            elif model_name == 'neon230': config['d_model'], config['n_head'], config['n_layers'], config['d_ff'] = 384, 6, 8, 1502 # 39M Progressive Momentum (V2)
             else: config['d_ff'] = 512
         
         return config
