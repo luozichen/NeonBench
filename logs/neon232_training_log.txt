@@ -1,3 +1,0 @@
-Step 500: Val Loss 0.0570
-Step 1000: Val Loss 0.0528
-Step 1500: Val Loss 0.0523
