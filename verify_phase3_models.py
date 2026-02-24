@@ -6,7 +6,7 @@ import os
 sys.path.append(os.getcwd())
 from train import get_config
 
-models = ["neon226", "neon227", "neon228", "neon229", "neon230", "neon231"]
+models = ["neon226", "neon227", "neon228", "neon229", "neon230", "neon231", "neon232"]
 
 print("--- Phase 3 & 4 Discovery Model Logic Verification ---")
 print(f"{'Model':<10} | {'Status':<10} | {'Message'}")
