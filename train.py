@@ -96,7 +96,7 @@ def get_config(model_name):
             config['d_ff'] = 592
         
         # Frankenstein Configs
-        if model_name in [f"neon{i:03d}" for i in range(61, 230)]:
+        if model_name in [f"neon{i:03d}" for i in range(61, 235)]:
             config['d_model'], config['n_layers'], config['n_head'] = 256, 4, 4
             if model_name == 'neon061': config['d_ff'] = 2736 # ~10M
             elif model_name == 'neon066': config['d_ff'] = 172 # match neon016
@@ -227,8 +227,8 @@ def get_config(model_name):
                 config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Intent activation variants
             elif model_name == 'neon206':
                 config['d_model'], config['d_ff'] = 272, 1075 # 5.0M Standard SwiGLU (no conv MLP)
-            elif model_name in ['neon207', 'neon208', 'neon209', 'neon210', "neon222", "neon223", "neon224", "neon225", "neon226", "neon227", "neon228", "neon229", "neon230", "neon231", "neon232", "neon233"]:
-                config['d_model'], config['d_ff'] = 272, 1072 # 5.0M New Architecture Ideas (neon230 will override d_model later)
+            elif model_name in ['neon207', 'neon208', 'neon209', 'neon210', "neon222", "neon223", "neon224", "neon225", "neon226", "neon227", "neon228", "neon229"]:
+                config['d_model'], config['d_ff'] = 272, 1072 # 5.0M New Architecture Ideas
             elif model_name == 'neon211':
                 config['d_model'], config['d_ff'] = 280, 1106 # 5.0M Reflective Attention (larger d_model, no I proj)
             elif model_name == 'neon212':

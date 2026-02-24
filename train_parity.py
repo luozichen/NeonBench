@@ -80,32 +80,43 @@ def main():
     pbar = tqdm(range(args.steps), desc=args.model)
     for step in pbar:
         # Alternate Parity
-        parity_shift = (step % 2 == 1)
+        is_odd_stream = (step % 2 == 1)
         
         # Linear Decay
         lr = args.lr * (1.0 - step / args.steps)
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
             
-        x, y = sampler.get_batch('train', parity_shift=parity_shift)
+        # neon231/232 use physical shift (parity_shift=True)
+        # neon233 uses mask-based shift (parity_shift=False in sampler, is_odd_stream=True in model)
+        sampler_shift = is_odd_stream if args.model in ["neon231", "neon232"] else False
         
-        logits, loss = model(x, y, parity_shift=parity_shift)
+        x, y = sampler.get_batch('train', parity_shift=sampler_shift)
+        
+        if args.model == "neon233":
+            logits, loss = model(x, y, is_odd_stream=is_odd_stream)
+        else:
+            logits, loss = model(x, y, parity_shift=is_odd_stream)
         
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         
-        pbar.set_postfix(loss=f"{loss.item():.4f}", p=("Even" if not parity_shift else "Odd"))
+        pbar.set_postfix(loss=f"{loss.item():.4f}", p=("Odd" if is_odd_stream else "Even"))
         
         if (step + 1) % 500 == 0:
             model.eval()
             val_losses = []
             with torch.no_grad():
                 for _ in range(10):
-                    for p_s in [False, True]:
-                        vx, vy = sampler.get_batch('val', parity_shift=p_s)
-                        _, vl = model(vx, vy, parity_shift=p_s)
+                    for strm in [False, True]:
+                        s_shift = strm if args.model in ["neon231", "neon232"] else False
+                        vx, vy = sampler.get_batch('val', parity_shift=s_shift)
+                        if args.model == "neon233":
+                            _, vl = model(vx, vy, is_odd_stream=strm)
+                        else:
+                            _, vl = model(vx, vy, parity_shift=strm)
                         val_losses.append(vl.item())
             val_loss = sum(val_losses) / len(val_losses)
             msg = f"Step {step+1}: Val Loss {val_loss:.4f}"

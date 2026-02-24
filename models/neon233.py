@@ -1,14 +1,14 @@
-"""Neon233: Phantom Shift Mask Model (5M class).
-Implements a 1-step quasi-encoder lookahead using a specialized mask.
-The mask interleaves a 'phantom shift' on alternating rows by masking out index 0.
-This allows bidirectional attention within 2x2 blocks while simulating dual-parity streams.
+"""Neon233: Staggered Block-Causal Attention Model (5M class).
+Implements a 1-step quasi-encoder lookahead via alternating masks.
+Natively handles Even ((0,1),(2,3)) and Odd ((0),(1,2),(3,4)) alignment.
+No <Z> token or physical shift required.
 """
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models.neon015 import RMSNorm, apply_rotary_emb
 
-class PhantomShiftMHA(nn.Module):
+class StaggeredMHA(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.n_head = config['n_head']
@@ -21,20 +21,21 @@ class PhantomShiftMHA(nn.Module):
         self.k_norm = RMSNorm(self.head_dim)
         self.c_proj = nn.Linear(d_model, d_model, bias=False)
         
-        # Precompute Phantom Shift Mask
-        # Base: Block-Causal (2x2)
-        mask = torch.tril(torch.ones(self.block_size, self.block_size))
+        # Precompute Mask A: Even Blocks (0,1), (2,3), ...
+        mask_a = torch.tril(torch.ones(self.block_size, self.block_size))
         for i in range(0, self.block_size, 2):
             if i + 1 < self.block_size:
-                mask[i, i+1] = 1.0 # T_n sees T_n+1 (bidirectional in block)
+                mask_a[i, i+1] = 1.0
+        self.register_buffer("mask_a", mask_a.view(1, 1, self.block_size, self.block_size))
         
-        # Phantom Shift: Mask out index 0 for all even rows
-        for i in range(0, self.block_size, 2):
-            mask[i, 0] = 0.0
-            
-        self.register_buffer("phantom_mask", mask.view(1, 1, self.block_size, self.block_size))
+        # Precompute Mask B: Staggered Blocks (0), (1,2), (3,4), (5)
+        mask_b = torch.tril(torch.ones(self.block_size, self.block_size))
+        # Group (1,2), (3,4)... i starts at 1
+        for i in range(1, self.block_size - 1, 2):
+            mask_b[i, i+1] = 1.0 # Token i sees i+1
+        self.register_buffer("mask_b", mask_b.view(1, 1, self.block_size, self.block_size))
 
-    def forward(self, x, freqs_cos, freqs_sin):
+    def forward(self, x, freqs_cos, freqs_sin, is_odd_stream=False):
         B, T, C = x.shape
         q_raw, k_raw, v_raw = self.c_attn(x).split(C, dim=2)
         
@@ -48,11 +49,12 @@ class PhantomShiftMHA(nn.Module):
         
         q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
         
-        # Apply Phantom Shift Mask
-        # attn_mask in SDPA: 1.0 for keep, 0.0 for mask (or bool)
+        # Select Mask
+        mask = self.mask_b if is_odd_stream else self.mask_a
+        
         y = F.scaled_dot_product_attention(
             q, k, v, 
-            attn_mask=self.phantom_mask[:, :, :T, :T]
+            attn_mask=mask[:, :, :T, :T]
         )
         
         y = y.transpose(1, 2).contiguous().view(B, T, C)
@@ -73,11 +75,11 @@ class Block(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.ln1 = RMSNorm(config['d_model'])
-        self.attn = PhantomShiftMHA(config)
+        self.attn = StaggeredMHA(config)
         self.ln2 = RMSNorm(config['d_model'])
         self.mlp = SwiGLU_MLP(config)
-    def forward(self, x, f_cos, f_sin):
-        x = x + self.attn(self.ln1(x), f_cos, f_sin)
+    def forward(self, x, f_cos, f_sin, is_odd_stream=False):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin, is_odd_stream=is_odd_stream)
         x = x + self.mlp(self.ln2(x))
         return x
 
@@ -102,24 +104,31 @@ class Neon233(nn.Module):
         self.register_buffer("freqs_cos", torch.cos(freqs))
         self.register_buffer("freqs_sin", torch.sin(freqs))
 
-    def forward(self, idx, targets=None):
+    def forward(self, idx, targets=None, is_odd_stream=False):
         B, T = idx.shape
         x = self.token_emb(idx)
         
+        f_cos = self.freqs_cos[:T]
+        f_sin = self.freqs_sin[:T]
+        
         for block in self.blocks:
-            x = block(x, self.freqs_cos, self.freqs_sin)
+            x = block(x, f_cos, f_sin, is_odd_stream=is_odd_stream)
             
         logits = self.head(self.ln_f(x))
         
         loss = None
         if targets is not None:
-            # Drop-Half Loss Mask: Only calculate on the second token of every block
             flat_logits = logits.view(-1, self.config['vocab_size'])
             flat_targets = targets.view(-1)
             
-            # Mask: True for tokens at indices 1, 3, 5... (second in 2x2 block)
+            # Loss Masking
             mask = torch.ones(T, device=x.device, dtype=torch.bool)
-            mask[0::2] = False
+            if is_odd_stream:
+                # Mask B (Staggered): Loss on 0, 2, 4... Mask 1, 3, 5...
+                mask[1::2] = False
+            else:
+                # Mask A (Even): Loss on 1, 3, 5... Mask 0, 2, 4...
+                mask[0::2] = False
             
             batch_mask = mask.repeat(B)
             loss_full = F.cross_entropy(flat_logits, flat_targets, reduction='none')

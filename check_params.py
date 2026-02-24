@@ -35,7 +35,7 @@ def check(name, ModelClass, d_ff):
     print(f"{name} (d_ff={d_ff}) Non-Embed: {p:,} (Diff: {p - target})")
 
 print(f"Target Non-Embed (Neon185): {target:,}\n")
-check("neon230", Neon230, 1169)
+check("neon230", Neon230, 1170)
 check("neon231", Neon231, 834)
-check("neon232", Neon232, 1169)
-check("neon233", Neon233, 1169)
+check("neon232", Neon232, 1170)
+check("neon233", Neon233, 1170)
