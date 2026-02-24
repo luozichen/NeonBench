@@ -195,7 +195,7 @@ def get_config(model_name):
             elif model_name == 'neon165': config['n_layers'], config['d_ff'] = 8, 207 # Res-Gated Silent
             elif model_name == 'neon166': config['n_layers'], config['d_ff'] = 8, 205 # Deep Spectral
             elif model_name == 'neon167': config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Non-Embed Class
-            elif model_name in ['neon183', 'neon184', 'neon185', 'neon186', 'neon187']: config['d_model'], config['d_ff'] = 272, 1072 # neon167 RoPE Variants
+            elif model_name in ['neon183', 'neon184', 'neon185', 'neon186', 'neon187', 'neon216']: config['d_model'], config['d_ff'] = 272, 1072 # neon167 RoPE Variants
             elif model_name in ['neon168', 'neon169', 'neon170', 'neon171', 'neon172', 'neon173', 'neon179', 'neon180', 'neon181', 'neon182']: 
                 config['d_model'], config['d_ff'] = 272, 1072 # 5.0M MHI Class
             elif model_name in ['neon174', 'neon175', 'neon176']:
@@ -228,6 +228,16 @@ def get_config(model_name):
                 config['d_model'], config['d_ff'] = 280, 1106 # 5.0M Reflective Attention (larger d_model, no I proj)
             elif model_name == 'neon212':
                 config['d_model'], config['n_layers'], config['d_ff'] = 240, 5, 981 # 5.0M 5-Layer neon185 (depth test)
+            elif model_name == 'neon217':
+                config['d_model'], config['d_ff'] = 272, 1200 # 5.0M Full Rank Intent Stream
+            elif model_name == 'neon218':
+                config['d_model'], config['d_ff'] = 272, 1264 # 5.0M Bottleneck Intent Stream
+            elif model_name == 'neon219':
+                config['d_model'], config['d_ff'] = 272, 1265 # 5.0M Universal Shared Stream
+            elif model_name == 'neon220':
+                config['d_model'], config['d_ff'] = 272, 1199 # 5.0M Momentum Decay Stream
+            elif model_name == 'neon221':
+                config['d_model'], config['d_ff'] = 272, 1114 # 5.0M Cross-Linked Feedback Stream
             elif model_name == 'neon213':
                 config['d_model'], config['n_head'], config['n_layers'], config['d_ff'] = 384, 6, 4, 1536 # ~20M Growable (uses train_growth.py)
                 config['conv_k'], config['mlp_k'] = 1, 1
