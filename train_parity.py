@@ -49,10 +49,7 @@ def run_eval(model, sampler, model_name, steps=10):
             for strm in [False, True]:
                 s_shift = strm if model_name == "neon231" else False
                 vx, vy = sampler.get_batch('val', parity_shift=s_shift)
-                if model_name == "neon231":
-                    _, loss = model(vx, vy, parity_shift=strm)
-                else:
-                    _, loss = model(vx, vy, is_odd_stream=strm)
+                _, loss = model(vx, vy, is_odd_stream=strm)
                 losses.append(loss.item())
     model.train()
     return sum(losses) / len(losses)
@@ -102,8 +99,7 @@ def main():
             s_shift = is_odd_stream if args.model == "neon231" else False
             tx, ty = sampler.get_batch('train', parity_shift=s_shift)
             with torch.no_grad():
-                if args.model == "neon231": _, train_loss = model(tx, ty, parity_shift=is_odd_stream)
-                else: _, train_loss = model(tx, ty, is_odd_stream=is_odd_stream)
+                _, train_loss = model(tx, ty, is_odd_stream=is_odd_stream)
             
             log_msg = f"Step {step}: Train Loss {train_loss.item():.4f}, Val Loss {val_loss:.4f}"
             tqdm.write(log_msg)
@@ -113,10 +109,7 @@ def main():
         s_shift = is_odd_stream if args.model == "neon231" else False
         x, y = sampler.get_batch('train', parity_shift=s_shift)
         
-        if args.model == "neon231":
-            logits, loss = model(x, y, parity_shift=is_odd_stream)
-        else:
-            logits, loss = model(x, y, is_odd_stream=is_odd_stream)
+        logits, loss = model(x, y, is_odd_stream=is_odd_stream)
             
         optimizer.zero_grad(set_to_none=True)
         loss.backward()

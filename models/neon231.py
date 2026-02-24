@@ -50,13 +50,13 @@ class FusionSplitMLP(nn.Module):
     def __init__(self, config):
         super().__init__()
         d_model = config['d_model']
-        # 2N space (544 if N=272)
+        # 2N space (544 if N=272). Calibrated for 5.0M non-embed parity.
         self.w_gate = nn.Linear(2 * d_model, 4 * d_model, bias=False)
         self.w1 = nn.Linear(2 * d_model, 4 * d_model, bias=False)
         self.w2 = nn.Linear(4 * d_model, 2 * d_model, bias=False)
     def forward(self, x):
         B, T, N = x.shape
-        # Sequence length must be even (handled by trainer/padding)
+        # Sequence length must be even
         x_fused = x.view(B, T // 2, 2 * N)
         y_fused = self.w2(F.silu(self.w_gate(x_fused)) * self.w1(x_fused))
         return y_fused.view(B, T, N)
@@ -92,15 +92,14 @@ class Neon231(nn.Module):
         self.register_buffer("freqs_cos", torch.cos(freqs))
         self.register_buffer("freqs_sin", torch.sin(freqs))
 
-    def forward(self, idx, targets=None, parity_shift=False):
+    def forward(self, idx, targets=None, is_odd_stream=False):
         B, T = idx.shape
         x = self.token_emb(idx)
-        if parity_shift:
+        if is_odd_stream:
+            # Physical shift for neon231: prepend Z-token
             x = torch.cat([self.z_token.expand(B, -1, -1), x[:, :-1, :]], dim=1)
         
-        # RoPE freqs (offset by shift)
-        f_cos = self.freqs_cos[:T]
-        f_sin = self.freqs_sin[:T]
+        f_cos, f_sin = self.freqs_cos[:T], self.freqs_sin[:T]
         
         for block in self.blocks:
             x = block(x, f_cos, f_sin)
@@ -109,8 +108,12 @@ class Neon231(nn.Module):
         if targets is not None:
             flat_logits = logits.view(-1, self.config['vocab_size'])
             flat_targets = targets.view(-1)
+            
+            # 2N-Fusion Cheat Prevention:
+            # Mask indices 0, 2, 4... (where Logit i has seen Input i+1 via Fusion)
             mask = torch.ones(T, device=x.device, dtype=torch.bool)
-            mask[0::2] = False # Mask start of each block
+            mask[0::2] = False 
+            
             batch_mask = mask.repeat(B)
             loss_full = F.cross_entropy(flat_logits, flat_targets, reduction='none')
             loss = loss_full[batch_mask].mean()
