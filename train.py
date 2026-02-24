@@ -241,6 +241,14 @@ def get_config(model_name):
             elif model_name == 'neon213':
                 config['d_model'], config['n_head'], config['n_layers'], config['d_ff'] = 384, 6, 4, 1536 # ~20M Growable (uses train_growth.py)
                 config['conv_k'], config['mlp_k'] = 1, 1
+            elif model_name == 'neon222':
+                config['d_model'], config['d_ff'] = 272, 981 # 5.0M Gated Decay
+            elif model_name == 'neon223':
+                config['d_model'], config['d_ff'] = 272, 1072 # 5.0M Slow RoPE
+            elif model_name == 'neon224':
+                config['d_model'], config['d_ff'] = 272, 1062 # 5.0M Wide Kernel
+            elif model_name == 'neon225':
+                config['d_model'], config['d_ff'] = 272, 804 # 5.0M MLP Synergy
             else: config['d_ff'] = 512
         
         return config
