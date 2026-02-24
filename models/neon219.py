@@ -117,7 +117,7 @@ class Neon219(nn.Module):
         B, T, D = x.shape
         z_i = torch.zeros(B, T, D, device=x.device)
         for block in self.blocks:
-            x, z_i = block(x, f_cos, f_sin, z_i, self.shared_w_delta.weight, self.shared_conv_i)
+            x, z_i = block(x, self.freqs_cos, self.freqs_sin, z_i, self.shared_w_delta.weight, self.shared_conv_i)
         logits = self.head(self.ln_f(x))
         loss = F.cross_entropy(logits.view(-1, self.config['vocab_size']), targets.view(-1)) if targets is not None else None
         return logits, loss
