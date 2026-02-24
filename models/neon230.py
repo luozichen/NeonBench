@@ -1,116 +1,68 @@
-"""Neon230: Progressive Momentum Model (V2 - 8 Layers)
-Similar to Neon213 (8 layers, 20M+ scale) but with Momentum Decay Stream.
-Added RMSNorm to intent stream for NaN-protection at 8-layer depth.
+"""Neon230: Pure Transformer Baseline (5M class).
+Same as neon185 but with all convolutions and intent logic removed.
+Maintains RoPE, RMSNorm, and standard SwiGLU MLP.
 """
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models.neon015 import RMSNorm, apply_rotary_emb
 
-class ProgressiveConv1d(nn.Module):
-    def __init__(self, d_model, max_k=21):
-        super().__init__()
-        self.max_k = max_k
-        self.register_buffer('current_k', torch.tensor(1, dtype=torch.long))
-        self.conv = nn.Conv1d(d_model, d_model, kernel_size=max_k, groups=d_model, bias=False)
-        nn.init.zeros_(self.conv.weight)
-        self.conv.weight.data[:, :, -1] = 1.0 # Identity init
-        
-    def set_k(self, k):
-        self.current_k.fill_(min(k, self.max_k))
-
-    def forward(self, x_t): 
-        mask = torch.zeros_like(self.conv.weight)
-        mask[:, :, -self.current_k:] = 1.0
-        effective_weight = self.conv.weight * mask
-        pad = self.max_k - 1
-        return F.conv1d(F.pad(x_t, (pad, 0)), effective_weight, groups=x_t.size(1))
-
-class FullMultiHeadConvAttentionProgressiveMomentum(nn.Module):
+class StandardMHA(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.n_head = config['n_head']
         self.head_dim = config['d_model'] // config['n_head']
         d_model = config['d_model']
         
+        # Standard Q, K, V projection
         self.c_attn = nn.Linear(d_model, 3 * d_model, bias=False)
-        self.w_delta = nn.Linear(d_model, d_model, bias=False)
-        self.alpha_raw = nn.Parameter(torch.zeros(d_model))
-        
-        # Stability: Norm the inputs to the intent stream
-        self.delta_norm = RMSNorm(d_model)
-        self.intent_norm = RMSNorm(d_model)
-        
-        self.conv_q = ProgressiveConv1d(d_model, max_k=21)
-        self.conv_k = ProgressiveConv1d(d_model, max_k=21)
-        self.conv_v = ProgressiveConv1d(d_model, max_k=21)
-        self.conv_i = ProgressiveConv1d(d_model, max_k=21)
-        
         self.q_norm = RMSNorm(self.head_dim)
         self.k_norm = RMSNorm(self.head_dim)
         self.c_proj = nn.Linear(d_model, d_model, bias=False)
 
-    def forward(self, x, z_i, freqs_cos, freqs_sin):
+    def forward(self, x, freqs_cos, freqs_sin):
         B, T, C = x.shape
-        q_raw, k_raw, v_raw = self.c_attn(x).split(C, dim=2)
-        
-        q = self.conv_q(q_raw.transpose(1, 2)).transpose(1, 2)
-        k = self.conv_k(k_raw.transpose(1, 2)).transpose(1, 2)
-        v = self.conv_v(v_raw.transpose(1, 2)).transpose(1, 2)
-        
-        # Intent Stream Update with Momentum Decay
-        # Safety: Norm the delta and the state
-        delta = self.w_delta(self.delta_norm(x))
-        alpha = torch.sigmoid(self.alpha_raw)
-        z_i_new = alpha * z_i + (1.0 - alpha) * delta
-        
-        intent = self.conv_i(self.intent_norm(z_i_new).transpose(1, 2)).transpose(1, 2)
+        q, k, v = self.c_attn(x).split(C, dim=2)
         
         q = q.view(B, T, self.n_head, self.head_dim)
         k = k.view(B, T, self.n_head, self.head_dim)
         v = v.view(B, T, self.n_head, self.head_dim)
-        intent = intent.view(B, T, self.n_head, self.head_dim)
         
         q, k = self.q_norm(q), self.k_norm(k)
         q = apply_rotary_emb(q, freqs_cos, freqs_sin)
         k = apply_rotary_emb(k, freqs_cos, freqs_sin)
         
         q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
-        intent = intent.transpose(1, 2)
         
-        attn_out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
-        y = torch.sigmoid(intent) * attn_out
+        # Standard causal attention
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
         y = y.transpose(1, 2).contiguous().view(B, T, C)
-        return self.c_proj(y), z_i_new
+        return self.c_proj(y)
 
-class ProgressiveHydraMLP(nn.Module):
+class SwiGLU_MLP(nn.Module):
     def __init__(self, config):
         super().__init__()
         d_model = config['d_model']
         d_ff = config['d_ff']
-        self.conv_gate = ProgressiveConv1d(d_model, max_k=21)
-        self.c_gate_proj = nn.Linear(d_model, d_ff, bias=False)
+        self.w_gate = nn.Linear(d_model, d_ff, bias=False)
         self.w1 = nn.Linear(d_model, d_ff, bias=False)
         self.w2 = nn.Linear(d_ff, d_model, bias=False)
 
     def forward(self, x):
-        c_gate = self.conv_gate(x.transpose(1, 2)).transpose(1, 2)
-        gate = F.silu(self.c_gate_proj(c_gate))
-        return self.w2(gate * self.w1(x))
+        return self.w2(F.silu(self.w_gate(x)) * self.w1(x))
 
 class Block(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.ln1 = RMSNorm(config['d_model'])
-        self.attn = FullMultiHeadConvAttentionProgressiveMomentum(config)
+        self.attn = StandardMHA(config)
         self.ln2 = RMSNorm(config['d_model'])
-        self.mlp = ProgressiveHydraMLP(config)
+        self.mlp = SwiGLU_MLP(config)
 
-    def forward(self, x, f_cos, f_sin, z_i):
-        a_out, z_i_new = self.attn(self.ln1(x), z_i, f_cos, f_sin)
-        x = x + a_out
+    def forward(self, x, f_cos, f_sin):
+        x = x + self.attn(self.ln1(x), f_cos, f_sin)
         x = x + self.mlp(self.ln2(x))
-        return x, z_i_new
+        return x
 
 class Neon230(nn.Module):
     def __init__(self, config, warm_embeddings=None):
@@ -135,18 +87,8 @@ class Neon230(nn.Module):
 
     def forward(self, idx, targets=None):
         x = self.token_emb(idx)
-        B, T, D = x.shape
-        z_i = torch.zeros(B, T, D, device=x.device)
         for block in self.blocks:
-            x, z_i = block(x, self.freqs_cos, self.freqs_sin, z_i)
+            x = block(x, self.freqs_cos, self.freqs_sin)
         logits = self.head(self.ln_f(x))
         loss = F.cross_entropy(logits.view(-1, self.config['vocab_size']), targets.view(-1)) if targets is not None else None
         return logits, loss
-
-    def set_kernel_size(self, k):
-        for block in self.blocks:
-            block.attn.conv_q.set_k(k)
-            block.attn.conv_k.set_k(k)
-            block.attn.conv_v.set_k(k)
-            block.attn.conv_i.set_k(k)
-            block.mlp.conv_gate.set_k(k)
