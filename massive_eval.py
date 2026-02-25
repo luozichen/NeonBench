@@ -48,7 +48,7 @@ if __name__ == "__main__":
     data = "data/wiki103/wiki103_tok5.bin"
     tok = "tokenizers/wiki103_tok5.json"
     
-    for i in range(243, 253): # Phase 8 & 9
+    for i in range(233, 243): # Phase 6 & 7
         results[f"neon{i}"] = massive_eval(f"neon{i}", data, tok, eval_cycles=1000)
         
     print("\n--- FINAL RANKING (1000 BATCHES) ---")

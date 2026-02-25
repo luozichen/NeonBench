@@ -484,6 +484,18 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 ---
 
+### 🧪 Benchmark: TinyShakespeare / Parity (Phase 6, 8, 9)
+*TinyShakespeare Dataset. All models strictly balanced to ~5.00M parameters. 10k steps, 2000 evaluation batches.*
+
+| Model | Params (Ex-Emb) | Val Loss | Summary |
+| :--- | :--- | :--- | :--- |
+| **neon234** | 5.00M | 3.6577 | **Phase 6: Baseline (No Intent, No Conv).** |
+| **neon241** | 5.00M | 3.5888 | **Phase 7: Intent + Lookahead.** Strong synergy! |
+| **neon244** | 5.00M | 3.6244 | **Phase 8: Intent Only.** Severe regression vs Phase 7, but better than baseline! |
+| **⭐ neon250** | **5.00M** | **3.5946** | **Phase 9: Conv Only.** Beats Phase 8 by a wide margin, proving convolutions are stronger than intent. |
+
+---
+
 ## 📈 Key Discovery Timeline
 
 1.  **Intent Evolution (001-022)**: We proved that **Result Gating** (gating the attention output) is significantly better than **Source Gating** (gating before attention). σ(I) is essential.
@@ -535,6 +547,13 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
     - **Recursive Intent**: `neon209` (**3.4431**) — passing intent across layers showed no benefit. Each layer apparently needs to re-evaluate intent from its own residual stream.
     - **Differential Attention**: `neon210` (**3.4680**) — worst of the structural batch. The noise-cancellation idea hurt at this scale; possibly the half-dimension Q/K splits reduce attention capacity too much at 4 heads.
     - **Reflective Attention**: `neon211` (**3.4424**) — the post-gate bottleneck nearly matched pre-intent gating despite having no learned Intent projection. Suggests the model *can* evaluate attention output quality, but a 16-dim bottleneck is too narrow for full expressiveness.
+20. **The Conv vs. Intent Showdown (231-252)**:
+    - **Core Question**: Which mechanism provides the strongest gain over a standard network?
+    - **Baseline (Phase 6)**: Pure Transformer with Lookahead (`neon233`-`237`) averaged **~3.67**.
+    - **Intent Only (Phase 8)**: `neon243`-`247` averaged **~3.625**. A solid improvement over baseline!
+    - **Conv Only (Phase 9)**: `neon248`-`252` averaged **~3.602** (with a best of **3.594**).
+    - **Synergy (Phase 7)**: Intent + Lookahead (`neon238`-`242`) averaged **~3.59** (with a best of **3.588**).
+    - **The Verdict**: Both 1D Convolutions and Learnt Intent improve upon the true baseline (~3.67). However, Convolutions (Phase 9) are significantly more powerful than Intent alone (Phase 8). The Phase 7 Synergy (Combining Intent + Lookahead) yields the absolute best results.
 
 ---
 
