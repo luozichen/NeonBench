@@ -96,7 +96,7 @@ def get_config(model_name):
             config['d_ff'] = 592
         
         # Frankenstein Configs
-        if model_name in [f"neon{i:03d}" for i in range(61, 250)]:
+        if model_name in [f"neon{i:03d}" for i in range(61, 260)]:
             config['d_model'], config['n_layers'], config['n_head'] = 256, 4, 4
             if model_name == 'neon061': config['d_ff'] = 2736 # ~10M
             elif model_name == 'neon066': config['d_ff'] = 172 # match neon016
@@ -267,6 +267,8 @@ def get_config(model_name):
             elif model_name == 'neon240': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1072 # 5.0M non-embed Phase 7 Intent + 50% Lookahead
             elif model_name == 'neon241': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1072 # 5.0M non-embed Phase 7 Intent + 75% Lookahead
             elif model_name == 'neon242': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1072 # 5.0M non-embed Phase 7 Intent + 100% Lookahead
+            elif model_name in [f"neon{i}" for i in range(243, 248)]: config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1079 # 5.0M non-embed Phase 8 Intent Only
+            elif model_name in [f"neon{i}" for i in range(248, 253)]: config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1164 # 5.0M non-embed Phase 9 Conv Only
             else: config['d_ff'] = 512
         
         return config
