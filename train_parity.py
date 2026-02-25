@@ -69,6 +69,9 @@ def main():
     
     print(f"Initializing {args.model} (Parity Training)...")
     print(f"Non-Embedding Parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad) - model.token_emb.weight.numel():,}")
+    
+    # Inject max_steps for progressive scheduling (Phase 11 & 12)
+    model.max_steps = args.steps
 
     sampler = TurboSampler(args.data, config['block_size'], config['batch_size'], device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
@@ -100,6 +103,8 @@ def main():
         # Training
         x, y = sampler.get_batch('train')
         
+        # Inject current step for progressive probabilistic masking
+        model.current_step = step
         logits, loss = model(x, y, is_odd_stream=is_odd_stream)
             
         optimizer.zero_grad(set_to_none=True)
