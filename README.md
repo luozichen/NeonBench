@@ -484,8 +484,8 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 
 ---
 
-### 🧪 Benchmark: TinyShakespeare / Parity (Phase 6, 8, 9)
-*TinyShakespeare Dataset. All models strictly balanced to ~5.00M parameters. 10k steps, 2000 evaluation batches.*
+### 🧪 Benchmark: Wiki103 / Tok5 (Parity: Phase 6, 8, 9)
+*Wiki103 Dataset. All models strictly balanced to ~5.00M parameters. 10k steps, 2000 evaluation batches.*
 
 | Model | Params (Ex-Emb) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- |
@@ -493,6 +493,8 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 | **neon241** | 5.00M | 3.5888 | **Phase 7: Intent + Lookahead.** Strong synergy! |
 | **neon244** | 5.00M | 3.6244 | **Phase 8: Intent Only.** Severe regression vs Phase 7, but better than baseline! |
 | **⭐ neon250** | **5.00M** | **3.5946** | **Phase 9: Conv Only.** Beats Phase 8 by a wide margin, proving convolutions are stronger than intent. |
+
+![Validation Loss Parity Chart (Phase 6-9)](assets/phase_6_to_9_conv_vs_intent_wiki103_val_loss.png)
 
 ---
 
@@ -552,8 +554,8 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
     - **Baseline (Phase 6)**: Pure Transformer with Lookahead (`neon233`-`237`) averaged **~3.67**.
     - **Intent Only (Phase 8)**: `neon243`-`247` averaged **~3.625**. A solid improvement over baseline!
     - **Conv Only (Phase 9)**: `neon248`-`252` averaged **~3.602** (with a best of **3.594**).
-    - **Synergy (Phase 7)**: Intent + Lookahead (`neon238`-`242`) averaged **~3.59** (with a best of **3.588**).
-    - **The Verdict**: Both 1D Convolutions and Learnt Intent improve upon the true baseline (~3.67). However, Convolutions (Phase 9) are significantly more powerful than Intent alone (Phase 8). The Phase 7 Synergy (Combining Intent + Lookahead) yields the absolute best results.
+    - **Conv+Int (Phase 7)**: Intent + Lookahead (`neon238`-`242`) averaged **~3.59** (with a best of **3.588**).
+    - **The Verdict**: Both 1D Convolutions and Learnt Intent improve upon the true baseline (~3.67). However, Convolutions (Phase 9) are significantly more powerful than Intent alone (Phase 8). The Phase 7 Conv+Int (Combining Intent + Lookahead) yields the absolute best results.
 
 ---
 
