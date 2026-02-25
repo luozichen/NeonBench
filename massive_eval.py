@@ -6,7 +6,7 @@ sys.path.append('.')
 
 from train_parity import TurboSampler, get_config
 
-def massive_eval(model_name, data_path, tok_path, eval_cycles=250):
+def massive_eval(model_name, data_path, tok_path, eval_cycles=500):
     config = get_config(model_name)
     device = config['device']
     tokenizer = Tokenizer.from_file(tok_path)
@@ -48,9 +48,9 @@ if __name__ == "__main__":
     data = "data/wiki103/wiki103_tok5.bin"
     tok = "tokenizers/wiki103_tok5.json"
     
-    for i in range(233, 238): # 233 to 237
-        results[f"neon{i}"] = massive_eval(f"neon{i}", data, tok, eval_cycles=250)
+    for i in range(233, 243): # 233 to 242
+        results[f"neon{i}"] = massive_eval(f"neon{i}", data, tok, eval_cycles=500)
         
-    print("\n--- FINAL PHASE 6 RANKING (500 BATCHES) ---")
+    print("\n--- FINAL RANKING (1000 BATCHES) ---")
     for k, v in results.items():
         print(f"{k}: {v:.5f}")
