@@ -45,11 +45,11 @@ def massive_eval(model_name, data_path, tok_path, eval_cycles=500):
 
 if __name__ == "__main__":
     results = {}
-    data = "data/wiki103/wiki103_tok5.bin"
-    tok = "tokenizers/wiki103_tok5.json"
+    data = "data/tinyshakespeare/tinyshakespeare.bin"
+    tok = "tokenizers/tinyshakespeare"
     
-    for i in range(233, 243): # 233 to 242
-        results[f"neon{i}"] = massive_eval(f"neon{i}", data, tok, eval_cycles=500)
+    for i in range(243, 253): # Phase 8 & 9
+        results[f"neon{i}"] = massive_eval(f"neon{i}", data, tok, eval_cycles=1000)
         
     print("\n--- FINAL RANKING (1000 BATCHES) ---")
     for k, v in results.items():
