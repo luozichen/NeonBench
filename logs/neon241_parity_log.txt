@@ -1,0 +1,21 @@
+Training neon241 - Parity Sync
+Step 0: Train Loss 9.1734, Val Loss 9.1594
+Step 500: Train Loss 4.7691, Val Loss 4.8355
+Step 1000: Train Loss 4.2824, Val Loss 4.2792
+Step 1500: Train Loss 4.1133, Val Loss 4.0989
+Step 2000: Train Loss 4.0023, Val Loss 4.0013
+Step 2500: Train Loss 3.9003, Val Loss 3.9116
+Step 3000: Train Loss 3.8860, Val Loss 3.8598
+Step 3500: Train Loss 3.7561, Val Loss 3.8178
+Step 4000: Train Loss 3.7089, Val Loss 3.7979
+Step 4500: Train Loss 3.6053, Val Loss 3.7434
+Step 5000: Train Loss 3.7177, Val Loss 3.7373
+Step 5500: Train Loss 3.5715, Val Loss 3.7094
+Step 6000: Train Loss 3.6617, Val Loss 3.6877
+Step 6500: Train Loss 3.6160, Val Loss 3.6867
+Step 7000: Train Loss 3.6478, Val Loss 3.6604
+Step 7500: Train Loss 3.6199, Val Loss 3.6360
+Step 8000: Train Loss 3.5992, Val Loss 3.6299
+Step 8500: Train Loss 3.5265, Val Loss 3.6087
+Step 9000: Train Loss 3.5573, Val Loss 3.6132
+Step 9500: Train Loss 3.5233, Val Loss 3.5888
