@@ -259,6 +259,9 @@ def get_config(model_name):
             elif model_name == 'neon232': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed parity
             elif model_name == 'neon233': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed parity
             elif model_name == 'neon234': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed Phase 6 SplitBrain
+            elif model_name == 'neon235': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed Phase 6 SplitBrain (75%)
+            elif model_name == 'neon236': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed Phase 6 SplitBrain (25%)
+            elif model_name == 'neon237': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed Phase 6 Control (0%)
             else: config['d_ff'] = 512
         
         return config
