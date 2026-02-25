@@ -110,7 +110,26 @@ def main():
 
     print("Training Complete.")
     os.makedirs("checkpoints", exist_ok=True)
-    torch.save(model.state_dict(), f"checkpoints/{args.model}_parity_final.pth")
+    final_ckpt_path = f"checkpoints/{args.model}_parity_final.pth"
+    torch.save(model.state_dict(), final_ckpt_path)
+    
+    print("\n--- Running Final 500-Batch Massive Eval ---")
+    model.eval()
+    losses = []
+    with torch.no_grad():
+        for i in range(250):
+            for strm in [False, True]:
+                vx, vy = sampler.get_batch('val')
+                _, loss = model(vx, vy, is_odd_stream=strm)
+                losses.append(loss.item())
+            if (i+1) % 50 == 0:
+                print(f"  [{i+1}/250] Running Avg: {sum(losses)/len(losses):.5f}")
+                
+    final_loss = sum(losses) / len(losses)
+    final_msg = f"==> FINAL MASSIVE EVAL LOSS: {final_loss:.5f} (over {len(losses)} batches)"
+    print(final_msg)
+    with open(log_path, "a") as f:
+        f.write("\n" + final_msg + "\n")
 
 if __name__ == "__main__":
     main()
