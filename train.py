@@ -270,6 +270,7 @@ def get_config(model_name):
             elif model_name in [f"neon{i}" for i in range(243, 248)]: config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1079 # 5.0M non-embed Phase 8 Intent Only
             elif model_name in [f"neon{i}" for i in range(248, 253)]: config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1164 # 5.0M non-embed Phase 9 Conv Only
             elif model_name in [f"neon{i}" for i in range(253, 257)]: config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1072 # 5.0M non-embed Phase 10 Layer-Lookahead
+            elif model_name in ['neon257', 'neon258']: config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1064 # 5.0M non-embed Phase 11 Wide Conv
             else: config['d_ff'] = 512
         
         return config
