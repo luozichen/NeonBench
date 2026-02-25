@@ -262,6 +262,11 @@ def get_config(model_name):
             elif model_name == 'neon235': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed Phase 6 SplitBrain (50%)
             elif model_name == 'neon236': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed Phase 6 SplitBrain (75%)
             elif model_name == 'neon237': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed Phase 6 Full Lookahead (100%)
+            elif model_name == 'neon238': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1072 # 5.0M non-embed Phase 7 Intent + 0% Lookahead
+            elif model_name == 'neon239': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1072 # 5.0M non-embed Phase 7 Intent + 25% Lookahead
+            elif model_name == 'neon240': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1072 # 5.0M non-embed Phase 7 Intent + 50% Lookahead
+            elif model_name == 'neon241': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1072 # 5.0M non-embed Phase 7 Intent + 75% Lookahead
+            elif model_name == 'neon242': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1072 # 5.0M non-embed Phase 7 Intent + 100% Lookahead
             else: config['d_ff'] = 512
         
         return config
