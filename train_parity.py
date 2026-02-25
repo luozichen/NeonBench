@@ -35,7 +35,7 @@ class TurboSampler:
         y = torch.stack([torch.from_numpy((data[i+1:i+1+self.seq_len]).astype(np.int64)) for i in ix])
         return x.to(self.device), y.to(self.device)
 
-def run_eval(model, sampler, model_name, steps=10):
+def run_eval(model, sampler, model_name, steps=25):
     model.eval()
     losses = []
     with torch.no_grad():

@@ -1,8 +1,8 @@
-"""Neon236: SplitBrain Asymmetric Attention (25% Staggered).
-Variation 3 of the Quasi-Encoder Lookahead (Phase 6).
-3 heads are strictly causal.
-1 head uses Staggered Lookahead masks (Mask A/B).
-Testing if minimal lookahead capacity is enough while maximizing causal preservation.
+"""Neon236: SplitBrain Asymmetric Attention (75% Staggered).
+Variation 2 of the Quasi-Encoder Lookahead (Phase 6).
+1 head is strictly causal.
+3 heads use Staggered Lookahead masks (Mask A/B).
+Testing if more lookahead capacity outweighs the causal dilution penalty.
 """
 import torch
 import torch.nn as nn
@@ -22,17 +22,17 @@ class SplitBrainMHA_236(nn.Module):
         self.k_norm = RMSNorm(self.head_dim)
         self.c_proj = nn.Linear(d_model, d_model, bias=False)
         
-        # 1. Strict Causal Mask (for Heads 0, 1, 2)
+        # 1. Strict Causal Mask (for Head 0)
         causal_mask = torch.tril(torch.ones(self.block_size, self.block_size))
         self.register_buffer("causal_mask", causal_mask.view(1, 1, self.block_size, self.block_size).bool())
         
-        # 2. Mask A (Even Block Boundaries) for Head 3
+        # 2. Mask A (Even Block Boundaries) for Heads 1, 2, 3
         mask_a = torch.tril(torch.ones(self.block_size, self.block_size))
         for i in range(0, self.block_size, 2):
             if i + 1 < self.block_size: mask_a[i, i+1] = 1.0
         self.register_buffer("mask_a", mask_a.view(1, 1, self.block_size, self.block_size).bool())
         
-        # 3. Mask B (Odd Block Boundaries) for Head 3
+        # 3. Mask B (Odd Block Boundaries) for Heads 1, 2, 3
         mask_b = torch.tril(torch.ones(self.block_size, self.block_size))
         for i in range(1, self.block_size - 1, 2):
             mask_b[i, i+1] = 1.0
@@ -51,8 +51,8 @@ class SplitBrainMHA_236(nn.Module):
         
         q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
         
-        # Split into causal heads (3) and lookahead heads (1)
-        n_causal = 3
+        # Split into causal heads (1) and lookahead heads (3)
+        n_causal = 1
         q_causal, q_look = q[:, :n_causal], q[:, n_causal:]
         k_causal, k_look = k[:, :n_causal], k[:, n_causal:]
         v_causal, v_look = v[:, :n_causal], v[:, n_causal:]
