@@ -487,12 +487,7 @@ NeonBench is a repository dedicated to exploring novel transformer and recurrent
 ### 🧪 Benchmark: Wiki103 / Tok5 (Parity: Phase 6, 8, 9)
 *Wiki103 Dataset. All models strictly balanced to ~5.00M parameters. 10k steps, 2000 evaluation batches.*
 
-| Model | Params (Ex-Emb) | Val Loss | Summary |
-| :--- | :--- | :--- | :--- |
-| **neon234** | 5.00M | 3.6577 | **Phase 6: Baseline (No Intent, No Conv).** |
-| **neon241** | 5.00M | 3.5888 | **Phase 7: Intent + Lookahead.** Strong synergy! |
-| **neon244** | 5.00M | 3.6244 | **Phase 8: Intent Only.** Severe regression vs Phase 7, but better than baseline! |
-| **⭐ neon250** | **5.00M** | **3.5946** | **Phase 9: Conv Only.** Beats Phase 8 by a wide margin, proving convolutions are stronger than intent. |
+Test out "quasi-encoder" decoder, varied the number of lookahead heads in each layer. Also confirms that intent and convolutions work (at this scale).
 
 ![Validation Loss Parity Chart (Phase 6-9)](assets/phase_6_to_9_conv_vs_intent_wiki103_val_loss.png)
 
