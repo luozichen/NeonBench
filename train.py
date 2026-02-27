@@ -330,18 +330,18 @@ def estimate_loss(model, dataloader, device, eval_iters=50):
     model.train()
     return losses.mean()
 
-def get_lr(step: int, max_iters: int, max_lr: float):
+def get_lr_multiplier(step: int, max_iters: int):
     # Linear warmup and cooldown schedule
     warmup_steps = int(0.10 * max_iters)
     cooldown_steps = int(0.10 * max_iters)
     cooldown_start = max_iters - cooldown_steps
     
     if step < warmup_steps:
-        return max_lr * (step / warmup_steps)
+        return 1.0 * (step / warmup_steps)
     elif step > cooldown_start:
         frac = (step - cooldown_start) / cooldown_steps
-        return max_lr * (1.0 - frac * 0.9) # Drop to 10% of max_lr
-    return max_lr
+        return 1.0 * (1.0 - frac * 0.9) # Drop to 10%
+    return 1.0
 
 def get_muon_momentum(step: int, max_iters: int, momentum_min=0.85, momentum_max=0.95):
     # Warmup phase: linearly increase momentum from min to max
@@ -471,16 +471,20 @@ def main():
     
     for iter_num in pbar:
         # Dynamic Learning Rate (used by both Adam and NorMuon)
-        current_lr = get_lr(iter_num, config['max_iters'], config['learning_rate'])
-        for group in optimizer.param_groups:
-            group['lr'] = current_lr
-            
-        # Dynamic Momentum (only for NorMuon)
+        current_lr_mult = get_lr_multiplier(iter_num, config['max_iters'])
+        
         if args.optimizer == "normuon":
+            for group in optimizer.param_groups:
+                group['lr'] = group.get('initial_lr', config['learning_rate']) * current_lr_mult
+            
+            # Dynamic Momentum (only for NorMuon)
             current_momentum = get_muon_momentum(iter_num, config['max_iters'])
             for group in optimizer.param_groups:
                 if group.get('optim_type') == 'normuon':
                     group['momentum'] = current_momentum
+        else:
+            for group in optimizer.param_groups:
+                group['lr'] = config['learning_rate'] * current_lr_mult
         # Get Batch
         try:
             X, Y = next(train_iter)

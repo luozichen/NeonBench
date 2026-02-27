@@ -345,47 +345,65 @@ def apply_normuon_variance_reduction(v_chunk, second_momentum_buffer, beta2, red
 
 class NorMuon(torch.optim.Optimizer):
     """
-    Single-GPU adaptation of the Muon/NorMuon optimizer from modded-nanogpt.
+    Faithful Single-GPU adaptation of the TrainingManager/Optimizers from modded-nanogpt.
     
-    This optimizer applies standard Adam to 1D parameters, embeddings, and lm_head 
-    (small parameters or things without a 2D constraint), while applying the 
-    NorMuon orthogonalization + variance reduction to large 2D/3D parameters.
+    This optimizer routes parameters into three separate groups based on their `.label` attribute
+    (or dimensions as a fallback):
+    1. Adam params (embeddings, small gates) -> lr=0.004, wd=0.005, betas=(0.8, 0.95), odd_step_only=True
+    2. Scalar params (residuals) -> lr=0.008, wd=0.005, betas=(0.9, 0.99), odd_step_only=True
+    3. Muon params (2D matrices) -> lr=0.015, wd=1.2, momentum=0.95, beta2=0.95
     """
-    def __init__(self, params, lr=0.02, weight_decay=0.01, momentum=0.95, beta2=0.95):
-        defaults = dict(lr=lr, weight_decay=weight_decay, momentum=momentum, beta2=beta2)
+    def __init__(self, params, lr=1.0): # lr is ignored, used as placeholder for train.py compat
+        defaults = dict(lr=lr)
         
-        groups = defaultdict(list)
+        adam_labels = ['lm_head', 'value_embed', 'smear_gate', 'skip_gate', 'embed2', 'embed', 'x0_lambdas']
+        scalar_labels = ['scalars']
+        muon_labels = ['attn_gate', 'value_embed_gate', 'attn', 'mlp', 'conv_q', 'conv_k', 'conv_v', 'conv_i']
+        
+        adam_params, scalar_params, muon_params = [], [], []
+        
         for param in params:
-            # Check dimension. If >= 2 (and it's not the embedding, we treat it via NorMuon).
-            # We explicitly check for nn.Linear/Conv shapes.
-            # Conv1d has shape (out, in, k).
-            if param.ndim >= 2:
-                groups['normuon'].append(param)
+            label = getattr(param, 'label', None)
+            if label in adam_labels: adam_params.append(param)
+            elif label in scalar_labels: scalar_params.append(param)
+            elif label in muon_labels: muon_params.append(param)
             else:
-                groups['adam'].append(param)
-                
-        param_groups = [
-            dict(params=groups['normuon'], optim_type='normuon'),
-            dict(params=groups['adam'], optim_type='adam')
+                # Fallback for models like neon185
+                if param.ndim >= 2 and not isinstance(param, nn.Embedding):
+                    muon_params.append(param)
+                else:
+                    adam_params.append(param)
+                    
+        groups = [
+            dict(params=adam_params, optim_type='adam', initial_lr=0.004, betas=(0.8, 0.95), weight_decay=0.005, odd_step_only=True),
+            dict(params=scalar_params, optim_type='adam', initial_lr=0.008, betas=(0.9, 0.99), weight_decay=0.005, odd_step_only=True),
+            dict(params=muon_params, optim_type='normuon', initial_lr=0.015, momentum=0.95, beta2=0.95, weight_decay=1.2, odd_step_only=False)
         ]
         
-        super().__init__(param_groups, defaults)
+        super().__init__(groups, defaults)
+        self.step_cnt = 0
 
     def reset(self):
         for group in self.param_groups:
             if "momentum_buffer" in group:
                 for mb in group["momentum_buffer"].values():
-                    if mb is not None:
-                        mb.zero_()
+                    if mb is not None: mb.zero_()
             if "second_momentum_buffer" in group:
                 for smb in group["second_momentum_buffer"].values():
-                    if smb is not None:
-                        smb.zero_()
+                    if smb is not None: smb.zero_()
+            if "state" in group:
+                for state in group["state"].values():
+                    state["step"] = 0
+                    state["exp_avg"].zero_()
+                    state["exp_avg_sq"].zero_()
 
     @torch.no_grad()
     def step(self):
+        self.step_cnt += 1
         for group in self.param_groups:
-            # We will decouple the processing depending on if it's the normuon list or adam
+            if group.get("odd_step_only", False) and self.step_cnt % 2 == 0:
+                continue
+                
             if group['optim_type'] == 'normuon':
                 self._step_normuon(group)
             elif group['optim_type'] == 'adam':
@@ -394,8 +412,7 @@ class NorMuon(torch.optim.Optimizer):
     @torch.no_grad()
     def _step_normuon(self, group):
         params: list[Tensor] = group["params"]
-        if not params:
-            return
+        if not params: return
 
         if "momentum_buffer" not in group:
             group["momentum_buffer"] = {p: torch.zeros_like(p) for p in params}
@@ -403,69 +420,42 @@ class NorMuon(torch.optim.Optimizer):
             group["second_momentum_buffer"] = {}
             for p in params:
                 shape = p.shape
-                # Assumes rows=input, columns=output for linear. For Conv1d, it's (out, in/group, k)
-                if shape[-2] >= shape[-1]:
-                    group["second_momentum_buffer"][p] = torch.zeros_like(p[..., :, :1])
-                else:
-                    group["second_momentum_buffer"][p] = torch.zeros_like(p[..., :1, :])
+                if shape[-2] >= shape[-1]: group["second_momentum_buffer"][p] = torch.zeros_like(p[..., :, :1])
+                else: group["second_momentum_buffer"][p] = torch.zeros_like(p[..., :1, :])
                     
         if "param_lr_cpu" not in group:
             group["param_lr_cpu"] = {}
             group["param_wd_cpu"] = {}
             for p in params:
                 shape = p.shape
-                if len(shape) >= 2:
-                    shape_mult = max(1.0, shape[-2] / shape[-1]) ** 0.5
-                else:
-                    shape_mult = 1.0
+                shape_mult = max(1.0, shape[-2] / shape[-1]) ** 0.5 if len(shape) >= 2 else 1.0
                 group["param_lr_cpu"][p] = torch.tensor(shape_mult * getattr(p, "lr_mul", 1.0), dtype=torch.float32, device="cpu")
                 group["param_wd_cpu"][p] = torch.tensor(getattr(p, "wd_mul", 1.0), dtype=torch.float32, device="cpu")
 
         for param in params:
-            if param.grad is None:
-                continue
-                
+            if param.grad is None: continue
+            
             grad = param.grad
             momentum_buffer = group["momentum_buffer"][param]
             second_momentum_buffer = group["second_momentum_buffer"][param]
             
-            # Apply momentum
-            momentum_buffer.lerp_(grad, 1 - group["momentum"])
-            updated_grad = grad.lerp_(momentum_buffer, group["momentum"])
+            momentum_buffer.lerp_(grad, 1 - group.get("momentum", 0.95))
+            updated_grad = grad.lerp_(momentum_buffer, group.get("momentum", 0.95))
             
-            # Zeropower
-            # Shape-based heuristic
-            param_shape = param.shape
-            
-            if param_shape[-2] >= param_shape[-1]:
-                red_dim = -1
-            else:
-                red_dim = -2
-
-            # Try to avoid split_baddbmm for single device for safety
+            red_dim = -1 if param.shape[-2] >= param.shape[-1] else -2
             v = polar_express(updated_grad, split_baddbmm=False)
-            
-            v = apply_normuon_variance_reduction(
-                v, second_momentum_buffer, group["beta2"], red_dim
-            )
-            v = v.view(param_shape)
+            v = apply_normuon_variance_reduction(v, second_momentum_buffer, group["beta2"], red_dim)
+            v = v.view(param.shape)
             
             eff_lr_cpu = group["param_lr_cpu"][param] * group["lr"]
             eff_wd_cpu = group["param_wd_cpu"][param] * group["weight_decay"] * group["lr"]
             
-            cautious_wd_and_update_inplace(
-                param,
-                v,
-                eff_wd_cpu,
-                eff_lr_cpu,
-            )
+            cautious_wd_and_update_inplace(param, v, eff_wd_cpu, eff_lr_cpu)
 
     @torch.no_grad()
     def _step_adam(self, group):
-        # Extremely basic AdamW step for 1D params (like norms and biases)
         params: list[Tensor] = group["params"]
-        if not params:
-            return
+        if not params: return
             
         if "state" not in group:
             group["state"] = {}
@@ -476,21 +466,24 @@ class NorMuon(torch.optim.Optimizer):
                     "exp_avg_sq": torch.zeros_like(p)
                 }
                 
-        beta1, beta2 = 0.9, group["beta2"]
-        eps = 1e-8
+        beta1, beta2 = group["betas"]
+        eps = group.get("eps", 1e-8)
         wd = group["weight_decay"]
         lr = group["lr"]
 
         for param in params:
-            if param.grad is None:
-                continue
-                
+            if param.grad is None: continue
+            
             grad = param.grad
             state = group["state"][param]
             state["step"] += 1
             exp_avg, exp_avg_sq = state["exp_avg"], state["exp_avg_sq"]
-            
             t = state["step"]
+            
+            # Use specific lr_mul and wd_mul like modded-nanogpt
+            p_lr = lr * getattr(param, "lr_mul", 1.0)
+            p_wd = wd * getattr(param, "wd_mul", 1.0)
+            
             exp_avg.mul_(beta1).add_(grad, alpha=1 - beta1)
             exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2)
             
@@ -498,9 +491,12 @@ class NorMuon(torch.optim.Optimizer):
             bias2 = 1 - beta2 ** t
             
             denom = exp_avg_sq.sqrt().add_(eps)
-            step_size = lr * (bias2 ** 0.5 / bias1)
-            
+            step_size = p_lr * (bias2 ** 0.5 / bias1)
             update = exp_avg.div(denom).mul_(step_size)
             
-            # standard decoupled wd
-            param.mul_(1.0 - lr * wd).add_(update, alpha=-1.0)
+            # Cautious weight decay for Adam too, like modded-nanogpt!
+            mask = (update * param) > 0
+            eff_weight_decay = p_lr * p_wd
+            update.addcmul_(param, mask, value=eff_weight_decay)
+            
+            param.add_(other=update, alpha=-1.0)
