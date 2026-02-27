@@ -470,10 +470,9 @@ def main():
     pbar = tqdm(range(config['max_iters']), desc="Training")
     
     for iter_num in pbar:
-        # Dynamic Learning Rate (used by both Adam and NorMuon)
-        current_lr_mult = get_lr_multiplier(iter_num, config['max_iters'])
-        
         if args.optimizer == "normuon":
+            # Dynamic Learning Rate for NorMuon
+            current_lr_mult = get_lr_multiplier(iter_num, config['max_iters'])
             for group in optimizer.param_groups:
                 group['lr'] = group.get('initial_lr', config['learning_rate']) * current_lr_mult
             
@@ -483,8 +482,9 @@ def main():
                 if group.get('optim_type') == 'normuon':
                     group['momentum'] = current_momentum
         else:
-            for group in optimizer.param_groups:
-                group['lr'] = config['learning_rate'] * current_lr_mult
+            # AdamW baseline should be totally static, untouched
+            pass
+            
         # Get Batch
         try:
             X, Y = next(train_iter)
