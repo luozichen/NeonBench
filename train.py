@@ -329,6 +329,36 @@ def estimate_loss(model, dataloader, device, eval_iters=50):
     model.train()
     return losses.mean()
 
+def get_lr(step: int, max_iters: int, max_lr: float):
+    # Linear warmup and cooldown schedule
+    warmup_steps = int(0.10 * max_iters)
+    cooldown_steps = int(0.10 * max_iters)
+    cooldown_start = max_iters - cooldown_steps
+    
+    if step < warmup_steps:
+        return max_lr * (step / warmup_steps)
+    elif step > cooldown_start:
+        frac = (step - cooldown_start) / cooldown_steps
+        return max_lr * (1.0 - frac * 0.9) # Drop to 10% of max_lr
+    return max_lr
+
+def get_muon_momentum(step: int, max_iters: int, momentum_min=0.85, momentum_max=0.95):
+    # Warmup phase: linearly increase momentum from min to max
+    # Cooldown phase: linearly decrease momentum from max to min
+    muon_warmup_steps = int(0.20 * max_iters)
+    muon_cooldown_steps = int(0.20 * max_iters)
+    momentum_cd_start = max_iters - muon_cooldown_steps
+    
+    if step < muon_warmup_steps:
+        frac = step / muon_warmup_steps
+        momentum = momentum_min + frac * (momentum_max - momentum_min)
+    elif step > momentum_cd_start:
+        frac = (step - momentum_cd_start) / muon_cooldown_steps
+        momentum = momentum_max - frac * (momentum_max - momentum_min)
+    else:
+        momentum = momentum_max
+    return momentum
+
 def main():
     parser = argparse.ArgumentParser(description="Train Neon models")
     parser.add_argument("--model", type=str, required=True, help="Model name (e.g., neon001)")
@@ -439,6 +469,17 @@ def main():
     pbar = tqdm(range(config['max_iters']), desc="Training")
     
     for iter_num in pbar:
+        # Dynamic Learning Rate (used by both Adam and NorMuon)
+        current_lr = get_lr(iter_num, config['max_iters'], config['learning_rate'])
+        for group in optimizer.param_groups:
+            group['lr'] = current_lr
+            
+        # Dynamic Momentum (only for NorMuon)
+        if args.optimizer == "normuon":
+            current_momentum = get_muon_momentum(iter_num, config['max_iters'])
+            for group in optimizer.param_groups:
+                if group.get('optim_type') == 'normuon':
+                    group['momentum'] = current_momentum
         # Get Batch
         try:
             X, Y = next(train_iter)
