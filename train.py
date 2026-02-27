@@ -338,6 +338,7 @@ def main():
     parser.add_argument("--warm_embeddings", type=str, default=None, help="Path to warm embeddings .pt file")
     parser.add_argument("--out_dir", type=str, default="checkpoints", help="Output directory for checkpoints")
     parser.add_argument("--log_dir", type=str, default="logs", help="Directory for logs")
+    parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "normuon"], help="Optimizer to use for training")
     
     args = parser.parse_args()
     
@@ -419,7 +420,13 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False)
 
     # 6. Optimizer
-    optimizer = torch.optim.AdamW(model.parameters(), lr=config['learning_rate'])
+    if args.optimizer == "normuon":
+        from normuon import NorMuon
+        optimizer = NorMuon(model.parameters(), lr=config['learning_rate'])
+        print(f"Using Optimizer: NorMuon")
+    else:
+        optimizer = torch.optim.AdamW(model.parameters(), lr=config['learning_rate'])
+        print(f"Using Optimizer: AdamW")
     
     # 7. Training Loop
     best_val_loss = float('inf')
