@@ -1,3 +1,5 @@
+### NeonBench
+
 NeonBench is a repository dedicated to exploring novel transformer and recurrent architectures at the ~3M parameter scale. This log tracks every experiment, focusing on parameter efficiency and architectural breakthroughs.
 
 **Total Architectures Tested**: 212  
@@ -566,3 +568,4 @@ Test out "quasi-encoder" decoder, varied the number of lookahead heads in each l
 | Model | Params (Total) | Val Loss | Summary |
 | :--- | :--- | :--- | :--- |
 | **⭐ neon213** | **26.49M** | **3.4400** | **Muon SOTA**. Significant breakthrough in dimensional diversity (PR=25.9). |
+
