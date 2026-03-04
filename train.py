@@ -331,18 +331,27 @@ def estimate_loss(model, dataloader, device, eval_iters=50):
     model.train()
     return losses.mean()
 
-def get_lr_multiplier(step: int, max_iters: int):
-    # Linear warmup and cosine decay schedule
+def get_lr_multiplier(step: int, max_iters: int, schedule_type='cosine'):
+    # Linear warmup + schedule logic
     import math
     warmup_steps = int(0.10 * max_iters)
     
     if step < warmup_steps:
         return 1.0 * (step / warmup_steps)
-    else:
-        # Cosine decay down to 10% of max LR
+    
+    if schedule_type == 'cosine':
+        # Cosine decay down to 10%
         decay_ratio = (step - warmup_steps) / (max_iters - warmup_steps)
         coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))
-        return 0.1 + coeff * 0.9 # Min LR is 10%
+        return 0.1 + coeff * 0.9
+    else:
+        # Plateau (Trapezoid) schedule
+        cooldown_steps = int(0.10 * max_iters)
+        cooldown_start = max_iters - cooldown_steps
+        if step > cooldown_start:
+            frac = (step - cooldown_start) / cooldown_steps
+            return 1.0 - frac * 0.9
+        return 1.0
 
 def get_muon_momentum(step: int, max_iters: int, momentum_min=0.85, momentum_max=0.95):
     # Warmup phase: linearly increase momentum from min to max
@@ -371,6 +380,7 @@ def main():
     parser.add_argument("--out_dir", type=str, default="checkpoints", help="Output directory for checkpoints")
     parser.add_argument("--log_dir", type=str, default="logs", help="Directory for logs")
     parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "normuon", "muon", "muon_gated_adam", "muon_adam"], help="Optimizer to use for training")
+    parser.add_argument("--schedule", type=str, default="cosine", choices=["plateau", "cosine"], help="Learning rate schedule type")
     parser.add_argument("--max_iters", type=int, default=None, help="Override maximum iterations")
     parser.add_argument("--eval_interval", type=int, default=None, help="Override evaluation interval")
     
@@ -420,7 +430,7 @@ def main():
     os.makedirs(args.log_dir, exist_ok=True)
     
     data_name = os.path.splitext(os.path.basename(args.data))[0]
-    run_name = f"{args.model}_{args.tok_name}_{data_name}_{args.optimizer}_cosine"
+    run_name = f"{args.model}_{args.tok_name}_{data_name}_{args.optimizer}_{args.schedule}"
     log_file_path = os.path.join(args.log_dir, f"{run_name}_log.txt")
     print(f"Run name: {run_name}")
     print(f"Logging to: {log_file_path}")
@@ -482,21 +492,24 @@ def main():
             else:
                 adamw_params.append(p)
         
-        # Simple hybrid optimizer setup
-        opt1 = Muon(muon_params, lr=0.01) # Baseline Muon LR
+        # Custom hybrid optimizer setup
+        opt1 = Muon(muon_params, lr=0.02) # Standard Muon LR
         opt2 = torch.optim.AdamW(adamw_params, lr=config['learning_rate'])
         
         class HybridOptim:
             def __init__(self, opt1, opt2):
                 self.optimizers = [opt1, opt2]
                 self.param_groups = opt1.param_groups + opt2.param_groups
+                # Record initial LRs for scheduling
+                for group in self.param_groups:
+                    group['initial_lr'] = group['lr']
             def zero_grad(self, set_to_none=True):
                 for opt in self.optimizers: opt.zero_grad(set_to_none=set_to_none)
             def step(self):
                 for opt in self.optimizers: opt.step()
         
         optimizer = HybridOptim(opt1, opt2)
-        print(f"Using Optimizer: Muon (Hybrid)")
+        print(f"Using Optimizer: Muon (Hybrid) at LR 0.02")
     elif args.optimizer == "muon_gated_adam":
         from normuon import MuonGatedAdam
         # Separate 2D weight matrices for Gated-Muon; others for AdamW
@@ -516,6 +529,8 @@ def main():
             def __init__(self, opt1, opt2):
                 self.optimizers = [opt1, opt2]
                 self.param_groups = opt1.param_groups + opt2.param_groups
+                for group in self.param_groups:
+                    group['initial_lr'] = group['lr']
             def zero_grad(self, set_to_none=True):
                 for opt in self.optimizers: opt.zero_grad(set_to_none=set_to_none)
             def step(self):
@@ -535,13 +550,15 @@ def main():
             else:
                 adamw_params.append(p)
                 
-        opt1 = MuonAdam(muon_adam_params, lr=config['learning_rate'])
+        opt1 = MuonAdam(muon_adam_params, lr=0.02)
         opt2 = torch.optim.AdamW(adamw_params, lr=config['learning_rate'])
         
         class HybridOptimMA:
             def __init__(self, opt1, opt2):
                 self.optimizers = [opt1, opt2]
                 self.param_groups = opt1.param_groups + opt2.param_groups
+                for group in self.param_groups:
+                    group['initial_lr'] = group['lr']
             def zero_grad(self, set_to_none=True):
                 for opt in self.optimizers: opt.zero_grad(set_to_none=set_to_none)
             def step(self):
@@ -551,6 +568,8 @@ def main():
         print(f"Using Optimizer: MuonAdam (Hybrid)")
     else:
         optimizer = torch.optim.AdamW(model.parameters(), lr=config['learning_rate'])
+        for group in optimizer.param_groups:
+            group['initial_lr'] = group['lr']
         print(f"Using Optimizer: AdamW")
     
     # 7. Training Loop
@@ -564,25 +583,19 @@ def main():
     pbar = tqdm(range(config['max_iters']), desc="Training")
     
     for iter_num in pbar:
+        # Apply Learning Rate Multiplier to ALL optimizers
+        current_lr_mult = get_lr_multiplier(iter_num, config['max_iters'], schedule_type=args.schedule)
+        for group in optimizer.param_groups:
+            # Use group-specific initial_lr if available (calculated during init)
+            base_lr = group.get('initial_lr', config['learning_rate'])
+            group['lr'] = base_lr * current_lr_mult
+
         if args.optimizer in ["normuon", "muon", "muon_gated_adam", "muon_adam"]:
-            # Dynamic Learning Rate
-            current_lr_mult = get_lr_multiplier(iter_num, config['max_iters'])
-            for group in optimizer.param_groups:
-                # Use initial_lr if present (NorMuon), else use global config
-                base_lr = group.get('initial_lr', config['learning_rate'])
-                if group.get('momentum') is not None: # Likely Muon group
-                     # Adjust Muon LR separately if needed, but here we just use multiplier
-                     pass
-                group['lr'] = base_lr * current_lr_mult
-            
-            # Dynamic Momentum (only for groups that have it, e.g. NorMuon or Muon)
+            # Dynamic Momentum (only for Muon variants)
             current_momentum = get_muon_momentum(iter_num, config['max_iters'])
             for group in optimizer.param_groups:
                 if 'momentum' in group:
                     group['momentum'] = current_momentum
-        else:
-            # AdamW baseline should be totally static, untouched
-            pass
             
         # Get Batch
         try:
