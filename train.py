@@ -96,7 +96,7 @@ def get_config(model_name):
             config['d_ff'] = 592
         
         # Frankenstein Configs
-        if model_name in [f"neon{i:03d}" for i in range(61, 260)]:
+        if model_name in [f"neon{i:03d}" for i in range(61, 300)]:
             config['d_model'], config['n_layers'], config['n_head'] = 256, 4, 4
             if model_name == 'neon061': config['d_ff'] = 2736 # ~10M
             elif model_name == 'neon066': config['d_ff'] = 172 # match neon016
@@ -273,7 +273,7 @@ def get_config(model_name):
             elif model_name in ['neon257', 'neon258']: config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1064 # 5.0M non-embed Phase 11 Wide Conv
             elif model_name in ['neon259', 'neon260']: config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed Phase 12 Pure Progressive Lookahead
             elif model_name == 'neon261': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1072 # 5.0M Modded NanoGPT port
-            elif model_name == 'neon263': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M Standard Transformer
+            elif model_name == 'neon263': config['d_model'], config['n_layers'], config['d_ff'] = 256, 4, 1024 # Standard Transformer, 4x SwiGLU expansion
             else: config['d_ff'] = 512
         
         return config
@@ -375,6 +375,13 @@ def main():
     parser.add_argument("--eval_interval", type=int, default=None, help="Override evaluation interval")
     
     args = parser.parse_args()
+
+    # Automatically infer tokenizer name from path if not explicitly set
+    if args.tok_name == "tok1" and "tok" in args.tokenizer:
+        import re
+        match = re.search(r'tok\d+', args.tokenizer)
+        if match:
+            args.tok_name = match.group(0)
     
     # 1. Setup Config & Device
     config = get_config(args.model)
