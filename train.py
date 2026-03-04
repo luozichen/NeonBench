@@ -370,7 +370,7 @@ def main():
     parser.add_argument("--warm_embeddings", type=str, default=None, help="Path to warm embeddings .pt file")
     parser.add_argument("--out_dir", type=str, default="checkpoints", help="Output directory for checkpoints")
     parser.add_argument("--log_dir", type=str, default="logs", help="Directory for logs")
-    parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "normuon", "muon", "muon_gated_adam"], help="Optimizer to use for training")
+    parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "normuon", "muon", "muon_gated_adam", "muon_adam"], help="Optimizer to use for training")
     parser.add_argument("--max_iters", type=int, default=None, help="Override maximum iterations")
     parser.add_argument("--eval_interval", type=int, default=None, help="Override evaluation interval")
     
@@ -523,6 +523,32 @@ def main():
         
         optimizer = HybridOptimGated(opt1, opt2)
         print(f"Using Optimizer: MuonGatedAdam (Hybrid)")
+    elif args.optimizer == "muon_adam":
+        from normuon import MuonAdam
+        # Hybrid Setup: Muon-Adam for 2D; AdamW for 1D
+        muon_adam_params = []
+        adamw_params = []
+        for name, p in model.named_parameters():
+            if not p.requires_grad: continue
+            if p.ndim >= 2 and "token_emb" not in name and "head" not in name:
+                muon_adam_params.append(p)
+            else:
+                adamw_params.append(p)
+                
+        opt1 = MuonAdam(muon_adam_params, lr=config['learning_rate'])
+        opt2 = torch.optim.AdamW(adamw_params, lr=config['learning_rate'])
+        
+        class HybridOptimMA:
+            def __init__(self, opt1, opt2):
+                self.optimizers = [opt1, opt2]
+                self.param_groups = opt1.param_groups + opt2.param_groups
+            def zero_grad(self, set_to_none=True):
+                for opt in self.optimizers: opt.zero_grad(set_to_none=set_to_none)
+            def step(self):
+                for opt in self.optimizers: opt.step()
+        
+        optimizer = HybridOptimMA(opt1, opt2)
+        print(f"Using Optimizer: MuonAdam (Hybrid)")
     else:
         optimizer = torch.optim.AdamW(model.parameters(), lr=config['learning_rate'])
         print(f"Using Optimizer: AdamW")
@@ -538,7 +564,7 @@ def main():
     pbar = tqdm(range(config['max_iters']), desc="Training")
     
     for iter_num in pbar:
-        if args.optimizer in ["normuon", "muon", "muon_gated_adam"]:
+        if args.optimizer in ["normuon", "muon", "muon_gated_adam", "muon_adam"]:
             # Dynamic Learning Rate
             current_lr_mult = get_lr_multiplier(iter_num, config['max_iters'])
             for group in optimizer.param_groups:

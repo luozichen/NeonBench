@@ -639,3 +639,63 @@ class MuonGatedAdam(torch.optim.Optimizer):
                 p.add_(actual_update, alpha=-group["lr"] * scaling)
 
         return loss
+
+class MuonAdam(torch.optim.Optimizer):
+    """
+    Muon-Adam Optimizer (Orthogonalized Adam):
+    Calculates the Adam update (m/sqrt(v)) and then orthogonalizes the result 
+    using the Polar Express method.
+    """
+    def __init__(self, params, lr=1e-3, betas=(0.9, 0.95), eps=1e-8, weight_decay=0.0, 
+                 ns_steps=5):
+        defaults = dict(lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, ns_steps=ns_steps)
+        super().__init__(params, defaults)
+
+    @torch.no_grad()
+    def step(self, closure=None):
+        loss = None
+        if closure is not None:
+            with torch.enable_grad():
+                loss = closure()
+
+        for group in self.param_groups:
+            beta1, beta2 = group["betas"]
+            
+            for p in group["params"]:
+                if p.grad is None: continue
+                g = p.grad
+                state = self.state[p]
+
+                # State initialization
+                if len(state) == 0:
+                    state["step"] = 0
+                    state["exp_avg"] = torch.zeros_like(g)
+                    state["exp_avg_sq"] = torch.zeros_like(g)
+
+                state["step"] += 1
+                exp_avg, exp_avg_sq = state["exp_avg"], state["exp_avg_sq"]
+                
+                # 1. Calculate Adam Update
+                exp_avg.mul_(beta1).add_(g, alpha=1 - beta1)
+                exp_avg_sq.mul_(beta2).addcmul_(g, g, value=1 - beta2)
+                
+                bias_corr1 = 1 - beta1 ** state["step"]
+                bias_corr2 = 1 - beta2 ** state["step"]
+                
+                denom = (exp_avg_sq.sqrt() / math.sqrt(bias_corr2)).add_(group["eps"])
+                u_adam = (exp_avg / bias_corr1) / denom 
+                
+                # 2. Orthogonalize the Adam Update
+                # This ensures the Adam move is orthonormalized
+                u_final = zeropower_polar_express(u_adam, steps=group["ns_steps"])
+                u_final = u_final.to(p.dtype)
+                
+                # 3. Apply Update
+                scaling = max(1, p.size(-2) / p.size(-1))**0.5
+                
+                if group["weight_decay"] > 0:
+                    p.mul_(1 - group["lr"] * group["weight_decay"])
+                
+                p.add_(u_final.view_as(p), alpha=-group["lr"] * scaling)
+
+        return loss
