@@ -420,7 +420,7 @@ def main():
     os.makedirs(args.log_dir, exist_ok=True)
     
     data_name = os.path.splitext(os.path.basename(args.data))[0]
-    run_name = f"{args.model}_{args.tok_name}_{data_name}"
+    run_name = f"{args.model}_{args.tok_name}_{data_name}_{args.optimizer}"
     log_file_path = os.path.join(args.log_dir, f"{run_name}_log.txt")
     print(f"Run name: {run_name}")
     print(f"Logging to: {log_file_path}")
