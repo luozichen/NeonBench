@@ -500,3 +500,70 @@ class NorMuon(torch.optim.Optimizer):
             update.addcmul_(param, mask, value=eff_weight_decay)
             
             param.add_(other=update, alpha=-1.0)
+
+# -----------------------------------------------------------------------------
+# Muon - MomentUm Orthogonalized by Polar Express / Newton Schulz
+# From the provided reference repository
+
+@torch.compile()
+def zeropower_polar_express(G: torch.Tensor, steps: int = 5):
+    """Polar express as replacement for Newton-Schulz iteration"""
+    assert G.ndim >= 2
+    assert steps <= len(polar_express_coeffs)
+
+    X = G.bfloat16()
+    
+    transpose_needed = G.size(-2) > G.size(-1) # transposing if tall matrix
+    if transpose_needed: 
+        X = X.mT 
+    
+    # Using the safety factor from the reference repo
+    X = X / (X.norm(dim=(-2, -1), keepdim=True) * 1.01 + 1e-7) 
+    
+    coeffs = polar_express_coeffs[:steps]
+    for a, b, c in coeffs:
+        A = X @ X.mT 
+        A2 = A @ A 
+        B = b * A + c * A2
+        X = a * X + B @ X  # Right-multiplication for left polar factor
+    
+    if transpose_needed: 
+        X = X.mT 
+    
+    return X # orthogonalized 
+
+class Muon(torch.optim.Optimizer):
+    """Muon - MomentUm Orthogonalized by Polar Express / Newton Schulz"""
+    def __init__(self, params, lr=0.02, momentum=0.95, nesterov=True, ns_steps=5):
+        defaults = dict(lr=lr, momentum=momentum, nesterov=nesterov, ns_steps=ns_steps)
+        super().__init__(params, defaults)
+
+    @torch.no_grad()
+    def step(self, closure=None):
+        loss = None
+        if closure is not None:
+            with torch.enable_grad():
+                loss = closure()
+
+        for group in self.param_groups:
+            for p in group["params"]:
+                if p.grad is None:
+                    continue
+
+                g = p.grad
+                state = self.state[p]
+
+                if "momentum_buffer" not in state:
+                    state["momentum_buffer"] = torch.zeros_like(g)
+
+                buf = state["momentum_buffer"]
+                buf.lerp_(g, 1 - group["momentum"])
+                g = g.lerp_(buf, group["momentum"]) if group["nesterov"] else buf
+                g = zeropower_polar_express(g, steps=group["ns_steps"]) 
+                g = g.to(p.dtype)
+                
+                # Using the scaling from the reference repo
+                scaling = max(1, p.size(-2) / p.size(-1))**0.5
+                p.add_(g.view_as(p), alpha=-group["lr"] * scaling)
+        
+        return loss

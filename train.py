@@ -273,6 +273,7 @@ def get_config(model_name):
             elif model_name in ['neon257', 'neon258']: config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1064 # 5.0M non-embed Phase 11 Wide Conv
             elif model_name in ['neon259', 'neon260']: config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M non-embed Phase 12 Pure Progressive Lookahead
             elif model_name == 'neon261': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1072 # 5.0M Modded NanoGPT port
+            elif model_name == 'neon263': config['d_model'], config['n_layers'], config['d_ff'] = 272, 4, 1170 # 5.0M Standard Transformer
             else: config['d_ff'] = 512
         
         return config
@@ -369,12 +370,19 @@ def main():
     parser.add_argument("--warm_embeddings", type=str, default=None, help="Path to warm embeddings .pt file")
     parser.add_argument("--out_dir", type=str, default="checkpoints", help="Output directory for checkpoints")
     parser.add_argument("--log_dir", type=str, default="logs", help="Directory for logs")
-    parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "normuon"], help="Optimizer to use for training")
+    parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "normuon", "muon"], help="Optimizer to use for training")
+    parser.add_argument("--max_iters", type=int, default=None, help="Override maximum iterations")
+    parser.add_argument("--eval_interval", type=int, default=None, help="Override evaluation interval")
     
     args = parser.parse_args()
     
     # 1. Setup Config & Device
     config = get_config(args.model)
+    if args.max_iters is not None:
+        config['max_iters'] = args.max_iters
+    if args.eval_interval is not None:
+        config['eval_interval'] = args.eval_interval
+    
     device = config['device']
     # 2. Load Tokenizer (detect type from file content)
     if not os.path.exists(args.tokenizer):
@@ -455,6 +463,33 @@ def main():
         from normuon import NorMuon
         optimizer = NorMuon(model.parameters(), lr=config['learning_rate'])
         print(f"Using Optimizer: NorMuon")
+    elif args.optimizer == "muon":
+        from normuon import Muon
+        # Separate 2D weight matrices for Muon; others (embeddings, norms, biases) for AdamW
+        muon_params = []
+        adamw_params = []
+        for name, p in model.named_parameters():
+            if not p.requires_grad: continue
+            if p.ndim >= 2 and "token_emb" not in name and "head" not in name:
+                muon_params.append(p)
+            else:
+                adamw_params.append(p)
+        
+        # Simple hybrid optimizer setup
+        opt1 = Muon(muon_params, lr=0.01) # Baseline Muon LR
+        opt2 = torch.optim.AdamW(adamw_params, lr=config['learning_rate'])
+        
+        class HybridOptim:
+            def __init__(self, opt1, opt2):
+                self.optimizers = [opt1, opt2]
+                self.param_groups = opt1.param_groups + opt2.param_groups
+            def zero_grad(self, set_to_none=True):
+                for opt in self.optimizers: opt.zero_grad(set_to_none=set_to_none)
+            def step(self):
+                for opt in self.optimizers: opt.step()
+        
+        optimizer = HybridOptim(opt1, opt2)
+        print(f"Using Optimizer: Muon (Hybrid)")
     else:
         optimizer = torch.optim.AdamW(model.parameters(), lr=config['learning_rate'])
         print(f"Using Optimizer: AdamW")
@@ -470,16 +505,21 @@ def main():
     pbar = tqdm(range(config['max_iters']), desc="Training")
     
     for iter_num in pbar:
-        if args.optimizer == "normuon":
-            # Dynamic Learning Rate for NorMuon
+        if args.optimizer in ["normuon", "muon"]:
+            # Dynamic Learning Rate
             current_lr_mult = get_lr_multiplier(iter_num, config['max_iters'])
             for group in optimizer.param_groups:
-                group['lr'] = group.get('initial_lr', config['learning_rate']) * current_lr_mult
+                # Use initial_lr if present (NorMuon), else use global config
+                base_lr = group.get('initial_lr', config['learning_rate'])
+                if group.get('momentum') is not None: # Likely Muon group
+                     # Adjust Muon LR separately if needed, but here we just use multiplier
+                     pass
+                group['lr'] = base_lr * current_lr_mult
             
-            # Dynamic Momentum (only for NorMuon)
+            # Dynamic Momentum (only for groups that have it, e.g. NorMuon or Muon)
             current_momentum = get_muon_momentum(iter_num, config['max_iters'])
             for group in optimizer.param_groups:
-                if group.get('optim_type') == 'normuon':
+                if 'momentum' in group:
                     group['momentum'] = current_momentum
         else:
             # AdamW baseline should be totally static, untouched
