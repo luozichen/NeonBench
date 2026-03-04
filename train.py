@@ -332,17 +332,17 @@ def estimate_loss(model, dataloader, device, eval_iters=50):
     return losses.mean()
 
 def get_lr_multiplier(step: int, max_iters: int):
-    # Linear warmup and cooldown schedule
+    # Linear warmup and cosine decay schedule
+    import math
     warmup_steps = int(0.10 * max_iters)
-    cooldown_steps = int(0.10 * max_iters)
-    cooldown_start = max_iters - cooldown_steps
     
     if step < warmup_steps:
         return 1.0 * (step / warmup_steps)
-    elif step > cooldown_start:
-        frac = (step - cooldown_start) / cooldown_steps
-        return 1.0 * (1.0 - frac * 0.9) # Drop to 10%
-    return 1.0
+    else:
+        # Cosine decay down to 10% of max LR
+        decay_ratio = (step - warmup_steps) / (max_iters - warmup_steps)
+        coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))
+        return 0.1 + coeff * 0.9 # Min LR is 10%
 
 def get_muon_momentum(step: int, max_iters: int, momentum_min=0.85, momentum_max=0.95):
     # Warmup phase: linearly increase momentum from min to max
@@ -420,7 +420,7 @@ def main():
     os.makedirs(args.log_dir, exist_ok=True)
     
     data_name = os.path.splitext(os.path.basename(args.data))[0]
-    run_name = f"{args.model}_{args.tok_name}_{data_name}_{args.optimizer}"
+    run_name = f"{args.model}_{args.tok_name}_{data_name}_{args.optimizer}_cosine"
     log_file_path = os.path.join(args.log_dir, f"{run_name}_log.txt")
     print(f"Run name: {run_name}")
     print(f"Logging to: {log_file_path}")
