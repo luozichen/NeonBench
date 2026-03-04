@@ -1,0 +1,43 @@
+Run: neon263_tok5_wiki103_tok5_muon_plateau
+Training neon263 on data/wiki103/wiki103_tok5.bin with tokenizer tok5
+Config: {'vocab_size': 8192, 'd_model': 256, 'n_layers': 4, 'n_head': 4, 'd_ff': 1024, 'block_size': 256, 'learning_rate': 0.001, 'max_iters': 20000, 'eval_interval': 500, 'batch_size': 64, 'device': 'cuda'}
+Step 0: Train Loss 9.1665, Val Loss 9.1638
+Step 500: Train Loss 5.6488, Val Loss 5.5780
+Step 1000: Train Loss 4.6499, Val Loss 4.6096
+Step 1500: Train Loss 4.3142, Val Loss 4.2663
+Step 2000: Train Loss 4.1428, Val Loss 4.0927
+Step 2500: Train Loss 3.9680, Val Loss 3.9521
+Step 3000: Train Loss 3.7969, Val Loss 3.8683
+Step 3500: Train Loss 3.8568, Val Loss 3.8130
+Step 4000: Train Loss 3.8619, Val Loss 3.7752
+Step 4500: Train Loss 3.8047, Val Loss 3.7279
+Step 5000: Train Loss 3.7504, Val Loss 3.6890
+Step 5500: Train Loss 3.7109, Val Loss 3.6588
+Step 6000: Train Loss 3.5768, Val Loss 3.6346
+Step 6500: Train Loss 3.6032, Val Loss 3.6116
+Step 7000: Train Loss 3.6391, Val Loss 3.5907
+Step 7500: Train Loss 3.4975, Val Loss 3.5708
+Step 8000: Train Loss 3.6366, Val Loss 3.5553
+Step 8500: Train Loss 3.6467, Val Loss 3.5412
+Step 9000: Train Loss 3.5248, Val Loss 3.5301
+Step 9500: Train Loss 3.5183, Val Loss 3.5186
+Step 10000: Train Loss 3.5531, Val Loss 3.5086
+Step 10500: Train Loss 3.4958, Val Loss 3.4978
+Step 11000: Train Loss 3.5040, Val Loss 3.4887
+Step 11500: Train Loss 3.4215, Val Loss 3.4803
+Step 12000: Train Loss 3.4521, Val Loss 3.4719
+Step 12500: Train Loss 3.5047, Val Loss 3.4652
+Step 13000: Train Loss 3.3862, Val Loss 3.4558
+Step 13500: Train Loss 3.5624, Val Loss 3.4506
+Step 14000: Train Loss 3.5499, Val Loss 3.4454
+Step 14500: Train Loss 3.5707, Val Loss 3.4382
+Step 15000: Train Loss 3.5327, Val Loss 3.4323
+Step 15500: Train Loss 3.4490, Val Loss 3.4267
+Step 16000: Train Loss 3.4741, Val Loss 3.4208
+Step 16500: Train Loss 3.4054, Val Loss 3.4090
+Step 17000: Train Loss 3.2952, Val Loss 3.3968
+Step 17500: Train Loss 3.3776, Val Loss 3.3866
+Step 18000: Train Loss 3.4108, Val Loss 3.3748
+Step 18500: Train Loss 3.3300, Val Loss 3.3546
+Step 19000: Train Loss 3.2118, Val Loss 3.3325
+Step 19500: Train Loss 3.3337, Val Loss 3.3135
