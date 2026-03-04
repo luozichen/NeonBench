@@ -567,3 +567,75 @@ class Muon(torch.optim.Optimizer):
                 p.add_(g.view_as(p), alpha=-group["lr"] * scaling)
         
         return loss
+class MuonGatedAdam(torch.optim.Optimizer):
+    """
+    Muon-Gated Adam Optimizer:
+    Uses Muon (orthogonalized momentum) as a spectral gate for AdamW updates.
+    Gated Update = AdamW_Update * Muon_Orthogonal_Update
+    """
+    def __init__(self, params, lr=1e-3, betas=(0.9, 0.95), eps=1e-8, weight_decay=0.0, 
+                 muon_momentum=0.95, ns_steps=5):
+        defaults = dict(lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, 
+                        muon_momentum=muon_momentum, ns_steps=ns_steps)
+        super().__init__(params, defaults)
+
+    @torch.no_grad()
+    def step(self, closure=None):
+        loss = None
+        if closure is not None:
+            with torch.enable_grad():
+                loss = closure()
+
+        for group in self.param_groups:
+            beta1, beta2 = group["betas"]
+            muon_mom = group["muon_momentum"]
+            
+            for p in group["params"]:
+                if p.grad is None: continue
+                g = p.grad
+                state = self.state[p]
+
+                # State initialization
+                if len(state) == 0:
+                    state["step"] = 0
+                    state["exp_avg"] = torch.zeros_like(g)
+                    state["exp_avg_sq"] = torch.zeros_like(g)
+                    state["muon_buf"] = torch.zeros_like(g)
+
+                state["step"] += 1
+                exp_avg, exp_avg_sq = state["exp_avg"], state["exp_avg_sq"]
+                muon_buf = state["muon_buf"]
+                
+                # 1. Standard AdamW Update Calculation
+                exp_avg.mul_(beta1).add_(g, alpha=1 - beta1)
+                exp_avg_sq.mul_(beta2).addcmul_(g, g, value=1 - beta2)
+                
+                bias_corr1 = 1 - beta1 ** state["step"]
+                bias_corr2 = 1 - beta2 ** state["step"]
+                
+                denom = (exp_avg_sq.sqrt() / math.sqrt(bias_corr2)).add_(group["eps"])
+                # Normalized Adam Update (spectral "magnitude" is not unit, but coordinate "magnitude" is stabilized)
+                g_adam = (exp_avg / bias_corr1) / denom 
+                
+                # 2. Muon Gate Calculation
+                muon_buf.lerp_(g, 1 - muon_mom)
+                # Polar Express orthogonalizes the momentum buffer
+                # For Gated Muon, we treat this as the "Directional Mask"
+                g_muon = zeropower_polar_express(muon_buf, steps=group["ns_steps"])
+                g_muon = g_muon.to(p.dtype)
+                
+                # 3. Gated Application: Update = Adam * Muon
+                # Scaling factor for Muon usually accounts for aspect ratio
+                scaling = max(1, p.size(-2) / p.size(-1))**0.5
+                
+                # Element-wise gate
+                actual_update = g_adam * g_muon.view_as(g_adam)
+                
+                # Apply weight decay (AdamW style)
+                if group["weight_decay"] > 0:
+                    p.mul_(1 - group["lr"] * group["weight_decay"])
+                
+                # Update parameters
+                p.add_(actual_update, alpha=-group["lr"] * scaling)
+
+        return loss
