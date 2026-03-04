@@ -344,6 +344,23 @@ def get_lr_multiplier(step: int, max_iters: int, schedule_type='cosine'):
         decay_ratio = (step - warmup_steps) / (max_iters - warmup_steps)
         coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))
         return 0.1 + coeff * 0.9
+    elif schedule_type == 'cyclic':
+        # Bimodal: Decrease -> Increase -> Decrease
+        valley_start = int(0.3 * max_iters)
+        valley_mid = int(0.5 * max_iters)
+        valley_end = int(0.7 * max_iters)
+        
+        if step < valley_start:
+            return 1.0
+        elif step < valley_mid:
+            frac = (step - valley_start) / (valley_mid - valley_start)
+            return 1.0 - frac * 0.9
+        elif step < valley_end:
+            frac = (step - valley_mid) / (valley_end - valley_mid)
+            return 0.1 + frac * 0.9
+        else:
+            frac = (step - valley_end) / (max_iters - valley_end)
+            return 1.0 - frac * 0.9
     else:
         # Plateau (Trapezoid) schedule
         cooldown_steps = int(0.10 * max_iters)
@@ -380,7 +397,7 @@ def main():
     parser.add_argument("--out_dir", type=str, default="checkpoints", help="Output directory for checkpoints")
     parser.add_argument("--log_dir", type=str, default="logs", help="Directory for logs")
     parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "normuon", "muon", "muon_gated_adam", "muon_adam"], help="Optimizer to use for training")
-    parser.add_argument("--schedule", type=str, default="cosine", choices=["plateau", "cosine"], help="Learning rate schedule type")
+    parser.add_argument("--schedule", type=str, default="cosine", choices=["plateau", "cosine", "cyclic"], help="Learning rate schedule type")
     parser.add_argument("--max_iters", type=int, default=None, help="Override maximum iterations")
     parser.add_argument("--eval_interval", type=int, default=None, help="Override evaluation interval")
     
