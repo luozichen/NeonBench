@@ -1,0 +1,23 @@
+Run: neon263_tok5_wiki103_tok5_muon_gated_adam
+Training neon263 on data/wiki103/wiki103_tok5.bin with tokenizer tok5
+Config: {'vocab_size': 8192, 'd_model': 256, 'n_layers': 4, 'n_head': 4, 'd_ff': 1024, 'block_size': 256, 'learning_rate': 0.001, 'max_iters': 10000, 'eval_interval': 500, 'batch_size': 64, 'device': 'cuda'}
+Step 0: Train Loss 9.1861, Val Loss 9.1741
+Step 500: Train Loss 7.0532, Val Loss 7.0480
+Step 1000: Train Loss 5.9395, Val Loss 5.9765
+Step 1500: Train Loss 5.9500, Val Loss 5.9193
+Step 2000: Train Loss 5.9181, Val Loss 5.9174
+Step 2500: Train Loss 5.8364, Val Loss 5.8899
+Step 3000: Train Loss 5.8905, Val Loss 5.9055
+Step 3500: Train Loss 5.9806, Val Loss 5.9299
+Step 4000: Train Loss 5.8504, Val Loss 5.9162
+Step 4500: Train Loss 5.9606, Val Loss 5.9219
+Step 5000: Train Loss 5.8468, Val Loss 5.8855
+Step 5500: Train Loss 5.9009, Val Loss 5.8753
+Step 6000: Train Loss 5.8740, Val Loss 5.8696
+Step 6500: Train Loss 5.9371, Val Loss 5.8971
+Step 7000: Train Loss 5.8781, Val Loss 5.9070
+Step 7500: Train Loss 5.8783, Val Loss 5.8978
+Step 8000: Train Loss 5.9335, Val Loss 5.9190
+Step 8500: Train Loss 5.9390, Val Loss 5.9278
+Step 9000: Train Loss 5.9841, Val Loss 5.9983
+Step 9500: Train Loss 5.9911, Val Loss 5.9578
