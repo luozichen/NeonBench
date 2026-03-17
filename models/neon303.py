@@ -1,5 +1,9 @@
-"""Neon302: Original Gram-Schmidt Transformer.
-Uses the sequential loop-based Modified Gram-Schmidt (MGS) projection.
+"""Neon303: Modified Gram-Schmidt (MGS) Loop-based Transformer.
+This variant is "slow but stable":
+1. Uses a sequential loop for GS projection (MGS algorithm).
+2. GS math is forced to float32.
+3. @torch.compiler.disable to fix Triton OOM and stabilize autograd.
+4. No stop-gradients (live gradients allowed).
 """
 import torch
 import torch.nn as nn
@@ -69,22 +73,22 @@ class Block(nn.Module):
 
 @torch.compiler.disable
 def gram_schmidt_project(residual, basis_list):
-    """Modified Gram-Schmidt loop. 
-    @torch.compiler.disable is necessary to prevent Triton OOM on GPU.
+    """Modified Gram-Schmidt (MGS) projection loop.
+    Much more numerically stable than simultaneous CGS.
     """
     if not basis_list:
         return residual
-    # Use float32 and MGS logic for numerical stability
     orig_dtype = residual.dtype
     r = residual.float()
     for b in basis_list:
         b_f = b.float()
+        # project residual onto b
         dot = (r * b_f).sum(dim=-1, keepdim=True)
-        norm_sq = (b_f * b_f).sum(dim=-1, keepdim=True).clamp(min=1e-8)
+        norm_sq = (b_f * b_f).sum(dim=-1, keepdim=True).clamp(min=1e-5)
         r = r - (dot / norm_sq) * b_f
     return r.to(orig_dtype)
 
-class Neon302(nn.Module):
+class Neon303(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
@@ -105,9 +109,11 @@ class Neon302(nn.Module):
         basis = []
         for block in self.blocks:
             attn_res, mlp_res = block(x, f_cos, f_sin)
+            # GS on Attn
             attn_orth = gram_schmidt_project(attn_res, basis)
             x = x + attn_orth
             basis.append(attn_orth)
+            # GS on MLP
             mlp_orth = gram_schmidt_project(mlp_res, basis)
             x = x + mlp_orth
             basis.append(mlp_orth)
