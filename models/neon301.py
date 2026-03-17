@@ -95,21 +95,33 @@ class Block(nn.Module):
 
 def gram_schmidt_project(residual, basis_list):
     """Project residual to be orthogonal to all vectors in basis_list.
-    All tensors are shape [B, T, d_model]. Projection is per-token
-    (each token position is an independent d_model-dim vector).
-
-    residual: [B, T, D] — the new residual to orthogonalize
-    basis_list: list of [B, T, D] — previous residuals (already orthogonal)
-
-    Returns: residual' orthogonal to all basis vectors
+    All tensors are shape [B, T, d_model]. Projection is per-token.
+    
+    Calculates projections simultaneously since basis_list vectors are 
+    already mutually orthogonal. This avoids a sequential loop and plays
+    nicely with torch.compile without causing triton out-of-resource errors.
     """
-    r = residual
-    for b in basis_list:
-        # Per-token dot product: [B, T, 1]
-        dot = (r * b).sum(dim=-1, keepdim=True)
-        norm_sq = (b * b).sum(dim=-1, keepdim=True).clamp(min=1e-8)
-        r = r - (dot / norm_sq) * b
-    return r
+    if not basis_list:
+        return residual
+        
+    # Stack basis vectors into [B, T, K, D]
+    basis = torch.stack(basis_list, dim=2)
+    
+    # Broadcast residual to [B, T, 1, D]
+    r = residual.unsqueeze(2)
+    
+    # Compute dot products and norms
+    # r * basis -> [B, T, K, D], sum over D -> [B, T, K]
+    dots = (r * basis).sum(dim=-1)
+    norm_sqs = (basis * basis).sum(dim=-1).clamp(min=1e-8)
+    
+    # Coefficients for projection
+    coeffs = dots / norm_sqs # [B, T, K]
+    
+    # Multiply basis by coeffs and sum over K to get total projection
+    proj = (coeffs.unsqueeze(-1) * basis).sum(dim=2) # [B, T, D]
+    
+    return residual - proj
 
 
 class Neon301(nn.Module):
