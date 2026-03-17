@@ -1,9 +1,7 @@
-"""Training script for Neon302: Raw-Residual Gram-Schmidt Transformer.
-Uses Muon optimizer + plateau (trapezoid) LR schedule.
-Same hyperparameters as Neon300 baseline for fair comparison.
-"""
-import argparse
 import os
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
+import argparse
 import sys
 import math
 import time

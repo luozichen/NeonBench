@@ -57,24 +57,18 @@ class SwiGLU_MLP(nn.Module):
     def forward(self, x):
         return self.w_down(F.silu(self.w_gate(x)) * self.w_up(x))
 
-class Block(nn.Module):
+class SubLayer(nn.Module):
+    """Container to expose components for sequential execution in main model."""
     def __init__(self, config):
         super().__init__()
         self.ln1 = RMSNorm(config['d_model']); self.attn = GatedSDPA(config)
         self.ln2 = RMSNorm(config['d_model']); self.mlp = SwiGLU_MLP(config)
-    def forward(self, x, f_cos, f_sin):
-        attn_res = self.attn(self.ln1(x), f_cos, f_sin)
-        mlp_res = self.mlp(self.ln2(x + attn_res))
-        return attn_res, mlp_res
 
 @torch.compiler.disable
 def gram_schmidt_project(residual, basis_list):
-    """Modified Gram-Schmidt loop. 
-    @torch.compiler.disable is necessary to prevent Triton OOM on GPU.
-    """
+    """Sequential Modified Gram-Schmidt loop."""
     if not basis_list:
         return residual
-    # Use float32 and MGS logic for numerical stability
     orig_dtype = residual.dtype
     r = residual.float()
     for b in basis_list:
@@ -89,7 +83,7 @@ class Neon302(nn.Module):
         super().__init__()
         self.config = config
         self.token_emb = nn.Embedding(config['vocab_size'], config['d_model'])
-        self.blocks = nn.ModuleList([Block(config) for _ in range(config['n_layers'])])
+        self.layers = nn.ModuleList([SubLayer(config) for _ in range(config['n_layers'])])
         self.ln_f = RMSNorm(config['d_model'])
         self.head = nn.Linear(config['d_model'], config['vocab_size'], bias=False)
         self.token_emb.weight = self.head.weight
@@ -103,14 +97,19 @@ class Neon302(nn.Module):
         B, T = idx.shape; x = self.token_emb(idx)
         f_cos, f_sin = self.freqs_cos[:T], self.freqs_sin[:T]
         basis = []
-        for block in self.blocks:
-            attn_res, mlp_res = block(x, f_cos, f_sin)
+        for l in self.layers:
+            # 1. Attention + Orthogonalization
+            attn_res = l.attn(l.ln1(x), f_cos, f_sin)
             attn_orth = gram_schmidt_project(attn_res, basis)
             x = x + attn_orth
             basis.append(attn_orth)
+            
+            # 2. MLP + Orthogonalization (calculated on updated x)
+            mlp_res = l.mlp(l.ln2(x))
             mlp_orth = gram_schmidt_project(mlp_res, basis)
             x = x + mlp_orth
             basis.append(mlp_orth)
+            
         logits = self.head(self.ln_f(x))
         loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1)) if targets is not None else None
         return logits, loss
