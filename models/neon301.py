@@ -93,6 +93,7 @@ class Block(nn.Module):
         return attn_res, mlp_res
 
 
+@torch.compiler.disable
 def gram_schmidt_project(residual, basis_list):
     """Project residual to be orthogonal to all vectors in basis_list.
     All tensors are shape [B, T, d_model]. Projection is per-token.
