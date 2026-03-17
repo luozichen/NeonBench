@@ -93,34 +93,27 @@ class Block(nn.Module):
         return attn_res, mlp_res
 
 
-@torch.compiler.disable
-def gram_schmidt_project(residual, basis_list):
-    """Project residual to be orthogonal to all vectors in basis_list.
-    All tensors are shape [B, T, d_model]. Projection is per-token.
-    
-    Calculates projections simultaneously since basis_list vectors are 
-    already mutually orthogonal. This avoids a sequential loop and plays
-    nicely with torch.compile without causing triton out-of-resource errors.
+def gram_schmidt_project(residual, basis):
+    """Project residual to be orthogonal to all vectors in basis.
+    residual: [B, T, D]
+    basis: [B, T, K, D] (where K is current number of basis vectors)
     """
-    if not basis_list:
+    if basis is None:
         return residual
         
-    # Stack basis vectors into [B, T, K, D]
-    basis = torch.stack(basis_list, dim=2)
+    # dots = residual . basis -> [B, T, K]
+    # (B, T, 1, D) @ (B, T, D, K) -> (B, T, 1, K)
+    dots = torch.matmul(residual.unsqueeze(-2), basis.transpose(-1, -2))
     
-    # Broadcast residual to [B, T, 1, D]
-    r = residual.unsqueeze(2)
+    # norm_sqs = basis . basis -> [B, T, K]
+    norm_sqs = (basis * basis).sum(dim=-1, keepdim=True).transpose(-1, -2).clamp(min=1e-8)
     
-    # Compute dot products and norms
-    # r * basis -> [B, T, K, D], sum over D -> [B, T, K]
-    dots = (r * basis).sum(dim=-1)
-    norm_sqs = (basis * basis).sum(dim=-1).clamp(min=1e-8)
+    # coeffs = dots / norm_sqs -> [B, T, 1, K]
+    coeffs = dots / norm_sqs
     
-    # Coefficients for projection
-    coeffs = dots / norm_sqs # [B, T, K]
-    
-    # Multiply basis by coeffs and sum over K to get total projection
-    proj = (coeffs.unsqueeze(-1) * basis).sum(dim=2) # [B, T, D]
+    # proj = coeffs . basis -> [B, T, D]
+    # (B, T, 1, K) @ (B, T, K, D) -> (B, T, 1, D)
+    proj = torch.matmul(coeffs, basis).squeeze(-2)
     
     return residual - proj
 
@@ -149,23 +142,25 @@ class Neon301(nn.Module):
     def forward(self, idx, targets=None):
         B, T = idx.shape
         x = self.token_emb(idx)
-
         f_cos, f_sin = self.freqs_cos[:T], self.freqs_sin[:T]
 
-        # Collect all orthogonalized residuals for Gram-Schmidt
-        basis = []
+        # basis: [B, T, K, D] (starts as None, then grows)
+        basis = None
 
         for block in self.blocks:
             attn_res, mlp_res = block(x, f_cos, f_sin)
 
-            # Orthogonalize attention residual against all previous
+            # 1. Attn Residual
             attn_res_orth = gram_schmidt_project(attn_res, basis)
-            basis.append(attn_res_orth)
+            if basis is None:
+                basis = attn_res_orth.unsqueeze(2)
+            else:
+                basis = torch.cat([basis, attn_res_orth.unsqueeze(2)], dim=2)
             x = x + attn_res_orth
 
-            # Orthogonalize MLP residual against all previous (including this layer's attn)
+            # 2. MLP Residual
             mlp_res_orth = gram_schmidt_project(mlp_res, basis)
-            basis.append(mlp_res_orth)
+            basis = torch.cat([basis, mlp_res_orth.unsqueeze(2)], dim=2)
             x = x + mlp_res_orth
 
         logits = self.head(self.ln_f(x))
