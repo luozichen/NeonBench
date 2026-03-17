@@ -1,7 +1,9 @@
-import os
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
-
+"""Training script for Neon302: Gram-Schmidt Orthogonal Residuals.
+Uses Muon optimizer + plateau (trapezoid) LR schedule.
+Same hyperparameters as Neon300 baseline for fair comparison.
+"""
 import argparse
+import os
 import sys
 import math
 import time
@@ -72,6 +74,7 @@ def get_lr_multiplier(step: int, max_steps: int):
     warmup_steps = int(0.10 * max_steps)
     cooldown_steps = int(0.10 * max_steps)
     cooldown_start = max_steps - cooldown_steps
+
     if step < warmup_steps:
         return step / warmup_steps
     elif step > cooldown_start:
@@ -93,6 +96,7 @@ class TurboSampler:
         self.train_data = self.data[:int(self.n_total * 0.99)]
         self.val_data = self.data[int(self.n_total * 0.99):]
         print(f"Loaded {self.n_total:,} tokens ({len(self.train_data):,} train, {len(self.val_data):,} val)")
+
     def get_batch(self, split='train'):
         data = self.train_data if split == 'train' else self.val_data
         ix = torch.randint(len(data) - self.seq_len, (self.batch_size,))
@@ -121,7 +125,7 @@ def estimate_loss(model, sampler, eval_iters=50):
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 def main():
-    parser = argparse.ArgumentParser(description="Train Neon302 (Raw GS Variant)")
+    parser = argparse.ArgumentParser(description="Train Neon302 (Gram-Schmidt Orthogonal Residuals)")
     parser.add_argument("--data", type=str, default="data/fineweb/fineweb_tok6.bin")
     parser.add_argument("--tokenizer", type=str, default="tokenizers/fineweb_tok6.json")
     parser.add_argument("--steps", type=int, default=30000)
@@ -153,7 +157,7 @@ def main():
         'block_size': args.seq_len,
     }
 
-    print(f"Initializing Neon302...")
+    print(f"Initializing Neon302 (Gram-Schmidt Orthogonal Residuals)...")
     print(f"Config: {config}")
     model = Neon302(config).to(DEVICE)
     n_params = sum(p.numel() for p in model.parameters())
@@ -177,12 +181,12 @@ def main():
     scaler = GradScaler()
 
     with open(log_path, "w") as f:
-        f.write(f"Neon302 Training Log\n")
+        f.write(f"Neon302 Gram-Schmidt Training Log\n")
         f.write(f"Config: {config}\n")
         f.write(f"Parameters: {n_params:,}\n")
         f.write(f"Muon LR: {args.muon_lr}, AdamW LR: {args.adam_lr}\n")
         f.write(f"Schedule: Plateau (Trapezoid)\n")
-        f.write(f"Architecture: Raw-Residual Gram-Schmidt (Live Gradients)\n")
+        f.write(f"Architecture: Orthogonal residuals (per-token Gram-Schmidt)\n")
         f.write(f"Steps: {args.steps}, Batch: {args.batch_size}, Seq: {args.seq_len}\n\n")
 
     best_val_loss = float('inf')
@@ -210,6 +214,7 @@ def main():
         scaler.unscale_(optimizer_muon)
         scaler.unscale_(optimizer_adam)
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+
         scaler.step(optimizer_muon)
         scaler.step(optimizer_adam)
         scaler.update()
@@ -217,14 +222,18 @@ def main():
         pbar.set_postfix({"loss": f"{loss.item():.4f}", "lr": f"{lr_mult:.3f}"})
 
         if (step + 1) % args.eval_interval == 0:
-            val_loss = estimate_loss(model, sampler, eval_iters=50)
+            val_loss = estimate_loss(model, sampler)
             log_msg = f"Step {step+1}: Train {loss.item():.4f}, Val {val_loss:.4f}, LR_mult {lr_mult:.3f}"
             tqdm.write(log_msg)
+
             with open(log_path, "a") as f:
                 f.write(log_msg + "\n")
+
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 torch.save(model.state_dict(), os.path.join(args.out_dir, "best.pth"))
+                tqdm.write(f"--> New best val loss: {val_loss:.4f}")
+
             torch.save(model.state_dict(), os.path.join(args.out_dir, "latest.pth"))
 
     print("\nTRAINING DONE.")
