@@ -102,18 +102,16 @@ def gram_schmidt_project(residual, basis, k):
     if k == 0:
         return residual
     
-    # Force float32 for stable projection
+    # Force float32 for stable projection and detach to stop recursive gradients
+    # Detaching is crucial: each layer optimizes against a *fixed* orthonormal basis.
     orig_dtype = residual.dtype
     r = residual.float()
+    Q_k = basis[:, :, :k, :].detach().float()
     
-    # Since basis is orthonormal, proj(r, Q) = sum((r.q_i) * q_i)
-    # This is (r @ Q.T) @ Q
-    # r: [B, T, 1, D], Q_k: [B, T, k, D]
-    Q_k = basis[:, :, :k, :].float()
-    
-    # dots = [B, T, 1, k]
+    # Vectorized projection: r_orth = r - (r @ Q_k.T) @ Q_k
+    # (B, T, 1, D) @ (B, T, D, k) -> (B, T, 1, k)
     dots = torch.matmul(r.unsqueeze(-2), Q_k.transpose(-1, -2))
-    # proj = [B, T, 1, D]
+    # (B, T, 1, k) @ (B, T, k, D) -> (B, T, 1, D)
     proj = torch.matmul(dots, Q_k).squeeze(-2)
     
     return (r - proj).to(orig_dtype)
@@ -146,22 +144,21 @@ class Neon301(nn.Module):
         f_cos, f_sin = self.freqs_cos[:T], self.freqs_sin[:T]
 
         # Orthonormal basis: [B, T, 16, D]. Pre-allocate for speed and stability.
-        # 16 = 8 blocks * (attn + mlp)
+        # Fixed size 16 = 8 blocks * 2 residuals (attn + mlp)
         basis = torch.zeros(B, T, 16, self.config['d_model'], device=x.device, dtype=x.dtype)
         k = 0
 
-        for i, block in enumerate(self.blocks):
+        for block in self.blocks:
+            # Each block returns raw residuals. We GS-orthogonalize them sequentially.
             attn_res, mlp_res = block(x, f_cos, f_sin)
 
             # 1. Attn Residual Orthogonalization
             attn_orth = gram_schmidt_project(attn_res, basis, k)
             x = x + attn_orth
             
-            # Normalize and add to basis
-            # Use float32 for normalization to avoid NaNs
+            # Update orthonormal basis: normalize and store
             norm = attn_orth.float().norm(dim=-1, keepdim=True).clamp(min=1e-6)
-            # If the residual is too small (collapsed), we store a zero vector
-            # effectively ignoring this layer's contribution to the basis
+            # Store in basis using in-place assignment to avoid graph breaks
             basis[:, :, k, :] = torch.where(norm > 1e-4, attn_orth / norm.to(attn_orth.dtype), torch.zeros_like(attn_orth))
             k += 1
 
