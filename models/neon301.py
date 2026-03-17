@@ -100,22 +100,29 @@ def gram_schmidt_project(residual, basis):
     """
     if basis is None:
         return residual
-        
-    # dots = residual . basis -> [B, T, K]
-    # (B, T, 1, D) @ (B, T, D, K) -> (B, T, 1, K)
-    dots = torch.matmul(residual.unsqueeze(-2), basis.transpose(-1, -2))
     
-    # norm_sqs = basis . basis -> [B, T, K]
-    norm_sqs = (basis * basis).sum(dim=-1, keepdim=True).transpose(-1, -2).clamp(min=1e-8)
+    # Force float32 for numerical stability in AMP (mixed precision)
+    orig_dtype = residual.dtype
+    r = residual.float()
+    
+    # Detach basis to stabilize gradients - we want to find 
+    # the orthogonal component of the *current* residual relative
+    # to the fixed state of previous residuals.
+    b = basis.detach().float()
+        
+    # dots = residual . basis -> [B, T, 1, K]
+    dots = torch.matmul(r.unsqueeze(-2), b.transpose(-1, -2))
+    
+    # norm_sqs = basis . basis -> [B, T, 1, K]
+    norm_sqs = (b * b).sum(dim=-1, keepdim=True).transpose(-1, -2).clamp(min=1e-5)
     
     # coeffs = dots / norm_sqs -> [B, T, 1, K]
     coeffs = dots / norm_sqs
     
-    # proj = coeffs . basis -> [B, T, D]
-    # (B, T, 1, K) @ (B, T, K, D) -> (B, T, 1, D)
-    proj = torch.matmul(coeffs, basis).squeeze(-2)
+    # proj = coeffs . basis -> [B, T, 1, D]
+    proj = torch.matmul(coeffs, b).squeeze(-2)
     
-    return residual - proj
+    return (r - proj).to(orig_dtype)
 
 
 class Neon301(nn.Module):
