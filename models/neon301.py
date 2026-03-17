@@ -93,34 +93,28 @@ class Block(nn.Module):
         return attn_res, mlp_res
 
 
-def gram_schmidt_project(residual, basis):
-    """Project residual to be orthogonal to all vectors in basis.
+def gram_schmidt_project(residual, basis, k):
+    """Project residual to be orthogonal to the first k vectors in basis.
     residual: [B, T, D]
-    basis: [B, T, K, D] (where K is current number of basis vectors)
+    basis: [B, T, 16, D] (orthonormal basis)
+    k: int (number of active basis vectors)
     """
-    if basis is None:
+    if k == 0:
         return residual
     
-    # Force float32 for numerical stability in AMP (mixed precision)
+    # Force float32 for stable projection
     orig_dtype = residual.dtype
     r = residual.float()
     
-    # Detach basis to stabilize gradients - we want to find 
-    # the orthogonal component of the *current* residual relative
-    # to the fixed state of previous residuals.
-    b = basis.detach().float()
-        
-    # dots = residual . basis -> [B, T, 1, K]
-    dots = torch.matmul(r.unsqueeze(-2), b.transpose(-1, -2))
+    # Since basis is orthonormal, proj(r, Q) = sum((r.q_i) * q_i)
+    # This is (r @ Q.T) @ Q
+    # r: [B, T, 1, D], Q_k: [B, T, k, D]
+    Q_k = basis[:, :, :k, :].float()
     
-    # norm_sqs = basis . basis -> [B, T, 1, K]
-    norm_sqs = (b * b).sum(dim=-1, keepdim=True).transpose(-1, -2).clamp(min=1e-5)
-    
-    # coeffs = dots / norm_sqs -> [B, T, 1, K]
-    coeffs = dots / norm_sqs
-    
-    # proj = coeffs . basis -> [B, T, 1, D]
-    proj = torch.matmul(coeffs, b).squeeze(-2)
+    # dots = [B, T, 1, k]
+    dots = torch.matmul(r.unsqueeze(-2), Q_k.transpose(-1, -2))
+    # proj = [B, T, 1, D]
+    proj = torch.matmul(dots, Q_k).squeeze(-2)
     
     return (r - proj).to(orig_dtype)
 
@@ -151,24 +145,33 @@ class Neon301(nn.Module):
         x = self.token_emb(idx)
         f_cos, f_sin = self.freqs_cos[:T], self.freqs_sin[:T]
 
-        # basis: [B, T, K, D] (starts as None, then grows)
-        basis = None
+        # Orthonormal basis: [B, T, 16, D]. Pre-allocate for speed and stability.
+        # 16 = 8 blocks * (attn + mlp)
+        basis = torch.zeros(B, T, 16, self.config['d_model'], device=x.device, dtype=x.dtype)
+        k = 0
 
-        for block in self.blocks:
+        for i, block in enumerate(self.blocks):
             attn_res, mlp_res = block(x, f_cos, f_sin)
 
-            # 1. Attn Residual
-            attn_res_orth = gram_schmidt_project(attn_res, basis)
-            if basis is None:
-                basis = attn_res_orth.unsqueeze(2)
-            else:
-                basis = torch.cat([basis, attn_res_orth.unsqueeze(2)], dim=2)
-            x = x + attn_res_orth
+            # 1. Attn Residual Orthogonalization
+            attn_orth = gram_schmidt_project(attn_res, basis, k)
+            x = x + attn_orth
+            
+            # Normalize and add to basis
+            # Use float32 for normalization to avoid NaNs
+            norm = attn_orth.float().norm(dim=-1, keepdim=True).clamp(min=1e-6)
+            # If the residual is too small (collapsed), we store a zero vector
+            # effectively ignoring this layer's contribution to the basis
+            basis[:, :, k, :] = torch.where(norm > 1e-4, attn_orth / norm.to(attn_orth.dtype), torch.zeros_like(attn_orth))
+            k += 1
 
-            # 2. MLP Residual
-            mlp_res_orth = gram_schmidt_project(mlp_res, basis)
-            basis = torch.cat([basis, mlp_res_orth.unsqueeze(2)], dim=2)
-            x = x + mlp_res_orth
+            # 2. MLP Residual Orthogonalization
+            mlp_orth = gram_schmidt_project(mlp_res, basis, k)
+            x = x + mlp_orth
+            
+            norm = mlp_orth.float().norm(dim=-1, keepdim=True).clamp(min=1e-6)
+            basis[:, :, k, :] = torch.where(norm > 1e-4, mlp_orth / norm.to(mlp_orth.dtype), torch.zeros_like(mlp_orth))
+            k += 1
 
         logits = self.head(self.ln_f(x))
 
