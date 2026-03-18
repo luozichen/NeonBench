@@ -25,5 +25,6 @@ checkpoints/neon300*/
 !checkpoints/neon300/neon300_final_int8.pth
 checkpoints/neon301/*
 checkpoints/neon302/*
+checkpoints/neon303/*
 
 example_repo/

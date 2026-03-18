@@ -29,3 +29,9 @@ Step 10000: Train 3.5102, Val 3.4784, LR_mult 1.000
 Step 10500: Train 3.4811, Val 3.4703, LR_mult 1.000
 Step 11000: Train 3.4979, Val 3.4588, LR_mult 1.000
 Step 11500: Train 3.4671, Val 3.4572, LR_mult 1.000
+
+--- Resuming from Step 11500 ---
+Step 12000: Train 3.4560, Val 3.4422, LR_mult 1.000
+Step 12500: Train 3.4119, Val 3.4395, LR_mult 1.000
+Step 13000: Train 3.4013, Val 3.4191, LR_mult 1.000
+Step 13500: Train 3.4317, Val 3.4146, LR_mult 1.000
