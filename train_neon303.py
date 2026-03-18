@@ -107,7 +107,8 @@ def main():
     parser.add_argument("--data", type=str, default="data/fineweb/fineweb_tok6.bin")
     parser.add_argument("--tokenizer", type=str, default="tokenizers/fineweb_tok6.json")
     parser.add_argument("--steps", type=int, default=30000)
-    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--accum_steps", type=int, default=2)
     parser.add_argument("--seq_len", type=int, default=512)
     parser.add_argument("--eval_interval", type=int, default=500)
     parser.add_argument("--muon_lr", type=float, default=0.02)
@@ -156,19 +157,25 @@ def main():
         for g in optimizer_muon.param_groups: g['lr'] = args.muon_lr * lr_mult
         for g in optimizer_adam.param_groups: g['lr'] = args.adam_lr * lr_mult
 
-        x, y = sampler.get_batch('train')
-        with autocast('cuda'): logits, loss = model(x, y)
+        optimizer_muon.zero_grad(set_to_none=True); optimizer_adam.zero_grad(set_to_none=True)
+        
+        loss_accum = 0.0
+        for _ in range(args.accum_steps):
+            x, y = sampler.get_batch('train')
+            with autocast('cuda'): 
+                logits, loss = model(x, y)
+                loss = loss / args.accum_steps
+            scaler.scale(loss).backward()
+            loss_accum += loss.item() * args.accum_steps
 
-        if torch.isnan(loss):
+        if torch.isnan(torch.tensor(loss_accum)):
             print(f"\nCRITICAL: NaN loss at step {step}!"); break
 
-        optimizer_muon.zero_grad(set_to_none=True); optimizer_adam.zero_grad(set_to_none=True)
-        scaler.scale(loss).backward()
         scaler.unscale_(optimizer_muon); scaler.unscale_(optimizer_adam)
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         scaler.step(optimizer_muon); scaler.step(optimizer_adam); scaler.update()
 
-        pbar.set_postfix({"loss": f"{loss.item():.4f}", "lr": f"{lr_mult:.3f}"})
+        pbar.set_postfix({"loss": f"{loss_accum:.4f}", "lr": f"{lr_mult:.3f}"})
 
         if (step + 1) % args.eval_interval == 0:
             val_loss = estimate_loss(model, sampler)
