@@ -135,6 +135,8 @@ def main():
     parser.add_argument("--muon_lr", type=float, default=0.02)
     parser.add_argument("--adam_lr", type=float, default=3e-4)
     parser.add_argument("--out_dir", type=str, default="checkpoints/neon302")
+    parser.add_argument("--resume", action="store_true", help="Resume from latest.pth")
+    parser.add_argument("--start_step", type=int, default=0, help="Step to start from")
     args = parser.parse_args()
 
     DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -165,6 +167,14 @@ def main():
 
     print("Compiling model with torch.compile...")
     model = torch.compile(model)
+    
+    if args.resume:
+        checkpoint_path = os.path.join(args.out_dir, "latest.pth")
+        if os.path.exists(checkpoint_path):
+            print(f"Resuming from {checkpoint_path}...")
+            model.load_state_dict(torch.load(checkpoint_path, map_location=DEVICE))
+        else:
+            print(f"Warning: No checkpoint found at {checkpoint_path}. Starting from scratch.")
 
     muon_params, adam_params = [], []
     for name, p in model.named_parameters():
@@ -180,18 +190,22 @@ def main():
     optimizer_adam = torch.optim.AdamW(adam_params, lr=args.adam_lr, weight_decay=0.1)
     scaler = GradScaler()
 
-    with open(log_path, "w") as f:
-        f.write(f"Neon302 Gram-Schmidt Training Log\n")
-        f.write(f"Config: {config}\n")
-        f.write(f"Parameters: {n_params:,}\n")
-        f.write(f"Muon LR: {args.muon_lr}, AdamW LR: {args.adam_lr}\n")
-        f.write(f"Schedule: Plateau (Trapezoid)\n")
-        f.write(f"Architecture: Orthogonal residuals (per-token Gram-Schmidt)\n")
-        f.write(f"Steps: {args.steps}, Batch: {args.batch_size}, Seq: {args.seq_len}\n\n")
+    log_mode = "a" if args.resume else "w"
+    with open(log_path, log_mode) as f:
+        if not args.resume:
+            f.write(f"Neon302 Gram-Schmidt Training Log\n")
+            f.write(f"Config: {config}\n")
+            f.write(f"Parameters: {n_params:,}\n")
+            f.write(f"Muon LR: {args.muon_lr}, AdamW LR: {args.adam_lr}\n")
+            f.write(f"Schedule: Plateau (Trapezoid)\n")
+            f.write(f"Architecture: Orthogonal residuals (per-token Gram-Schmidt)\n")
+            f.write(f"Steps: {args.steps}, Batch: {args.batch_size}, Seq: {args.seq_len}\n\n")
+        else:
+            f.write(f"\n--- Resuming from Step {args.start_step} ---\n")
 
     best_val_loss = float('inf')
     model.train()
-    pbar = tqdm(range(args.steps), desc="Neon302")
+    pbar = tqdm(range(args.start_step, args.steps), desc="Neon302")
 
     for step in pbar:
         lr_mult = get_lr_multiplier(step, args.steps)
