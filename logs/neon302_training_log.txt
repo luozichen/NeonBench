@@ -1,0 +1,31 @@
+Neon302 Gram-Schmidt Training Log
+Config: {'vocab_size': 16384, 'd_model': 512, 'n_layers': 8, 'n_head': 8, 'd_ff': 2048, 'block_size': 512}
+Parameters: 44,049,920
+Muon LR: 0.02, AdamW LR: 0.0003
+Schedule: Plateau (Trapezoid)
+Architecture: Orthogonal residuals (per-token Gram-Schmidt)
+Steps: 30000, Batch: 64, Seq: 512
+
+Step 500: Train 5.9941, Val 5.9746, LR_mult 0.166
+Step 1000: Train 5.0324, Val 4.9355, LR_mult 0.333
+Step 1500: Train 4.5457, Val 4.4655, LR_mult 0.500
+Step 2000: Train 4.2614, Val 4.2098, LR_mult 0.666
+Step 2500: Train 4.1154, Val 4.0476, LR_mult 0.833
+Step 3000: Train 3.9458, Val 3.9416, LR_mult 1.000
+Step 3500: Train 3.7833, Val 3.8470, LR_mult 1.000
+Step 4000: Train 3.8477, Val 3.7853, LR_mult 1.000
+Step 4500: Train 3.7001, Val 3.7278, LR_mult 1.000
+Step 5000: Train 3.6924, Val 3.6715, LR_mult 1.000
+Step 5500: Train 3.6113, Val 3.6409, LR_mult 1.000
+Step 6000: Train 3.6288, Val 3.6158, LR_mult 1.000
+Step 6500: Train 3.6030, Val 3.5934, LR_mult 1.000
+Step 7000: Train 3.5364, Val 3.5684, LR_mult 1.000
+Step 7500: Train 3.6106, Val 3.5456, LR_mult 1.000
+Step 8000: Train 3.6306, Val 3.5304, LR_mult 1.000
+Step 8500: Train 3.5444, Val 3.5195, LR_mult 1.000
+Step 9000: Train 3.5421, Val 3.5001, LR_mult 1.000
+Step 9500: Train 3.4899, Val 3.4905, LR_mult 1.000
+Step 10000: Train 3.5102, Val 3.4784, LR_mult 1.000
+Step 10500: Train 3.4811, Val 3.4703, LR_mult 1.000
+Step 11000: Train 3.4979, Val 3.4588, LR_mult 1.000
+Step 11500: Train 3.4671, Val 3.4572, LR_mult 1.000

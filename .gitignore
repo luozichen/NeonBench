@@ -21,6 +21,9 @@ checkpoints/neon213_muon_growth/
 checkpoints/neon213_muon_long/
 checkpoints/neon213_muon/
 checkpoints/neon230/
-checkpoints/neon300/*
+checkpoints/neon300*/
 !checkpoints/neon300/neon300_final_int8.pth
+checkpoints/neon301/*
+checkpoints/neon302/*
+
 example_repo/

@@ -1,0 +1,68 @@
+Neon301 Gram-Schmidt Training Log
+Config: {'vocab_size': 16384, 'd_model': 512, 'n_layers': 8, 'n_head': 8, 'd_ff': 2048, 'block_size': 512}
+Parameters: 44,049,920
+Muon LR: 0.02, AdamW LR: 0.0003
+Schedule: Plateau (Trapezoid)
+Architecture: Orthogonal residuals (per-token Gram-Schmidt)
+Steps: 30000, Batch: 64, Seq: 512
+
+Step 500: Train 6.1625, Val 6.0914, LR_mult 0.166
+Step 1000: Train 5.1042, Val 5.0863, LR_mult 0.333
+Step 1500: Train 4.6493, Val 4.5923, LR_mult 0.500
+Step 2000: Train 4.3586, Val 4.3314, LR_mult 0.666
+Step 2500: Train 4.2120, Val 4.1481, LR_mult 0.833
+Step 3000: Train 4.0726, Val 4.0284, LR_mult 1.000
+Step 3500: Train 4.0185, Val 3.9110, LR_mult 1.000
+Step 4000: Train 3.8406, Val 3.8398, LR_mult 1.000
+Step 4500: Train 3.7405, Val 3.7854, LR_mult 1.000
+Step 5000: Train 3.7919, Val 3.7430, LR_mult 1.000
+Step 5500: Train 3.7156, Val 3.7046, LR_mult 1.000
+Step 6000: Train 3.6806, Val 3.6966, LR_mult 1.000
+Step 6500: Train 3.6629, Val 3.6594, LR_mult 1.000
+Step 7000: Train 3.5871, Val 3.6273, LR_mult 1.000
+Step 7500: Train 3.5625, Val 3.6095, LR_mult 1.000
+Step 8000: Train 3.6406, Val 3.5935, LR_mult 1.000
+Step 8500: Train 3.6017, Val 3.5653, LR_mult 1.000
+Step 9000: Train 3.6059, Val 3.5696, LR_mult 1.000
+Step 9500: Train 3.6085, Val 3.5529, LR_mult 1.000
+Step 10000: Train 3.5841, Val 3.5400, LR_mult 1.000
+Step 10500: Train 3.5847, Val 3.5278, LR_mult 1.000
+Step 11000: Train 3.5243, Val 3.5181, LR_mult 1.000
+Step 11500: Train 3.4664, Val 3.5008, LR_mult 1.000
+Step 12000: Train 3.5369, Val 3.5102, LR_mult 1.000
+Step 12500: Train 3.5218, Val 3.4866, LR_mult 1.000
+Step 13000: Train 3.5804, Val 3.4897, LR_mult 1.000
+Step 13500: Train 3.4172, Val 3.4730, LR_mult 1.000
+Step 14000: Train 3.4979, Val 3.4531, LR_mult 1.000
+Step 14500: Train 3.4122, Val 3.4611, LR_mult 1.000
+Step 15000: Train 3.4207, Val 3.4444, LR_mult 1.000
+Step 15500: Train 3.4802, Val 3.4437, LR_mult 1.000
+Step 16000: Train 3.4210, Val 3.4348, LR_mult 1.000
+Step 16500: Train 3.4490, Val 3.4352, LR_mult 1.000
+Step 17000: Train 3.4110, Val 3.4405, LR_mult 1.000
+Step 17500: Train 3.4090, Val 3.4294, LR_mult 1.000
+Step 18000: Train 3.4159, Val 3.4268, LR_mult 1.000
+Step 18500: Train 3.4918, Val 3.4214, LR_mult 1.000
+Step 19000: Train 3.4337, Val 3.4142, LR_mult 1.000
+Step 19500: Train 3.4238, Val 3.4048, LR_mult 1.000
+Step 20000: Train 3.4573, Val 3.4049, LR_mult 1.000
+Step 20500: Train 3.3306, Val 3.3875, LR_mult 1.000
+Step 21000: Train 3.4171, Val 3.3975, LR_mult 1.000
+Step 21500: Train 3.3845, Val 3.3828, LR_mult 1.000
+Step 22000: Train 3.3740, Val 3.3796, LR_mult 1.000
+Step 22500: Train 3.3463, Val 3.3858, LR_mult 1.000
+Step 23000: Train 3.3961, Val 3.3811, LR_mult 1.000
+Step 23500: Train 3.3683, Val 3.3850, LR_mult 1.000
+Step 24000: Train 3.4123, Val 3.3785, LR_mult 1.000
+Step 24500: Train 3.4471, Val 3.3759, LR_mult 1.000
+Step 25000: Train 3.3493, Val 3.3674, LR_mult 1.000
+Step 25500: Train 3.4074, Val 3.3564, LR_mult 1.000
+Step 26000: Train 3.3819, Val 3.3746, LR_mult 1.000
+Step 26500: Train 3.4104, Val 3.3448, LR_mult 1.000
+Step 27000: Train 3.2989, Val 3.3414, LR_mult 1.000
+Step 27500: Train 3.3375, Val 3.3536, LR_mult 0.850
+Step 28000: Train 3.3811, Val 3.3295, LR_mult 0.700
+Step 28500: Train 3.3403, Val 3.3129, LR_mult 0.550
+Step 29000: Train 3.3329, Val 3.2935, LR_mult 0.400
+Step 29500: Train 3.2009, Val 3.2966, LR_mult 0.250
+Step 30000: Train 3.2877, Val 3.2798, LR_mult 0.100
