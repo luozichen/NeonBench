@@ -58,7 +58,6 @@ class SwiGLU_MLP(nn.Module):
     def forward(self, x):
         return self.w_down(F.silu(self.w_gate(x)) * self.w_up(x))
 
-@torch.compiler.disable
 def orthogonal_project(residual, input_vec):
     """Project residual to be orthogonal to input_vec in FP32."""
     orig_dtype = residual.dtype
