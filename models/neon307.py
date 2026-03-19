@@ -63,6 +63,7 @@ class Block(nn.Module):
         mlp_res = self.mlp(self.ln2(x + attn_res))
         return attn_res, mlp_res
 
+@torch.compiler.disable
 def gram_schmidt_importance(residual, basis_list, top_k=4):
     """MGS projection against the K largest (by norm) previous residuals."""
     if not basis_list:
@@ -71,25 +72,17 @@ def gram_schmidt_importance(residual, basis_list, top_k=4):
     orig_dtype = residual.dtype
     r = residual.float()
     
-    # 1. Compute norms of all basis elements (B, T, 1)
-    # We do this per token.
-    norms = torch.stack([ (b*b).sum(dim=-1, keepdim=True) for b in basis_list ], dim=0) # (L, B, T, 1)
-    
-    # 2. Find top K indices per token
-    # This is tricky because top-k might be different per token.
-    # To keep it simple and compile-friendly, let's take the Top K average across tokens?
-    # No, that defeats the purpose.
-    # Let's just do it for the whole batch/sequence if possible, or loop.
-    
-    # Better: Use the last K if K is small, or just project against everything if L < K.
+    # 1. Selection logic using pure torch (avoid .item() graph breaks)
     if len(basis_list) <= top_k:
         selected_basis = basis_list
     else:
-        # Sort basis elements by their global average norm in this batch
-        # This makes it stable for torch.compile
-        avg_norms = torch.tensor([ (b.float()**2).mean().item() for b in basis_list ], device=residual.device)
+        # Stack basis temporarily to compute global average norms (B, T, C -> Scalar per basis)
+        # avg_norms shape: (L,)
+        basis_tensor = torch.stack([b.float() for b in basis_list])
+        avg_norms = (basis_tensor**2).mean(dim=(1,2,3))
         _, indices = torch.topk(avg_norms, top_k)
-        selected_basis = [ basis_list[i] for i in indices.tolist() ]
+        # Select basis elements using indices (this is still a list of tensors for the loop)
+        selected_basis = [ basis_list[i] for i in indices ]
     
     for b in selected_basis:
         b_f = b.float()

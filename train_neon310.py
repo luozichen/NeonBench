@@ -116,7 +116,7 @@ def main():
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
 
-    DEVICE = 'cuda' if torch.cuda.available() else 'cpu'
+    DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
     os.makedirs(args.out_dir, exist_ok=True); os.makedirs("logs", exist_ok=True)
     log_path = "logs/neon310_training_log.txt"
 

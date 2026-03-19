@@ -65,6 +65,7 @@ class Block(nn.Module):
         mlp_res = self.mlp(self.ln2(x + attn_res))
         return attn_res, mlp_res
 
+@torch.compiler.disable
 def gram_schmidt_window(residual, basis_list, window_size=3):
     """MGS projection against the last N elements of the basis."""
     if not basis_list:
