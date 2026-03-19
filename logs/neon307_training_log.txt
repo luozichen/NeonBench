@@ -1,0 +1,4 @@
+Neon307 Training Log (Importance-Based GS, k=4)
+Config: {'vocab_size': 16384, 'd_model': 512, 'n_layers': 8, 'n_head': 8, 'd_ff': 2048, 'block_size': 512, 'top_k': 4}
+Steps: 30000, Batch: 64
+
